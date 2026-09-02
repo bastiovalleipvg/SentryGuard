@@ -1,0 +1,6 @@
+@SentryGuard_HostAddress = http://localhost:5170
+
+GET {{SentryGuard_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
