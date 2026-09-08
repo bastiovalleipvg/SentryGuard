@@ -11,7 +11,7 @@ namespace SentryGuard.Endpoints
     {
         public static void MapIncidenteApi(this WebApplication app)
         {
-            var incidentes = app.MapGroup("/api/incidentes")
+            var incidentes = app.MapGroup("/api/v1/incidentes")
                 .WithTags("Incidentes")
                 .RequireAuthorization();
 
@@ -66,7 +66,7 @@ namespace SentryGuard.Endpoints
             };
 
             await repo.AddAsync(incidente);
-            return Results.Created($"/api/incidentes/{incidente.Id}", new { id = incidente.Id, titulo = incidente.Titulo });
+            return Results.Created($"/api/v1/incidentes/{incidente.Id}", new { id = incidente.Id, titulo = incidente.Titulo });
         }
 
         private static async Task<IResult> ListarIncidentes(SentryGuardDbContext db, HttpContext httpContext, AuthService authService, int page = 1, int pageSize = 10)
@@ -220,7 +220,7 @@ namespace SentryGuard.Endpoints
 
             await db.BitacorasIncidente.AddAsync(bitacora);
             await db.SaveChangesAsync();
-            return Results.Created($"/api/incidentes/{id}/bitacora", new { id = bitacora.Id });
+            return Results.Created($"/api/v1/incidentes/{id}/bitacora", new { id = bitacora.Id });
         }
 
         private static async Task<IResult> ObtenerBitacora(int id, SentryGuardDbContext db, HttpContext httpContext, AuthService authService)
@@ -272,7 +272,7 @@ namespace SentryGuard.Endpoints
 
             await db.EvidenciasIncidente.AddAsync(evidencia);
             await db.SaveChangesAsync();
-            return Results.Created($"/api/incidentes/{id}/evidencia", new { id = evidencia.Id });
+            return Results.Created($"/api/v1/incidentes/{id}/evidencia", new { id = evidencia.Id });
         }
 
         private static async Task<IResult> ObtenerEvidencia(int id, SentryGuardDbContext db, HttpContext httpContext, AuthService authService)

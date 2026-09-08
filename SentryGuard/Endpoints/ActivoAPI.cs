@@ -10,7 +10,7 @@ namespace SentryGuard.Endpoints
     {
         public static void MapActivoApi(this WebApplication app)
         {
-            var grupo = app.MapGroup("/api/activos").WithTags("Activos").RequireAuthorization();
+            var grupo = app.MapGroup("/api/v1/activos").WithTags("Activos").RequireAuthorization();
             // Listar/Obtener: los 4 roles, filtrado por organizacion dentro del handler para Cliente.
             grupo.MapGet("", Listar).WithName("Listar activos");
             grupo.MapGet("/{id}", Obtener).WithName("Obtener activo");
@@ -82,7 +82,7 @@ namespace SentryGuard.Endpoints
             await repo.AddAsync(activo);
 
             var dto = new ActivoDTO { Id = activo.Id, Nombre = activo.Nombre, HostnameIp = activo.HostnameIp, Categoria = categoria.Nombre };
-            return Results.Created($"/api/activos/{activo.Id}", dto);
+            return Results.Created($"/api/v1/activos/{activo.Id}", dto);
         }
 
         private static async Task<IResult> Actualizar(int id, ActualizarActivoRequest req, IActivoRepository repo)

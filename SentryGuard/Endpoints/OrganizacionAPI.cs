@@ -10,7 +10,7 @@ namespace SentryGuard.Endpoints
     {
         public static void MapOrganizacionApi(this WebApplication app)
         {
-            var grupo = app.MapGroup("/api/organizaciones").WithTags("Organizaciones").RequireAuthorization();
+            var grupo = app.MapGroup("/api/v1/organizaciones").WithTags("Organizaciones").RequireAuthorization();
             // Listar todas las organizaciones es solo para staff de CyberOps; un Cliente no necesita ver otras.
             grupo.MapGet("", Listar).WithName("Listar organizaciones")
                 .RequireAuthorization(p => p.RequireRole("Administrador", "Supervisor", "Analista"));
@@ -66,7 +66,7 @@ namespace SentryGuard.Endpoints
             await repo.AddAsync(org);
 
             var dto = new OrganizacionDTO { Id = org.Id, RazonSocial = org.RazonSocial, Rut = org.Rut, Plan = plan.Nombre, FechaAlta = org.FechaAlta };
-            return Results.Created($"/api/organizaciones/{org.Id}", dto);
+            return Results.Created($"/api/v1/organizaciones/{org.Id}", dto);
         }
 
         private static async Task<IResult> Actualizar(int id, ActualizarOrgRequest req, IOrganizacionRepository repo)

@@ -12,7 +12,7 @@ namespace SentryGuard.Endpoints
     {
         public static void MapUsuarioApi(this WebApplication app)
         {
-            var usuarios = app.MapGroup("/api/usuarios")
+            var usuarios = app.MapGroup("/api/v1/usuarios")
                 .WithTags("Usuarios");
 
             // Solo Administrador aprovisiona cuentas (evita que cualquiera se auto-asigne un rol, ver OWASP API5).
@@ -38,7 +38,7 @@ namespace SentryGuard.Endpoints
             usuario.PasswordHash = authService.HashPassword(usuario, request.Password);
 
             await usuarioRepository.AddAsync(usuario);
-            return Results.Created($"/api/usuarios/{usuario.Id}", new { id = usuario.Id, nombre = usuario.Nombre, email = usuario.Email, rol = rol.Nombre });
+            return Results.Created($"/api/v1/usuarios/{usuario.Id}", new { id = usuario.Id, nombre = usuario.Nombre, email = usuario.Email, rol = rol.Nombre });
         }
 
         private static async Task<IResult> LoginUsuario(LoginRequest login, SentryGuardDbContext db, AuthService authService)

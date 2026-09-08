@@ -7,7 +7,7 @@ namespace SentryGuard.Endpoints
     {
         public static void MapCatalogoApi(this WebApplication app)
         {
-            var catalogo = app.MapGroup("/api/catalogos")
+            var catalogo = app.MapGroup("/api/v1/catalogos")
                 .WithTags("Catálogos");
 
             // Severidades
@@ -89,7 +89,7 @@ namespace SentryGuard.Endpoints
             db.Severidades.Add(severidad);
             await db.SaveChangesAsync();
 
-            return Results.Created($"/api/catalogos/severidades/{severidad.Id}", new
+            return Results.Created($"/api/v1/catalogos/severidades/{severidad.Id}", new
             {
                 id = severidad.Id,
                 nombre = severidad.Nombre
@@ -129,7 +129,7 @@ namespace SentryGuard.Endpoints
             db.EstadosIncidente.Add(estado);
             await db.SaveChangesAsync();
 
-            return Results.Created($"/api/catalogos/estados-incidente/{estado.Id}", new
+            return Results.Created($"/api/v1/catalogos/estados-incidente/{estado.Id}", new
             {
                 id = estado.Id,
                 nombre = estado.Nombre
@@ -169,7 +169,7 @@ namespace SentryGuard.Endpoints
             db.CategoriasActivo.Add(categoria);
             await db.SaveChangesAsync();
 
-            return Results.Created($"/api/catalogos/categorias-activo/{categoria.Id}", new
+            return Results.Created($"/api/v1/catalogos/categorias-activo/{categoria.Id}", new
             {
                 id = categoria.Id,
                 nombre = categoria.Nombre
@@ -217,7 +217,7 @@ namespace SentryGuard.Endpoints
             db.PlanesServicio.Add(plan);
             await db.SaveChangesAsync();
 
-            return Results.Created($"/api/catalogos/planes-servicio/{plan.Id}", new
+            return Results.Created($"/api/v1/catalogos/planes-servicio/{plan.Id}", new
             {
                 id = plan.Id,
                 nombre = plan.Nombre
