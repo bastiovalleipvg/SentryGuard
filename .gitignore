@@ -6,6 +6,8 @@ obj/
 *.suo
 *.userosscache
 *.sln.docstates
+CLAUDE.md 
+.claude/
 
 # Rider
 .idea/
