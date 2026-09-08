@@ -168,7 +168,12 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.UseRateLimiter();
+// Rate limiting deshabilitado en tests de integracion: todas las requests de
+// WebApplicationFactory salen de la misma IP simulada y activarian el limite de /login.
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.UseRateLimiter();
+}
 
 // Mapear Endpoints (Minimal APIs)
 app.MapUsuarioApi();
@@ -178,3 +183,7 @@ app.MapActivoApi();
 app.MapCatalogoApi();
 
 app.Run();
+
+// Necesario para que WebApplicationFactory<Program> (tests de integracion) pueda referenciar
+// el entry point generado por top-level statements.
+public partial class Program { }
