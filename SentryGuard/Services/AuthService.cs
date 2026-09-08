@@ -73,12 +73,16 @@ namespace SentryGuard.Services
         /// </summary>
         public string GenerateJwtToken(Usuario usuario, Rol rol)
         {
-            var jwtKey = _configuration["Jwt:Key"]
-    ?? throw new InvalidOperationException("Falta configurar Jwt:Key en appsettings.json");
+            var jwtKey = _configuration["Jwt:Key"];
+            if (string.IsNullOrWhiteSpace(jwtKey))
+                throw new InvalidOperationException("Falta configurar Jwt:Key (usa dotnet user-secrets en Development).");
+
             var jwtIssuer = _configuration["Jwt:Issuer"];
             var jwtAudience = _configuration["Jwt:Audience"];
-            var jwtExpireMinutes = _configuration["Jwt:ExpireMinutes"]
-                ?? throw new InvalidOperationException("Falta configurar Jwt:ExpireMinutes en appsettings.json");
+
+            var jwtExpireMinutes = _configuration["Jwt:ExpireMinutes"];
+            if (string.IsNullOrWhiteSpace(jwtExpireMinutes))
+                throw new InvalidOperationException("Falta configurar Jwt:ExpireMinutes en appsettings.json");
 
             var claims = new List<Claim>
             {
