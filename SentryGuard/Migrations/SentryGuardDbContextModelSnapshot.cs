@@ -125,6 +125,33 @@ namespace SentryGuard.Migrations
                         .IsUnique();
 
                     b.ToTable("tb_CategoriaActivo");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Nombre = "Servidor"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Nombre = "Endpoint"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Nombre = "Red"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Nombre = "Aplicación"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Nombre = "Nube"
+                        });
                 });
 
             modelBuilder.Entity("SentryGuard.Models.ContratoSLA", b =>
@@ -212,6 +239,33 @@ namespace SentryGuard.Migrations
                         .IsUnique();
 
                     b.ToTable("tb_EstadoIncidente");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Nombre = "Abierto"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Nombre = "En progreso"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Nombre = "Escalado"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Nombre = "Resuelto"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Nombre = "Cerrado"
+                        });
                 });
 
             modelBuilder.Entity("SentryGuard.Models.EvidenciaIncidente", b =>
@@ -414,6 +468,16 @@ namespace SentryGuard.Migrations
                         .IsUnique();
 
                     b.ToTable("tb_Organizacion");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            FechaAlta = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PlanContratadoId = 2,
+                            RazonSocial = "Empresa Demo SpA",
+                            Rut = "76123456-7"
+                        });
                 });
 
             modelBuilder.Entity("SentryGuard.Models.PlanServicio", b =>
@@ -447,6 +511,29 @@ namespace SentryGuard.Migrations
                         .IsUnique();
 
                     b.ToTable("tb_PlanServicio");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Descripcion = "Plan de servicio básico",
+                            Nombre = "Básico",
+                            TiempoRespuestaBaseH = 24m
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Descripcion = "Plan de servicio estándar",
+                            Nombre = "Estándar",
+                            TiempoRespuestaBaseH = 12m
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Descripcion = "Plan de servicio premium",
+                            Nombre = "Premium",
+                            TiempoRespuestaBaseH = 4m
+                        });
                 });
 
             modelBuilder.Entity("SentryGuard.Models.RefreshToken", b =>
@@ -516,6 +603,28 @@ namespace SentryGuard.Migrations
                         .IsUnique();
 
                     b.ToTable("tb_Rol");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Nombre = "Administrador"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Nombre = "Supervisor"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Nombre = "Analista"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Nombre = "Cliente"
+                        });
                 });
 
             modelBuilder.Entity("SentryGuard.Models.Severidad", b =>
@@ -544,6 +653,32 @@ namespace SentryGuard.Migrations
                         .IsUnique();
 
                     b.ToTable("tb_Severidad");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            HorasSla = 24m,
+                            Nombre = "Baja"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            HorasSla = 12m,
+                            Nombre = "Media"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            HorasSla = 4m,
+                            Nombre = "Alta"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            HorasSla = 1m,
+                            Nombre = "Crítica"
+                        });
                 });
 
             modelBuilder.Entity("SentryGuard.Models.Usuario", b =>
@@ -608,6 +743,51 @@ namespace SentryGuard.Migrations
                     b.HasIndex("RolId");
 
                     b.ToTable("tb_Usuario");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Activo = true,
+                            Email = "admin@sentryguard.cl",
+                            IntentosFallidos = 0,
+                            Nombre = "Administrador SentryGuard",
+                            PasswordHash = "AQAAAAIAAYagAAAAEA7tnp5gva8xrGxWDTthC+lZOlvP37Z6w0rYJiGbxYzLWfHz5fvYXt7Usi6skqdweQ==",
+                            RolId = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Activo = true,
+                            Email = "supervisor@sentryguard.cl",
+                            IntentosFallidos = 0,
+                            Nombre = "Supervisor Demo",
+                            OrganizacionId = 1,
+                            PasswordHash = "AQAAAAIAAYagAAAAEA7tnp5gva8xrGxWDTthC+lZOlvP37Z6w0rYJiGbxYzLWfHz5fvYXt7Usi6skqdweQ==",
+                            RolId = 2
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Activo = true,
+                            Email = "analista@sentryguard.cl",
+                            IntentosFallidos = 0,
+                            Nombre = "Analista Demo",
+                            OrganizacionId = 1,
+                            PasswordHash = "AQAAAAIAAYagAAAAEA7tnp5gva8xrGxWDTthC+lZOlvP37Z6w0rYJiGbxYzLWfHz5fvYXt7Usi6skqdweQ==",
+                            RolId = 3
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Activo = true,
+                            Email = "cliente@sentryguard.cl",
+                            IntentosFallidos = 0,
+                            Nombre = "Cliente Demo",
+                            OrganizacionId = 1,
+                            PasswordHash = "AQAAAAIAAYagAAAAEA7tnp5gva8xrGxWDTthC+lZOlvP37Z6w0rYJiGbxYzLWfHz5fvYXt7Usi6skqdweQ==",
+                            RolId = 4
+                        });
                 });
 
             modelBuilder.Entity("SentryGuard.Models.Activo", b =>

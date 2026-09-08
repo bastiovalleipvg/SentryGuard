@@ -9,10 +9,10 @@ namespace SentryGuard.Endpoints
         public static void MapActivoApi(this WebApplication app)
         {
             var grupo = app.MapGroup("/api/activos").WithTags("Activos").RequireAuthorization();
-            grupo.MapGet("", Listar).WithName("Listar");
-            grupo.MapGet("/{id}", Obtener).WithName("Obtener");
-            grupo.MapPost("", Crear).WithName("Crear");
-            grupo.MapPut("/{id}", Actualizar).WithName("Actualizar");
+            grupo.MapGet("", Listar).WithName("Listar activos");
+            grupo.MapGet("/{id}", Obtener).WithName("Obtener activo");
+            grupo.MapPost("", Crear).WithName("Crear activo");
+            grupo.MapPut("/{id}", Actualizar).WithName("Actualizar activo");
             grupo.MapDelete("/{id}", Eliminar).RequireAuthorization(p => p.RequireRole("Administrador"));
         }
 

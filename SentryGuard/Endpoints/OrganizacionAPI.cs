@@ -9,8 +9,8 @@ namespace SentryGuard.Endpoints
         public static void MapOrganizacionApi(this WebApplication app)
         {
             var grupo = app.MapGroup("/api/organizaciones").WithTags("Organizaciones").RequireAuthorization();
-            grupo.MapGet("", Listar).WithName("Listar");
-            grupo.MapGet("/{id}", Obtener).WithName("Obtener");
+            grupo.MapGet("", Listar).WithName("Listar organizaciones");
+            grupo.MapGet("/{id}", Obtener).WithName("Obtener organizacion");
             grupo.MapPost("", Crear).RequireAuthorization(p => p.RequireRole("Administrador"));
             grupo.MapPut("/{id}", Actualizar).RequireAuthorization(p => p.RequireRole("Administrador"));
             grupo.MapDelete("/{id}", Eliminar).RequireAuthorization(p => p.RequireRole("Administrador"));
