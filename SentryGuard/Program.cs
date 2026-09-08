@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 using SentryGuard.Data;
 using SentryGuard.Endpoints;
@@ -37,7 +39,40 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 
 // Add services to the container
-builder.Services.AddOpenApi();
+const string BearerSchemeId = "Bearer";
+builder.Services.AddOpenApi(options =>
+{
+    // Declara el esquema Bearer en el documento OpenAPI para que Scalar muestre el boton "Authorize".
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        document.Components ??= new OpenApiComponents();
+        document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+        document.Components.SecuritySchemes[BearerSchemeId] = new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description = "Pega aqui el token JWT obtenido en POST /api/v1/usuarios/login (sin el prefijo 'Bearer ')."
+        };
+        return Task.CompletedTask;
+    });
+
+    // Exige el esquema Bearer solo en los endpoints que ya tienen [Authorize]/.RequireAuthorization().
+    options.AddOperationTransformer((operation, context, cancellationToken) =>
+    {
+        var requiereAuth = context.Description.ActionDescriptor.EndpointMetadata.OfType<IAuthorizeData>().Any();
+        if (requiereAuth)
+        {
+            operation.Security ??= new List<OpenApiSecurityRequirement>();
+            operation.Security.Add(new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecuritySchemeReference(BearerSchemeId, context.Document, null)] = new List<string>()
+            });
+        }
+        return Task.CompletedTask;
+    });
+});
 builder.Services.AddScoped<AuthService>();
 
 // Registrar Repositorios (Scoped)
@@ -75,7 +110,9 @@ if (app.Environment.IsDevelopment())
     {
         options.WithTitle("SentryGuard CyberOps API")
             .WithTheme(ScalarTheme.BluePlanet)
-            .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient);
+            .WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)
+            .AddPreferredSecuritySchemes([BearerSchemeId])
+            .EnablePersistentAuthentication();
     });
 }
 
