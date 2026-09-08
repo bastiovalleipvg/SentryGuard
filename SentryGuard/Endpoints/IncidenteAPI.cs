@@ -16,8 +16,10 @@ namespace SentryGuard.Endpoints
                 .RequireAuthorization();
 
             // Cliente crea sus propios incidentes; Administrador/Supervisor pueden crearlos por cualquier organizacion.
+            // Rate limiting por IP para mitigar spam/abuso en la creacion de incidentes (OWASP API4).
             incidentes.MapPost("", CrearIncidente).WithName("Crear incidente")
-                .RequireAuthorization(p => p.RequireRole("Administrador", "Supervisor", "Cliente"));
+                .RequireAuthorization(p => p.RequireRole("Administrador", "Supervisor", "Cliente"))
+                .RequireRateLimiting("incidentes-crear");
             // Listar/Obtener/Bitacora/Evidencia/SLA: abiertos a los 4 roles, filtrados/validados dentro del handler.
             incidentes.MapGet("", ListarIncidentes).WithName("Listar incidentes");
             incidentes.MapGet("/{id}", ObtenerIncidente).WithName("Obtener incidente");

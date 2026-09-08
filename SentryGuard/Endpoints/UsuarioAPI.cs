@@ -18,7 +18,9 @@ namespace SentryGuard.Endpoints
             // Solo Administrador aprovisiona cuentas (evita que cualquiera se auto-asigne un rol, ver OWASP API5).
             usuarios.MapPost("/registro", RegistroUsuario).WithName("Registro")
                 .RequireAuthorization(p => p.RequireRole("Administrador"));
-            usuarios.MapPost("/login", LoginUsuario).WithName("Login");
+            // Rate limiting por IP para mitigar fuerza bruta sobre credenciales (OWASP API4).
+            usuarios.MapPost("/login", LoginUsuario).WithName("Login")
+                .RequireRateLimiting("login");
             usuarios.MapGet("/me", ObtenerUsuarioActual).RequireAuthorization();
             usuarios.MapGet("/{id}", ObtenerUsuarioId).RequireAuthorization();
             usuarios.MapPost("/refresh-token", RefrescarToken).RequireAuthorization();

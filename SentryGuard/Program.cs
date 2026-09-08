@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -10,6 +11,7 @@ using SentryGuard.Middleware;
 using SentryGuard.Repositories;
 using SentryGuard.Services;
 using System.Text;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +39,42 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+
+// CORS restringido a los origenes conocidos del frontend (OWASP API8)
+var corsAllowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+    {
+        policy.WithOrigins(corsAllowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
+// Rate limiting basico por IP en endpoints sensibles a fuerza bruta / abuso (OWASP API4)
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("login", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconocido",
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0
+        }));
+
+    options.AddPolicy("incidentes-crear", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconocido",
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 10,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0
+        }));
+});
 
 // Add services to the container
 const string BearerSchemeId = "Bearer";
@@ -91,9 +129,21 @@ builder.Logging.AddDebug();
 
 var app = builder.Build();
 
+// Headers de seguridad en toda respuesta, incluidas las de error (OWASP API8)
+app.UseSecurityHeaders();
+
+// HSTS solo fuera de Development (en dev no hay certificado HTTPS de confianza)
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+
 // Configure the HTTP request pipeline
 // Middleware personalizado: Manejo de excepciones (primero para capturar todo)
 app.UseGlobalExceptionHandling();
+
+// CORS: debe ir antes de autenticacion/autorizacion
+app.UseCors("Frontend");
 
 // Autenticación y autorización
 app.UseAuthentication();
@@ -117,6 +167,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseRateLimiter();
 
 // Mapear Endpoints (Minimal APIs)
 app.MapUsuarioApi();
