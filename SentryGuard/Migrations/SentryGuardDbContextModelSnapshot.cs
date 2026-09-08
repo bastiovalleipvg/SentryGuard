@@ -762,7 +762,6 @@ namespace SentryGuard.Migrations
                             Email = "supervisor@sentryguard.cl",
                             IntentosFallidos = 0,
                             Nombre = "Supervisor Demo",
-                            OrganizacionId = 1,
                             PasswordHash = "AQAAAAIAAYagAAAAEA7tnp5gva8xrGxWDTthC+lZOlvP37Z6w0rYJiGbxYzLWfHz5fvYXt7Usi6skqdweQ==",
                             RolId = 2
                         },
@@ -773,7 +772,6 @@ namespace SentryGuard.Migrations
                             Email = "analista@sentryguard.cl",
                             IntentosFallidos = 0,
                             Nombre = "Analista Demo",
-                            OrganizacionId = 1,
                             PasswordHash = "AQAAAAIAAYagAAAAEA7tnp5gva8xrGxWDTthC+lZOlvP37Z6w0rYJiGbxYzLWfHz5fvYXt7Usi6skqdweQ==",
                             RolId = 3
                         },

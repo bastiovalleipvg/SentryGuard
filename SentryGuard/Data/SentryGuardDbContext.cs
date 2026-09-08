@@ -191,7 +191,7 @@ public class SentryGuardDbContext : DbContext
                     Email = "supervisor@sentryguard.cl",
                     PasswordHash = PASSWORD_HASH_PRUEBA,
                     RolId = 2,
-                    OrganizacionId = (int?)1,
+                    OrganizacionId = (int?)null, // staff interno de CyberOps, no pertenece a una organizacion cliente
                     Activo = true,
                     IntentosFallidos = 0
                 },
@@ -202,7 +202,7 @@ public class SentryGuardDbContext : DbContext
                     Email = "analista@sentryguard.cl",
                     PasswordHash = PASSWORD_HASH_PRUEBA,
                     RolId = 3,
-                    OrganizacionId = (int?)1,
+                    OrganizacionId = (int?)null, // staff interno; su acceso se valida por incidente asignado
                     Activo = true,
                     IntentosFallidos = 0
                 },

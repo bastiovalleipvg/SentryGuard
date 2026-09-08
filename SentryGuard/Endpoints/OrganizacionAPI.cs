@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using SentryGuard.Data;
+using SentryGuard.DTOs;
 using SentryGuard.Repositories;
+using SentryGuard.Services;
 
 namespace SentryGuard.Endpoints
 {
@@ -9,30 +11,62 @@ namespace SentryGuard.Endpoints
         public static void MapOrganizacionApi(this WebApplication app)
         {
             var grupo = app.MapGroup("/api/organizaciones").WithTags("Organizaciones").RequireAuthorization();
-            grupo.MapGet("", Listar).WithName("Listar organizaciones");
+            // Listar todas las organizaciones es solo para staff de CyberOps; un Cliente no necesita ver otras.
+            grupo.MapGet("", Listar).WithName("Listar organizaciones")
+                .RequireAuthorization(p => p.RequireRole("Administrador", "Supervisor", "Analista"));
+            // Obtener por id: abierto a los 4 roles, pero Cliente solo puede pedir la suya (validado dentro del handler).
             grupo.MapGet("/{id}", Obtener).WithName("Obtener organizacion");
             grupo.MapPost("", Crear).RequireAuthorization(p => p.RequireRole("Administrador"));
             grupo.MapPut("/{id}", Actualizar).RequireAuthorization(p => p.RequireRole("Administrador"));
             grupo.MapDelete("/{id}", Eliminar).RequireAuthorization(p => p.RequireRole("Administrador"));
         }
 
-        private static async Task<IResult> Listar(IOrganizacionRepository repo, int page = 1, int pageSize = 10)
+        private static async Task<IResult> Listar(SentryGuardDbContext db, int page = 1, int pageSize = 10)
         {
-            var orgs = await repo.GetAllAsync();
-            return Results.Ok(new { total = orgs.Count(), page, pageSize, items = orgs.Skip((page - 1) * pageSize).Take(pageSize) });
+            var total = await db.Organizaciones.CountAsync();
+            var items = await db.Organizaciones
+                .OrderBy(o => o.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(o => new OrganizacionDTO
+                {
+                    Id = o.Id,
+                    RazonSocial = o.RazonSocial,
+                    Rut = o.Rut,
+                    Plan = o.Plan!.Nombre,
+                    FechaAlta = o.FechaAlta
+                })
+                .ToListAsync();
+
+            return Results.Ok(new { total, page, pageSize, items });
         }
 
-        private static async Task<IResult> Obtener(int id, IOrganizacionRepository repo)
+        private static async Task<IResult> Obtener(int id, SentryGuardDbContext db, HttpContext httpContext, AuthService authService)
         {
-            var org = await repo.GetByIdAsync(id);
-            return org == null ? Results.NotFound() : Results.Ok(org);
+            var usuario = await authService.ObtenerUsuarioAutenticadoAsync(httpContext, db);
+            if (usuario == null) return Results.Unauthorized();
+
+            if (usuario.Rol?.Nombre == "Cliente" && usuario.OrganizacionId != id)
+                return Results.Forbid();
+
+            var dto = await db.Organizaciones
+                .Where(o => o.Id == id)
+                .Select(o => new OrganizacionDTO { Id = o.Id, RazonSocial = o.RazonSocial, Rut = o.Rut, Plan = o.Plan!.Nombre, FechaAlta = o.FechaAlta })
+                .FirstOrDefaultAsync();
+
+            return dto == null ? Results.NotFound() : Results.Ok(dto);
         }
 
-        private static async Task<IResult> Crear(CrearOrgRequest req, IOrganizacionRepository repo)
+        private static async Task<IResult> Crear(CrearOrgRequest req, IOrganizacionRepository repo, SentryGuardDbContext db)
         {
+            var plan = await db.PlanesServicio.AsNoTracking().FirstOrDefaultAsync(p => p.Id == req.PlanId);
+            if (plan == null) return Results.BadRequest(new { error = "Plan no existe" });
+
             var org = new Models.Organizacion { RazonSocial = req.RazonSocial, Rut = req.Rut, PlanContratadoId = req.PlanId, FechaAlta = DateTime.UtcNow };
             await repo.AddAsync(org);
-            return Results.Created($"/api/organizaciones/{org.Id}", org);
+
+            var dto = new OrganizacionDTO { Id = org.Id, RazonSocial = org.RazonSocial, Rut = org.Rut, Plan = plan.Nombre, FechaAlta = org.FechaAlta };
+            return Results.Created($"/api/organizaciones/{org.Id}", dto);
         }
 
         private static async Task<IResult> Actualizar(int id, ActualizarOrgRequest req, IOrganizacionRepository repo)

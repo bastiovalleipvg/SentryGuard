@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SentryGuard.Data;
 using SentryGuard.Models;
@@ -119,19 +120,51 @@ namespace SentryGuard.Services
         /// <summary>
         /// Valida que usuario tenga acceso a una organización (OWASP API1).
         /// Impide que Usuario Cliente acceda a otra organización.
+        /// Administrador y Supervisor son staff interno de CyberOps: no están atados a una
+        /// organización cliente, tienen acceso a todas. Analista no se valida por organización
+        /// sino por incidente asignado (ver ValidaAccesoIncidente).
         /// </summary>
         public bool ValidaAccesoOrganizacion(Usuario usuario, int organizacionIdSolicitada)
         {
-            // Admin: acceso a todo
-            if (usuario.Rol?.Nombre == "Administrador")
+            if (usuario.Rol?.Nombre is "Administrador" or "Supervisor")
                 return true;
 
-            // Cliente: solo acceso a su propia organización
             if (usuario.Rol?.Nombre == "Cliente")
                 return usuario.OrganizacionId == organizacionIdSolicitada;
 
-            // Supervisor y Analista: acceso a su organizacion_id
-            return usuario.OrganizacionId == organizacionIdSolicitada;
+            return false;
+        }
+
+        /// <summary>
+        /// Valida que usuario tenga acceso a un incidente puntual (OWASP API1).
+        /// Administrador y Supervisor: acceso total. Cliente: solo incidentes de su propia
+        /// organización. Analista: solo incidentes que tiene asignados.
+        /// </summary>
+        public bool ValidaAccesoIncidente(Usuario usuario, Incidente incidente)
+        {
+            if (usuario.Rol?.Nombre is "Administrador" or "Supervisor")
+                return true;
+
+            if (usuario.Rol?.Nombre == "Cliente")
+                return usuario.OrganizacionId == incidente.OrganizacionId;
+
+            if (usuario.Rol?.Nombre == "Analista")
+                return incidente.AnalistaAsignadoId == usuario.Id;
+
+            return false;
+        }
+
+        /// <summary>
+        /// Obtiene el usuario autenticado (con su Rol cargado) a partir del claim del JWT.
+        /// Centraliza la lectura del NameIdentifier para no repetirla en cada endpoint.
+        /// </summary>
+        public async Task<Usuario?> ObtenerUsuarioAutenticadoAsync(HttpContext httpContext, SentryGuardDbContext db)
+        {
+            var usuarioId = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!int.TryParse(usuarioId, out var id))
+                return null;
+
+            return await db.Usuarios.Include(u => u.Rol).FirstOrDefaultAsync(u => u.Id == id);
         }
     }
 }
