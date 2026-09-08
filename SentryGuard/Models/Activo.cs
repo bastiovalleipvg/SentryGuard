@@ -24,4 +24,11 @@ public class Activo
 
     [Column("categoria_id")]
     public int CategoriaId { get; set; }
+
+    // Navigation properties
+    [ForeignKey("OrganizacionId")]
+    public virtual Organizacion? Organizacion { get; set; }
+
+    [ForeignKey("CategoriaId")]
+    public virtual CategoriaActivo? Categoria { get; set; }
 }

@@ -19,4 +19,7 @@ public class ContratoSLA
 
     [Column("vigente_hasta")]
     public DateTime? VigenteHasta { get; set; }
+
+    [ForeignKey("OrganizacionId")]
+    public virtual Organizacion? Organizacion { get; set; }
 }

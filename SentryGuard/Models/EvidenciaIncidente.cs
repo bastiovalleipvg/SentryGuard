@@ -29,4 +29,11 @@ public class EvidenciaIncidente
 
     [Column("fecha")]
     public DateTime Fecha { get; set; }
+
+    // Navigation properties
+    [ForeignKey("IncidenteId")]
+    public virtual Incidente? Incidente { get; set; }
+
+    [ForeignKey("SubidoPorId")]
+    public virtual Usuario? SubidoPor { get; set; }
 }

@@ -27,4 +27,11 @@ public class BitacoraIncidente
 
     [Column("timestamp")]
     public DateTime Timestamp { get; set; }
+
+    // Navigation properties
+    [ForeignKey("IncidenteId")]
+    public virtual Incidente? Incidente { get; set; }
+
+    [ForeignKey("UsuarioId")]
+    public virtual Usuario? Usuario { get; set; }
 }

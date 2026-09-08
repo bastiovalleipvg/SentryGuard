@@ -44,4 +44,20 @@ public class Incidente
     [Timestamp]
     [Column("row_version")]
     public byte[]? RowVersion { get; set; }
+
+    // Navigation properties
+    [ForeignKey("OrganizacionId")]
+    public virtual Organizacion? Organizacion { get; set; }
+
+    [ForeignKey("ActivoId")]
+    public virtual Activo? Activo { get; set; }
+
+    [ForeignKey("SeveridadId")]
+    public virtual Severidad? Severidad { get; set; }
+
+    [ForeignKey("EstadoId")]
+    public virtual EstadoIncidente? Estado { get; set; }
+
+    [ForeignKey("AnalistaAsignadoId")]
+    public virtual Usuario? AnalistaAsignado { get; set; }
 }

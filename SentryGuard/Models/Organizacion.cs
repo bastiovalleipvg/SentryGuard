@@ -26,4 +26,20 @@ public class Organizacion
 
     [Column("fecha_alta")]
     public DateTime FechaAlta { get; set; }
+
+    // Navigation properties
+    [ForeignKey("PlanContratadoId")]
+    public virtual PlanServicio? Plan { get; set; }
+
+    [InverseProperty("Organizacion")]
+    public virtual ICollection<Activo>? Activos { get; set; }
+
+    [InverseProperty("Organizacion")]
+    public virtual ICollection<Incidente>? Incidentes { get; set; }
+
+    [InverseProperty("Organizacion")]
+    public virtual ICollection<ContratoSLA>? ContratosSla { get; set; }
+
+    [InverseProperty("Organizacion")]
+    public virtual ICollection<Usuario>? Usuarios { get; set; }
 }

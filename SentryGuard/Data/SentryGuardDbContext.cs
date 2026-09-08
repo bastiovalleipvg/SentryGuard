@@ -62,7 +62,8 @@ public class SentryGuardDbContext : DbContext
                 .HasPrecision(0)
                 .HasDefaultValueSql("SYSUTCDATETIME()");
 
-            entity.HasOne<PlanServicio>()
+            // Organizacion.Plan -> PlanServicio (sin colección de vuelta)
+            entity.HasOne(e => e.Plan)
                 .WithMany()
                 .HasForeignKey(e => e.PlanContratadoId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -74,8 +75,9 @@ public class SentryGuardDbContext : DbContext
             entity.Property(e => e.VigenteHasta).HasPrecision(0);
             entity.HasIndex(e => e.OrganizacionId).IsUnique().HasFilter("[vigente_hasta] IS NULL");
 
-            entity.HasOne<Organizacion>()
-                .WithMany()
+            // ContratoSLA.Organizacion <-> Organizacion.ContratosSla
+            entity.HasOne(e => e.Organizacion)
+                .WithMany(o => o.ContratosSla)
                 .HasForeignKey(e => e.OrganizacionId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
@@ -85,6 +87,7 @@ public class SentryGuardDbContext : DbContext
             entity.HasIndex(e => new { e.ContratoId, e.SeveridadId }).IsUnique();
             entity.Property(e => e.HorasSla).HasPrecision(10, 2);
 
+            // Sin navegación declarada en ContratoSLADetalle.cs -> se deja genérico
             entity.HasOne<ContratoSLA>()
                 .WithMany()
                 .HasForeignKey(e => e.ContratoId)
@@ -103,13 +106,15 @@ public class SentryGuardDbContext : DbContext
             entity.Property(e => e.IntentosFallidos).HasDefaultValue(0);
             entity.Property(e => e.BloqueadoHasta).HasPrecision(0);
 
-            entity.HasOne<Rol>()
+            // Usuario.Rol -> Rol (sin colección de vuelta)
+            entity.HasOne(e => e.Rol)
                 .WithMany()
                 .HasForeignKey(e => e.RolId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne<Organizacion>()
-                .WithMany()
+            // Usuario.Organizacion <-> Organizacion.Usuarios
+            entity.HasOne(e => e.Organizacion)
+                .WithMany(o => o.Usuarios)
                 .HasForeignKey(e => e.OrganizacionId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
@@ -125,6 +130,7 @@ public class SentryGuardDbContext : DbContext
             entity.HasIndex(e => e.UsuarioId);
             entity.HasIndex(e => e.FechaExpira);
 
+            // Sin navegación declarada en RefreshToken.cs -> se deja genérico
             entity.HasOne<Usuario>()
                 .WithMany()
                 .HasForeignKey(e => e.UsuarioId)
@@ -136,12 +142,14 @@ public class SentryGuardDbContext : DbContext
             entity.HasIndex(e => e.OrganizacionId);
             entity.HasIndex(e => e.CategoriaId);
 
-            entity.HasOne<Organizacion>()
-                .WithMany()
+            // Activo.Organizacion <-> Organizacion.Activos
+            entity.HasOne(e => e.Organizacion)
+                .WithMany(o => o.Activos)
                 .HasForeignKey(e => e.OrganizacionId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne<CategoriaActivo>()
+            // Activo.Categoria -> CategoriaActivo (sin colección de vuelta)
+            entity.HasOne(e => e.Categoria)
                 .WithMany()
                 .HasForeignKey(e => e.CategoriaId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -162,27 +170,29 @@ public class SentryGuardDbContext : DbContext
             entity.HasIndex(e => e.AnalistaAsignadoId);
             entity.HasIndex(e => e.FechaCreacion);
 
-            entity.HasOne<Organizacion>()
-                .WithMany()
+            // Incidente.Organizacion <-> Organizacion.Incidentes
+            entity.HasOne(e => e.Organizacion)
+                .WithMany(o => o.Incidentes)
                 .HasForeignKey(e => e.OrganizacionId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne<Activo>()
+            // El resto son de un solo sentido (sin colección de vuelta)
+            entity.HasOne(e => e.Activo)
                 .WithMany()
                 .HasForeignKey(e => e.ActivoId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne<Severidad>()
+            entity.HasOne(e => e.Severidad)
                 .WithMany()
                 .HasForeignKey(e => e.SeveridadId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne<EstadoIncidente>()
+            entity.HasOne(e => e.Estado)
                 .WithMany()
                 .HasForeignKey(e => e.EstadoId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            entity.HasOne<Usuario>()
+            entity.HasOne(e => e.AnalistaAsignado)
                 .WithMany()
                 .HasForeignKey(e => e.AnalistaAsignadoId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -198,12 +208,12 @@ public class SentryGuardDbContext : DbContext
             entity.HasIndex(e => e.UsuarioId);
             entity.HasIndex(e => e.Timestamp);
 
-            entity.HasOne<Incidente>()
+            entity.HasOne(e => e.Incidente)
                 .WithMany()
                 .HasForeignKey(e => e.IncidenteId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne<Usuario>()
+            entity.HasOne(e => e.Usuario)
                 .WithMany()
                 .HasForeignKey(e => e.UsuarioId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -218,12 +228,12 @@ public class SentryGuardDbContext : DbContext
             entity.HasIndex(e => e.IncidenteId);
             entity.HasIndex(e => e.SubidoPorId);
 
-            entity.HasOne<Incidente>()
+            entity.HasOne(e => e.Incidente)
                 .WithMany()
                 .HasForeignKey(e => e.IncidenteId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasOne<Usuario>()
+            entity.HasOne(e => e.SubidoPor)
                 .WithMany()
                 .HasForeignKey(e => e.SubidoPorId)
                 .OnDelete(DeleteBehavior.Restrict);
@@ -238,6 +248,7 @@ public class SentryGuardDbContext : DbContext
             entity.HasIndex(e => e.UsuarioId);
             entity.HasIndex(e => e.Timestamp);
 
+            
             entity.HasOne<Usuario>()
                 .WithMany()
                 .HasForeignKey(e => e.UsuarioId)

@@ -40,4 +40,11 @@ public class Usuario
 
     [Column("bloqueado_hasta")]
     public DateTime? BloqueadoHasta { get; set; }
+
+    // Navigation properties
+    [ForeignKey("RolId")]
+    public virtual Rol? Rol { get; set; }
+
+    [ForeignKey("OrganizacionId")]
+    public virtual Organizacion? Organizacion { get; set; }
 }
