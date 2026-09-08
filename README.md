@@ -1,67 +1,132 @@
-# SentryGuard
+# SentryGuard — CyberOps Chile SpA
 
-Proyecto ASP.NET Core / .NET 10 con Entity Framework Core y SQL Server.
+API RESTful para gestión de incidentes de ciberseguridad, construida con ASP.NET Core
+(.NET 10) + Entity Framework Core (Code-First) + SQL Server + JWT.
 
-## Conexión a la base de datos
+## Requisitos previos
 
-La cadena de conexión **no debe contener credenciales compartidas**. Cada desarrollador debe usar su propia conexión local o la de su entorno.
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- SQL Server (Express, Developer o LocalDB) corriendo localmente
+- Herramienta de EF Core (si no la tienes):
+  ```
+  dotnet tool install --global dotnet-ef
+  ```
+- Git
 
-En este repositorio hay un ejemplo en `SentryGuard/appsettings.json`, pero al subir el proyecto a GitHub lo recomendable es reemplazarlo por una cadena local o moverla a User Secrets / variables de entorno.
+## 1. Clonar el repositorio
 
-Ejemplo de conexión local:
-
-```json
-"ConnectionStrings": {
-  "DefaultConnection": "Server=TU_SERVIDOR\TU_INSTANCIA;Database=SentryGuardDB;Trusted_Connection=True;TrustServerCertificate=True;"
-}
+```
+git clone https://github.com/<usuario>/SentryGuard.git
+cd SentryGuard
 ```
 
-## Generar los modelos con scaffolding en Visual Studio
+## 2. Configurar credenciales (obligatorio, no están en el repo)
 
-Si necesitas regenerar el `DbContext` y las entidades desde la base de datos en tu equipo:
+Por diseño, `appsettings.json` **no contiene** la clave JWT ni la cadena de conexión reales
+— están vacías a propósito. Cada desarrollador configura las suyas localmente con
+[User Secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets), que las
+guarda fuera de la carpeta del proyecto y nunca se suben a git.
 
-1. Abre la solución en Visual Studio.
-2. Verifica que SQL Server / SQL Express esté corriendo en tu máquina.
-3. Cambia la cadena de conexión de `DefaultConnection` por tu instancia local.
-4. Abre **Tools > NuGet Package Manager > Package Manager Console**.
-5. Ejecuta este comando:
+```
+cd SentryGuard
+dotnet user-secrets init
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Server=TU_SERVIDOR\TU_INSTANCIA;Database=SentryGuardDB;Trusted_Connection=True;TrustServerCertificate=True;"
+dotnet user-secrets set "Jwt:Key" "UNA_CLAVE_ALEATORIA_DE_AL_MENOS_32_CARACTERES"
+```
+
+Para generar una clave aleatoria segura en PowerShell:
 
 ```powershell
-Scaffold-DbContext "Server=TU_SERVIDOR\TU_INSTANCIA;Database=SentryGuardDB;Trusted_Connection=True;TrustServerCertificate=True;" Microsoft.EntityFrameworkCore.SqlServer -Context SentryGuardDbContext -ContextDir Data -OutputDir Models -DataAnnotations -Force -NoOnConfiguring
+[Convert]::ToBase64String((1..48 | ForEach-Object { Get-Random -Maximum 256 }))
 ```
 
-### Alternativa con CLI
+Si al correr la app ves el error *"Falta configurar Jwt:Key..."*, es porque falta este
+paso — no porque algo esté roto.
 
-Si prefieres la consola:
+> **Nota:** esto solo aplica al entorno `Development`. La suite de tests de integración
+> usa su propia clave no sensible en `appsettings.Testing.json` (ver sección Tests) y no
+> depende de este paso.
 
-```powershell
-dotnet ef dbcontext scaffold "Server=TU_SERVIDOR\TU_INSTANCIA;Database=SentryGuardDB;Trusted_Connection=True;TrustServerCertificate=True;" Microsoft.EntityFrameworkCore.SqlServer --context SentryGuardDbContext --context-dir Data --output-dir Models --force --no-onconfiguring --data-annotations --use-database-names
+## 3. Aplicar las migraciones (crea la base de datos)
+
+```
+dotnet ef database update
 ```
 
-## Notas importantes
+Esto crea la base de datos `SentryGuardDB` si no existe, todas las tablas según el modelo
+de EF Core, y siembra automáticamente (vía migraciones con `HasData()`, no un script
+aparte) los catálogos y usuarios de prueba:
 
-- El scaffolding puede sobrescribir archivos existentes si usas `-Force`.
-- Si quieres conservar el código actual, haz una copia antes de regenerar.
-- Los archivos generados deben quedar dentro de `SentryGuard/Data` y `SentryGuard/Models`.
+| Usuario | Rol | Contraseña |
+|---|---|---|
+| `admin@sentryguard.cl` | Administrador | `Admin123!` |
+| `supervisor@sentryguard.cl` | Supervisor | `Admin123!` |
+| `analista@sentryguard.cl` | Analista | `Admin123!` |
+| `cliente@sentryguard.cl` | Cliente | `Admin123!` |
 
-## ¿Por qué no se ven `Services` y `Endpoints` en Visual Studio?
+Si necesitas partir de cero (por ejemplo, tras algún problema local), puedes borrar y
+recrear la base:
 
-Esas carpetas **sí existen físicamente** en la solución, pero están vacías. Visual Studio normalmente no muestra carpetas vacías en Solution Explorer si no tienen archivos o si no están incluidas explícitamente en el proyecto.
-
-Para que aparezcan tienes dos opciones:
-
-- crear al menos un archivo dentro de cada carpeta, o
-- agregarlas explícitamente al `.csproj` con entradas como:
-
-```xml
-<ItemGroup>
-  <Folder Include="Endpoints\" />
-  <Folder Include="Services\" />
-</ItemGroup>
+```
+dotnet ef database drop
+dotnet ef database update
 ```
 
-## Recomendación para el equipo
+## 4. Correr la aplicación
 
-- No subir credenciales reales al repositorio.
-- Cada compañero debe usar su propia cadena de conexión.
-- Si van a regenerar modelos, hacerlo desde su entorno local con su SQL Server.
+```
+dotnet run
+```
+
+Por defecto queda disponible en `https://localhost:5170` (o el puerto que indique la
+consola). En entorno `Development`:
+
+- Documentación interactiva (Scalar): `https://localhost:5170/scalar/v1`
+- Documento OpenAPI crudo: `https://localhost:5170/openapi/v1.json`
+
+Para probar un endpoint protegido desde Scalar: haz `POST /api/v1/usuarios/login` con uno
+de los usuarios de la tabla de arriba, copia el `token` de la respuesta, ábrelo en el panel
+**Authentication** (arriba a la derecha en Scalar) y pégalo en el campo Bearer Token — queda
+guardado entre recargas mientras pruebas otros endpoints.
+
+## 5. Correr los tests de integración
+
+```
+dotnet test SentryGuard.slnx
+```
+
+Los tests levantan la aplicación completa (`WebApplicationFactory<Program>`) contra una
+base de datos separada y descartable (`SentryGuardDB_Test`), que se recrea desde las
+migraciones antes de cada corrida — no requiere ningún setup manual ni depende de los
+User Secrets configurados en el paso 2.
+
+## Variables de configuración
+
+| Clave | Dónde va | Sensible |
+|---|---|---|
+| `ConnectionStrings:DefaultConnection` | User Secrets (dev) / variable de entorno (prod) | Sí |
+| `Jwt:Key` | User Secrets (dev) / variable de entorno (prod) | Sí |
+| `Jwt:Issuer`, `Jwt:Audience`, `Jwt:ExpireMinutes` | `appsettings.json` | No |
+| `Cors:AllowedOrigins` | `appsettings.json` | No |
+
+En un entorno de producción real (no cubierto por este entregable académico), las claves
+sensibles se configurarían como variables de entorno del sistema o del servicio de hosting
+(`Jwt__Key`, `ConnectionStrings__DefaultConnection`, con doble guion bajo — así es como
+ASP.NET Core mapea variables de entorno a la jerarquía de configuración), nunca en un
+archivo dentro del repositorio.
+
+## Estructura del proyecto
+
+```
+SentryGuard/
+├── SentryGuard/              # API principal
+│   ├── Models/                # Entidades EF Core
+│   ├── Data/                  # DbContext
+│   ├── Repositories/          # Patrón Repository
+│   ├── Services/              # AuthService (JWT, hashing)
+│   ├── Endpoints/              # Minimal APIs por recurso
+│   ├── Middleware/             # Logging y manejo de excepciones
+│   └── Migrations/             # Migraciones de EF Core
+├── SentryGuard.Tests/         # Pruebas de integración (xUnit)
+└── SentryGuard.slnx
+```
