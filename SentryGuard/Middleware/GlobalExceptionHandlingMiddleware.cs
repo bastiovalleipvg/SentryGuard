@@ -2,6 +2,11 @@ using System.Text.Json;
 
 namespace SentryGuard.Middleware
 {
+    /// <summary>
+    /// Captura cualquier excepcion no controlada y responde con un JSON generico (OWASP API8).
+    /// El detalle real (mensaje, stack trace) solo se escribe en el log del servidor; al cliente
+    /// se le entrega un traceId para correlacionar, nunca el mensaje interno de la excepcion.
+    /// </summary>
     public class GlobalExceptionHandlingMiddleware
     {
         private readonly RequestDelegate _next;
@@ -21,8 +26,11 @@ namespace SentryGuard.Middleware
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Excepción no manejada | Mensaje: {Message} | Ruta: {Path}",
-                    ex.Message, context.Request.Path);
+                _logger.LogError(ex, "Excepción no manejada | TraceId: {TraceId} | Ruta: {Path}",
+                    context.TraceIdentifier, context.Request.Path);
+
+                if (context.Response.HasStarted)
+                    throw;
 
                 await HandleExceptionAsync(context, ex);
             }
@@ -30,54 +38,25 @@ namespace SentryGuard.Middleware
 
         private static Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
+            var (status, codigo, mensaje) = exception switch
+            {
+                // JSON mal formado, tipos incorrectos o parametros de ruta invalidos.
+                BadHttpRequestException bad => (bad.StatusCode, "SOLICITUD_INVALIDA", "La solicitud no tiene un formato válido."),
+                UnauthorizedAccessException => (StatusCodes.Status403Forbidden, "ACCESO_DENEGADO", "No tienes permisos para realizar esta acción."),
+                KeyNotFoundException => (StatusCodes.Status404NotFound, "RECURSO_NO_ENCONTRADO", "El recurso solicitado no existe."),
+                _ => (StatusCodes.Status500InternalServerError, "ERROR_INTERNO", "Ocurrió un error inesperado. Si persiste, contacta a soporte indicando el traceId.")
+            };
+
+            context.Response.Clear();
+            context.Response.StatusCode = status;
             context.Response.ContentType = "application/json";
 
-            var response = new ErrorResponse();
-
-            switch (exception)
+            var response = new ErrorResponse
             {
-                case ArgumentNullException argNullEx:
-                    context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                    response.Codigo = "ARGUMENTO_NULO";
-                    response.Mensaje = "Un argumento requerido es nulo";
-                    response.Detalle = argNullEx.ParamName;
-                    break;
-
-                case ArgumentException argEx:
-                    context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                    response.Codigo = "ARGUMENTO_INVALIDO";
-                    response.Mensaje = "Argumento inválido";
-                    response.Detalle = argEx.Message;
-                    break;
-
-                case InvalidOperationException invOpEx:
-                    context.Response.StatusCode = StatusCodes.Status409Conflict;
-                    response.Codigo = "OPERACION_INVALIDA";
-                    response.Mensaje = "Operación inválida";
-                    response.Detalle = invOpEx.Message;
-                    break;
-
-                case UnauthorizedAccessException uaEx:
-                    context.Response.StatusCode = StatusCodes.Status401Unauthorized;
-                    response.Codigo = "NO_AUTORIZADO";
-                    response.Mensaje = "No autorizado para realizar esta acción";
-                    response.Detalle = uaEx.Message;
-                    break;
-
-                case KeyNotFoundException knfEx:
-                    context.Response.StatusCode = StatusCodes.Status404NotFound;
-                    response.Codigo = "RECURSO_NO_ENCONTRADO";
-                    response.Mensaje = "El recurso solicitado no existe";
-                    response.Detalle = knfEx.Message;
-                    break;
-
-                default:
-                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
-                    response.Codigo = "ERROR_INTERNO";
-                    response.Mensaje = "Error interno del servidor";
-                    response.Detalle = exception.Message;
-                    break;
-            }
+                Codigo = codigo,
+                Mensaje = mensaje,
+                TraceId = context.TraceIdentifier
+            };
 
             var jsonResponse = JsonSerializer.Serialize(response, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
             return context.Response.WriteAsync(jsonResponse);
@@ -87,7 +66,7 @@ namespace SentryGuard.Middleware
         {
             public string Codigo { get; set; } = "ERROR";
             public string Mensaje { get; set; } = "Ocurrió un error";
-            public string? Detalle { get; set; }
+            public string? TraceId { get; set; }
             public DateTime Timestamp { get; set; } = DateTime.UtcNow;
         }
     }

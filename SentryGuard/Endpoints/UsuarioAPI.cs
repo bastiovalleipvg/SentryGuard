@@ -22,6 +22,9 @@ namespace SentryGuard.Endpoints
             usuarios.MapPost("/login", LoginUsuario).WithName("Login")
                 .RequireRateLimiting("login");
             usuarios.MapGet("/me", ObtenerUsuarioActual).RequireAuthorization();
+            // Lista minima (id, nombre) para el selector de asignacion; solo quien puede asignar la necesita.
+            usuarios.MapGet("/analistas", ListarAnalistas)
+                .RequireAuthorization(p => p.RequireRole("Administrador", "Supervisor"));
             usuarios.MapGet("/{id}", ObtenerUsuarioId).RequireAuthorization();
             usuarios.MapPost("/refresh-token", RefrescarToken).RequireAuthorization();
         }
@@ -43,15 +46,29 @@ namespace SentryGuard.Endpoints
             return Results.Created($"/api/v1/usuarios/{usuario.Id}", new { id = usuario.Id, nombre = usuario.Nombre, email = usuario.Email, rol = rol.Nombre });
         }
 
-        private static async Task<IResult> LoginUsuario(LoginRequest login, SentryGuardDbContext db, AuthService authService)
-        {
-            var usuario = await db.Usuarios.Include(u => u.Rol).FirstOrDefaultAsync(u => u.Email == login.Email);
-            if (usuario == null || !usuario.Activo)
-                return Results.Unauthorized();
+        // Mismo mensaje para email inexistente, contraseña incorrecta o cuenta bloqueada: un mensaje
+        // distinto por caso permitiria enumerar cuentas validas (OWASP API2).
+        private static IResult CredencialesInvalidas() => Results.Json(
+            new { codigo = "CREDENCIALES_INVALIDAS", mensaje = "Correo o contraseña incorrectos, o la cuenta está bloqueada temporalmente." },
+            statusCode: StatusCodes.Status401Unauthorized);
 
-            var (esValida, razon) = await authService.VerifyPasswordAsync(usuario, login.Password, db);
+        private static async Task<IResult> LoginUsuario(LoginRequest login, SentryGuardDbContext db, AuthService authService, IConfiguration configuration)
+        {
+            var errores = new Dictionary<string, string[]>();
+            if (string.IsNullOrWhiteSpace(login.Email) || login.Email.Length > 320)
+                errores["email"] = ["Ingresa un correo válido."];
+            if (string.IsNullOrEmpty(login.Password) || login.Password.Length > 200)
+                errores["password"] = ["Ingresa tu contraseña."];
+            if (errores.Count > 0)
+                return Results.ValidationProblem(errores);
+
+            var usuario = await db.Usuarios.Include(u => u.Rol).FirstOrDefaultAsync(u => u.Email == login.Email!.Trim());
+            if (usuario == null || !usuario.Activo)
+                return CredencialesInvalidas();
+
+            var (esValida, _) = await authService.VerifyPasswordAsync(usuario, login.Password!, db);
             if (!esValida)
-                return Results.Json(new { error = razon }, statusCode: StatusCodes.Status401Unauthorized);
+                return CredencialesInvalidas();
 
             var token = authService.GenerateJwtToken(usuario, usuario.Rol!);
 
@@ -61,7 +78,8 @@ namespace SentryGuard.Endpoints
             await db.RefreshTokens.AddAsync(refreshToken);
             await db.SaveChangesAsync();
 
-            return Results.Ok(new { token, refreshToken = refreshTokenHash, expiresIn = 3600 });
+            var expiraEnSegundos = configuration.GetValue("Jwt:ExpireMinutes", 60) * 60;
+            return Results.Ok(new { token, refreshToken = refreshTokenHash, expiresIn = expiraEnSegundos });
         }
 
         private static async Task<IResult> ObtenerUsuarioActual(HttpContext httpContext, SentryGuardDbContext db)
@@ -74,7 +92,17 @@ namespace SentryGuard.Endpoints
             if (usuario == null)
                 return Results.NotFound();
 
-            return Results.Ok(new { id = usuario.Id, nombre = usuario.Nombre, email = usuario.Email, rol = usuario.Rol?.Nombre, activo = usuario.Activo });
+            return Results.Ok(new { id = usuario.Id, nombre = usuario.Nombre, email = usuario.Email, rol = usuario.Rol?.Nombre, organizacionId = usuario.OrganizacionId, activo = usuario.Activo });
+        }
+
+        private static async Task<IResult> ListarAnalistas(SentryGuardDbContext db)
+        {
+            var analistas = await db.Usuarios
+                .Where(u => u.Activo && u.Rol!.Nombre == "Analista")
+                .OrderBy(u => u.Nombre)
+                .Select(u => new { id = u.Id, nombre = u.Nombre })
+                .ToListAsync();
+            return Results.Ok(analistas);
         }
 
         private static async Task<IResult> ObtenerUsuarioId(int id, HttpContext httpContext, SentryGuardDbContext db)
@@ -111,7 +139,7 @@ namespace SentryGuard.Endpoints
         }
 
         record RegistroRequest(string Nombre, string Email, string Password, int RolId, int? OrganizacionId);
-        record LoginRequest(string Email, string Password);
+        record LoginRequest(string? Email, string? Password);
         record RefreshTokenRequest(string RefreshToken);
     }
 }

@@ -44,9 +44,14 @@ namespace SentryGuard.DTOs
         public int Id { get; init; }
         public string Titulo { get; init; } = null!;
         public string Descripcion { get; init; } = null!;
+        public int SeveridadId { get; init; }
         public string Severidad { get; init; } = null!;
+        public int EstadoId { get; init; }
         public string Estado { get; init; } = null!;
+        public int ActivoId { get; init; }
         public string Activo { get; init; } = null!;
+        public int OrganizacionId { get; init; }
+        public int? AnalistaAsignadoId { get; init; }
         public string? AnalistaAsignado { get; init; }
         public DateTime FechaCreacion { get; init; }
         public DateTime? FechaCierre { get; init; }

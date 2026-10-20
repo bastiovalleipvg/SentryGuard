@@ -27,6 +27,20 @@ CLAUDE.md
 
 # Node
 node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/
+playwright/.cache/
+*.tsbuildinfo
+
+# Variables de entorno locales (solo se versiona la plantilla .env.example)
+.env
+.env.*
+!.env.example
+
+# Certificados de desarrollo exportados localmente
+certs/
 
 # macOS
 .DS_Store

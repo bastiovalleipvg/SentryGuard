@@ -52,8 +52,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("Frontend", policy =>
     {
         policy.WithOrigins(corsAllowedOrigins)
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+            .WithHeaders("Authorization", "Content-Type")
+            .WithMethods("GET", "POST", "PUT", "DELETE")
+            .WithExposedHeaders("Location", "Retry-After");
     });
 });
 
@@ -61,6 +62,19 @@ builder.Services.AddCors(options =>
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.OnRejected = async (context, cancellationToken) =>
+    {
+        var segundos = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter)
+            ? (int)Math.Ceiling(retryAfter.TotalSeconds)
+            : 60;
+        context.HttpContext.Response.Headers.RetryAfter = segundos.ToString();
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            codigo = "DEMASIADAS_SOLICITUDES",
+            mensaje = $"Demasiados intentos. Espera {segundos} segundos antes de volver a intentarlo.",
+            reintentarEnSegundos = segundos
+        }, cancellationToken);
+    };
 
     options.AddPolicy("login", httpContext => RateLimitPartition.GetFixedWindowLimiter(
         partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconocido",

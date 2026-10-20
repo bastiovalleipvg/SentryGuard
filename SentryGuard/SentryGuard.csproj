@@ -20,6 +20,8 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="Scalar.AspNetCore" Version="2.17.2" />
+    <!-- Fija una version parchada: Microsoft.Data.SqlClient 6.1.6 trae 9.0.11 (GHSA-846f-f764-76mx, GHSA-2fmv-rv2c-59x7). -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
   </ItemGroup>
 
 </Project>

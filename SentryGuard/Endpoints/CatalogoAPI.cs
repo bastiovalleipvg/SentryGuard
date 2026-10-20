@@ -57,8 +57,7 @@ namespace SentryGuard.Endpoints
             int page = 1,
             int pageSize = 10)
         {
-            if (page < 1 || pageSize < 1)
-                return Results.BadRequest(new { error = "Parámetros inválidos" });
+            (page, pageSize) = Paginacion.Normalizar(page, pageSize);
 
             var total = await db.Severidades.CountAsync();
             var items = await db.Severidades
@@ -101,6 +100,7 @@ namespace SentryGuard.Endpoints
             int page = 1,
             int pageSize = 10)
         {
+            (page, pageSize) = Paginacion.Normalizar(page, pageSize);
             var total = await db.EstadosIncidente.CountAsync();
             var items = await db.EstadosIncidente
                 .Skip((page - 1) * pageSize)
@@ -141,6 +141,7 @@ namespace SentryGuard.Endpoints
             int page = 1,
             int pageSize = 10)
         {
+            (page, pageSize) = Paginacion.Normalizar(page, pageSize);
             var total = await db.CategoriasActivo.CountAsync();
             var items = await db.CategoriasActivo
                 .Skip((page - 1) * pageSize)
@@ -181,6 +182,7 @@ namespace SentryGuard.Endpoints
             int page = 1,
             int pageSize = 10)
         {
+            (page, pageSize) = Paginacion.Normalizar(page, pageSize);
             var total = await db.PlanesServicio.CountAsync();
             var items = await db.PlanesServicio
                 .Skip((page - 1) * pageSize)

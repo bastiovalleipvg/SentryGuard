@@ -25,6 +25,7 @@ namespace SentryGuard.Endpoints
 
         private static async Task<IResult> Listar(SentryGuardDbContext db, HttpContext httpContext, AuthService authService, int page = 1, int pageSize = 10)
         {
+            (page, pageSize) = Paginacion.Normalizar(page, pageSize);
             var usuario = await authService.ObtenerUsuarioAutenticadoAsync(httpContext, db);
             if (usuario == null) return Results.Unauthorized();
 

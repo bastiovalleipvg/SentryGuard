@@ -3,6 +3,7 @@ using SentryGuard.Data;
 using SentryGuard.DTOs;
 using SentryGuard.Repositories;
 using SentryGuard.Services;
+using System.Linq.Expressions;
 using System.Security.Claims;
 
 namespace SentryGuard.Endpoints
@@ -43,25 +44,74 @@ namespace SentryGuard.Endpoints
             incidentes.MapGet("/sla/cumplimiento/{id}", ConsultarCumplimientoSla).WithName("Cumplimiento SLA");
         }
 
+        private const int TituloMin = 5;
+        private const int TituloMax = 250;
+        private const int DescripcionMin = 10;
+        private const int DescripcionMax = 4000;
+        private const int BusquedaMax = 100;
+
+        // Proyeccion unica a DTO, traducida a SQL por EF Core (nunca materializa entidades con navegaciones, OWASP API3).
+        private static readonly Expression<Func<Models.Incidente, IncidenteDTO>> ADto = i => new IncidenteDTO
+        {
+            Id = i.Id,
+            Titulo = i.Titulo,
+            Descripcion = i.Descripcion,
+            SeveridadId = i.SeveridadId,
+            Severidad = i.Severidad!.Nombre,
+            EstadoId = i.EstadoId,
+            Estado = i.Estado!.Nombre,
+            ActivoId = i.ActivoId,
+            Activo = i.Activo!.Nombre,
+            OrganizacionId = i.OrganizacionId,
+            AnalistaAsignadoId = i.AnalistaAsignadoId,
+            AnalistaAsignado = i.AnalistaAsignado != null ? i.AnalistaAsignado.Nombre : null,
+            FechaCreacion = i.FechaCreacion,
+            FechaCierre = i.FechaCierre
+        };
+
+        // Validacion de servidor obligatoria aunque el frontend tambien valide: el cliente es controlable por el atacante.
+        private static void ValidarTexto(Dictionary<string, string[]> errores, string campo, string? valor, int min, int max, bool requerido)
+        {
+            if (valor is null)
+            {
+                if (requerido) errores[campo] = [$"El campo {campo} es obligatorio."];
+                return;
+            }
+
+            var largo = valor.Trim().Length;
+            if (largo < min || largo > max)
+                errores[campo] = [$"Debe tener entre {min} y {max} caracteres."];
+        }
+
         private static async Task<IResult> CrearIncidente(CrearIncidenteRequest request, IIncidenteRepository repo, SentryGuardDbContext db, HttpContext httpContext, AuthService authService)
         {
             var usuario = await authService.ObtenerUsuarioAutenticadoAsync(httpContext, db);
             if (usuario == null) return Results.Unauthorized();
 
-            var activo = await db.Activos.FindAsync(request.ActivoId);
-            if (activo == null) return Results.BadRequest(new { error = "Activo no existe" });
+            var errores = new Dictionary<string, string[]>();
+            ValidarTexto(errores, "titulo", request.Titulo, TituloMin, TituloMax, requerido: true);
+            ValidarTexto(errores, "descripcion", request.Descripcion, DescripcionMin, DescripcionMax, requerido: true);
+            if (!await db.Severidades.AnyAsync(s => s.Id == request.SeveridadId))
+                errores["severidadId"] = ["La severidad seleccionada no existe."];
+
+            var activo = await db.Activos.AsNoTracking().FirstOrDefaultAsync(a => a.Id == request.ActivoId);
+            if (activo == null)
+                errores["activoId"] = ["El activo seleccionado no existe."];
+
+            if (errores.Count > 0)
+                return Results.ValidationProblem(errores);
 
             // El incidente pertenece a la organizacion dueña del activo (OWASP API1: nunca confiar en un id del body).
-            if (usuario.Rol?.Nombre == "Cliente" && usuario.OrganizacionId != activo.OrganizacionId)
+            if (usuario.Rol?.Nombre == "Cliente" && usuario.OrganizacionId != activo!.OrganizacionId)
                 return Results.Forbid();
 
             var estado = await db.EstadosIncidente.FirstOrDefaultAsync(e => e.Nombre == "Abierto");
             var incidente = new Models.Incidente
             {
-                OrganizacionId = activo.OrganizacionId,
+                OrganizacionId = activo!.OrganizacionId,
                 ActivoId = request.ActivoId,
-                Titulo = request.Titulo,
-                Descripcion = request.Descripcion,
+                Titulo = request.Titulo!.Trim(),
+                Descripcion = request.Descripcion!.Trim(),
                 SeveridadId = request.SeveridadId,
                 EstadoId = estado?.Id ?? 1,
                 FechaCreacion = DateTime.UtcNow
@@ -71,10 +121,13 @@ namespace SentryGuard.Endpoints
             return Results.Created($"/api/v1/incidentes/{incidente.Id}", new { id = incidente.Id, titulo = incidente.Titulo });
         }
 
-        private static async Task<IResult> ListarIncidentes(SentryGuardDbContext db, HttpContext httpContext, AuthService authService, int page = 1, int pageSize = 10)
+        private static async Task<IResult> ListarIncidentes(SentryGuardDbContext db, HttpContext httpContext, AuthService authService,
+            int page = 1, int pageSize = 10, string? q = null, int? estadoId = null, int? severidadId = null)
         {
             var usuario = await authService.ObtenerUsuarioAutenticadoAsync(httpContext, db);
             if (usuario == null) return Results.Unauthorized();
+
+            (page, pageSize) = Paginacion.Normalizar(page, pageSize);
 
             IQueryable<Models.Incidente> query = db.Incidentes;
 
@@ -84,26 +137,26 @@ namespace SentryGuard.Endpoints
             else if (usuario.Rol?.Nombre == "Analista")
                 query = query.Where(i => i.AnalistaAsignadoId == usuario.Id);
 
+            // EF Core parametriza el valor de la busqueda (LIKE @p), no concatena SQL.
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var termino = q.Trim();
+                if (termino.Length > BusquedaMax) termino = termino[..BusquedaMax];
+                query = query.Where(i => i.Titulo.Contains(termino));
+            }
+            if (estadoId.HasValue) query = query.Where(i => i.EstadoId == estadoId.Value);
+            if (severidadId.HasValue) query = query.Where(i => i.SeveridadId == severidadId.Value);
+
             var total = await query.CountAsync();
             var items = await query
                 .OrderByDescending(i => i.FechaCreacion)
+                .ThenByDescending(i => i.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
-                .Select(i => new IncidenteDTO
-                {
-                    Id = i.Id,
-                    Titulo = i.Titulo,
-                    Descripcion = i.Descripcion,
-                    Severidad = i.Severidad!.Nombre,
-                    Estado = i.Estado!.Nombre,
-                    Activo = i.Activo!.Nombre,
-                    AnalistaAsignado = i.AnalistaAsignado != null ? i.AnalistaAsignado.Nombre : null,
-                    FechaCreacion = i.FechaCreacion,
-                    FechaCierre = i.FechaCierre
-                })
+                .Select(ADto)
                 .ToListAsync();
 
-            return Results.Ok(new { total, page, pageSize, totalPages = Math.Ceiling((double)total / pageSize), items });
+            return Results.Ok(new { total, page, pageSize, totalPages = (int)Math.Ceiling((double)total / pageSize), items });
         }
 
         private static async Task<IResult> ObtenerIncidente(int id, SentryGuardDbContext db, HttpContext httpContext, AuthService authService)
@@ -118,22 +171,7 @@ namespace SentryGuard.Endpoints
             if (!authService.ValidaAccesoIncidente(usuario, incidente))
                 return Results.Forbid();
 
-            var dto = await db.Incidentes
-                .Where(i => i.Id == id)
-                .Select(i => new IncidenteDTO
-                {
-                    Id = i.Id,
-                    Titulo = i.Titulo,
-                    Descripcion = i.Descripcion,
-                    Severidad = i.Severidad!.Nombre,
-                    Estado = i.Estado!.Nombre,
-                    Activo = i.Activo!.Nombre,
-                    AnalistaAsignado = i.AnalistaAsignado != null ? i.AnalistaAsignado.Nombre : null,
-                    FechaCreacion = i.FechaCreacion,
-                    FechaCierre = i.FechaCierre
-                })
-                .FirstAsync();
-
+            var dto = await db.Incidentes.Where(i => i.Id == id).Select(ADto).FirstAsync();
             return Results.Ok(dto);
         }
 
@@ -148,8 +186,17 @@ namespace SentryGuard.Endpoints
             if (!authService.ValidaAccesoIncidente(usuario, incidente))
                 return Results.Forbid();
 
-            if (!string.IsNullOrEmpty(request.Titulo)) incidente.Titulo = request.Titulo;
-            if (!string.IsNullOrEmpty(request.Descripcion)) incidente.Descripcion = request.Descripcion;
+            var errores = new Dictionary<string, string[]>();
+            ValidarTexto(errores, "titulo", request.Titulo, TituloMin, TituloMax, requerido: false);
+            ValidarTexto(errores, "descripcion", request.Descripcion, DescripcionMin, DescripcionMax, requerido: false);
+            if (request.SeveridadId.HasValue && !await db.Severidades.AnyAsync(s => s.Id == request.SeveridadId.Value))
+                errores["severidadId"] = ["La severidad seleccionada no existe."];
+            if (errores.Count > 0)
+                return Results.ValidationProblem(errores);
+
+            if (request.Titulo is not null) incidente.Titulo = request.Titulo.Trim();
+            if (request.Descripcion is not null) incidente.Descripcion = request.Descripcion.Trim();
+            if (request.SeveridadId.HasValue) incidente.SeveridadId = request.SeveridadId.Value;
 
             await repo.UpdateAsync(incidente);
             return Results.Ok(new { mensaje = "Actualizado" });
@@ -321,8 +368,8 @@ namespace SentryGuard.Endpoints
             return Results.Ok(new { horasTranscurridas = horas, horasSLA = sla, cumple = horas <= sla });
         }
 
-        record CrearIncidenteRequest(string Titulo, string Descripcion, int ActivoId, int SeveridadId);
-        record ActualizarIncidenteRequest(string? Titulo, string? Descripcion);
+        record CrearIncidenteRequest(string? Titulo, string? Descripcion, int ActivoId, int SeveridadId);
+        record ActualizarIncidenteRequest(string? Titulo, string? Descripcion, int? SeveridadId);
         record AsignarAnalistaRequest(int AnalistaId);
         record CambiarEstadoRequest(int EstadoId);
         record AgregarBitacoraRequest(string Accion, string? Comentario);
