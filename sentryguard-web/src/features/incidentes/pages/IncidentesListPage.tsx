@@ -21,7 +21,8 @@ function aEntero(valor: string | null): number | undefined {
 export function IncidentesListPage() {
   const { usuario } = useAuth()
   const [params, setParams] = useSearchParams()
-  const esPantallaAncha = useMediaQuery('(min-width: 48rem)')
+  // Tabla solo en escritorio: con 6 columnas, bajo 1024 px se lee mejor como tarjetas.
+  const esPantallaAncha = useMediaQuery('(min-width: 64rem)')
 
   // Los filtros viven en la URL: se pueden compartir, recargar y navegar con Atras.
   const filtros: FiltrosIncidentes = {
