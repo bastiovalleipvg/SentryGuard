@@ -57,6 +57,32 @@ namespace SentryGuard.Migrations
                     b.HasIndex("OrganizacionId");
 
                     b.ToTable("tb_Activo");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CategoriaId = 1,
+                            HostnameIp = "10.10.0.10",
+                            Nombre = "Servidor web de producción",
+                            OrganizacionId = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CategoriaId = 3,
+                            HostnameIp = "10.10.0.1",
+                            Nombre = "Firewall perimetral",
+                            OrganizacionId = 1
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CategoriaId = 4,
+                            HostnameIp = "portal.demo.cl",
+                            Nombre = "Portal de clientes",
+                            OrganizacionId = 1
+                        });
                 });
 
             modelBuilder.Entity("SentryGuard.Models.BitacoraIncidente", b =>

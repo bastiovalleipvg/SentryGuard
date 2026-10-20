@@ -254,6 +254,14 @@ public class SentryGuardDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.CategoriaId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Activos de demostracion de la organizacion demo (id=1): sin ellos un Cliente no puede
+            // registrar incidentes desde el frontend, porque solo Administrador/Supervisor crean activos.
+            entity.HasData(
+                new Activo { Id = 1, OrganizacionId = 1, Nombre = "Servidor web de producción", HostnameIp = "10.10.0.10", CategoriaId = 1 },
+                new Activo { Id = 2, OrganizacionId = 1, Nombre = "Firewall perimetral", HostnameIp = "10.10.0.1", CategoriaId = 3 },
+                new Activo { Id = 3, OrganizacionId = 1, Nombre = "Portal de clientes", HostnameIp = "portal.demo.cl", CategoriaId = 4 }
+            );
         });
 
         modelBuilder.Entity<Incidente>(entity =>
