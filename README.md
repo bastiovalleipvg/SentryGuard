@@ -18,6 +18,19 @@ Sistema de gestión de incidentes de ciberseguridad. Monorepo con:
 - Node.js 22.15 o superior y npm (desarrollado con Node 26)
 - Git
 
+## Inicio rápido (sin IDE)
+
+Con los requisitos instalados y los User Secrets configurados (sección 1.1), basta con hacer
+doble clic en:
+
+| Script | Qué hace |
+|---|---|
+| `iniciar.bat` | Verifica requisitos, certificado HTTPS y dependencias; compila la API, aplica migraciones, abre la API y el frontend en dos ventanas, espera a que respondan y abre el navegador en `https://localhost:5173` |
+| `iniciar.bat preview` | Lo mismo, pero con el build de producción (CSP estricta) en `https://localhost:4173` |
+| `detener.bat` | Cierra ambas ventanas y libera los puertos 7166, 5170, 5173 y 4173 |
+
+Si la API o el frontend ya estaban corriendo, `iniciar.bat` los reutiliza.
+
 ## 1. API (backend)
 
 ### 1.1 Credenciales (no están en el repositorio)

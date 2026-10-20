@@ -1,0 +1,2 @@
+# cmd.exe puede fallar con etiquetas (goto) si un .bat tiene finales de linea LF.
+*.bat text eol=crlf
