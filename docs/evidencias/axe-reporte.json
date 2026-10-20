@@ -1,0 +1,37 @@
+{
+  "fecha": "2026-10-20T08:43:28.779Z",
+  "etiquetas": [
+    "wcag2a",
+    "wcag2aa",
+    "wcag21a",
+    "wcag21aa",
+    "wcag22aa"
+  ],
+  "vistas": {
+    "login": {
+      "url": "https://localhost:5173/login",
+      "violaciones": [],
+      "reglasAprobadas": 22
+    },
+    "listado": {
+      "url": "https://localhost:5173/incidentes#contenido",
+      "violaciones": [],
+      "reglasAprobadas": 28
+    },
+    "detalle": {
+      "url": "https://localhost:5173/incidentes/8",
+      "violaciones": [],
+      "reglasAprobadas": 27
+    },
+    "dialogo-eliminar": {
+      "url": "https://localhost:5173/incidentes/8",
+      "violaciones": [],
+      "reglasAprobadas": 13
+    },
+    "formulario-con-errores": {
+      "url": "https://localhost:5173/incidentes/nuevo",
+      "violaciones": [],
+      "reglasAprobadas": 27
+    }
+  }
+}

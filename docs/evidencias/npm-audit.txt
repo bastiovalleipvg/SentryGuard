@@ -1,0 +1,6 @@
+npm audit — sentryguard-web (2026-10-20T08:41Z)
+
+found 0 vulnerabilities
+
+--- dependencias de produccion ---
+found 0 vulnerabilities

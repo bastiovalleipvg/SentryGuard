@@ -1,0 +1,9 @@
+Pruebas end-to-end (Playwright) contra la API real — 2026-10-20T08:43Z
+Comando: npm run test:e2e (API en https://localhost:7166, frontend en https://localhost:5173)
+
+  ok 1 [chromium] › e2e\accesibilidad.spec.ts:48:3 › Accesibilidad (axe, WCAG 2.2 AA) y diseño responsivo › vistas principales sin violaciones, sin scroll horizontal y operables con teclado (4.7s)
+  ok 2 [chromium] › e2e\flujo-incidentes.spec.ts:6:3 › Flujo principal contra la API real › sin sesión, una ruta privada redirige al login (488ms)
+  ok 3 [chromium] › e2e\flujo-incidentes.spec.ts:12:3 › Flujo principal contra la API real › Cliente inicia sesión, crea un incidente, lo encuentra en el listado y no puede editarlo (1.3s)
+  ok 4 [chromium] › e2e\seguridad.spec.ts:7:3 › CORS aplicado por el navegador › el origen del frontend puede consumir la API (446ms)
+  ok 5 [chromium] › e2e\seguridad.spec.ts:13:3 › CORS aplicado por el navegador › un origen no permitido es bloqueado por el navegador (108ms)
+  5 passed (7.7s)

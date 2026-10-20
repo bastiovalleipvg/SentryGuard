@@ -1,0 +1,25 @@
+Pruebas de componentes (Vitest + Testing Library + MSW) — 2026-10-20T08:43Z
+Comando: npm test
+
+ ✓ src/features/auth/ProtectedRoute.test.tsx > Rutas protegidas > redirige al login cuando no hay sesión 144ms
+ ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > lista los incidentes devueltos por la API 256ms
+ ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > muestra el estado vacío cuando no hay resultados 50ms
+ ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > muestra un error y permite reintentar si la API falla 57ms
+ ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > rechaza una respuesta que no cumple el contrato de la API 36ms
+ ✓ src/features/auth/ProtectedRoute.test.tsx > Rutas protegidas > vuelve a la ruta pedida después de iniciar sesión 855ms
+ ✓ src/features/auth/ProtectedRoute.test.tsx > Rutas protegidas > muestra acceso denegado cuando el rol no puede entrar a la ruta 23ms
+ ✓ src/features/auth/ProtectedRoute.test.tsx > Rutas protegidas > muestra acceso denegado cuando la API responde 403 38ms
+ ✓ src/features/auth/LoginPage.test.tsx > Inicio de sesión > inicia sesión, guarda el token y redirige al listado de incidentes 1031ms
+ ✓ src/features/auth/LoginPage.test.tsx > Inicio de sesión > valida los campos en el cliente y asocia los errores a cada campo 62ms
+ ✓ src/features/auth/ProtectedRoute.test.tsx > Rutas protegidas > cierra la sesión y vuelve al login cuando el token expiró (401) 43ms
+ ✓ src/features/auth/ProtectedRoute.test.tsx > Rutas protegidas > oculta las acciones que el rol no puede realizar 61ms
+ ✓ src/features/auth/LoginPage.test.tsx > Inicio de sesión > muestra el mensaje genérico de la API ante credenciales inválidas 805ms
+ ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > crea un incidente con datos válidos y envía el contrato esperado 1731ms
+ ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > valida el formulario en el cliente antes de enviar 146ms
+ ✓ src/features/auth/LoginPage.test.tsx > Inicio de sesión > informa con claridad cuando la API limita los intentos (429) 849ms
+ ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > muestra junto al campo los errores de validación devueltos por la API (400) 1631ms
+ ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > elimina un incidente solo después de confirmar en el diálogo (Administrador) 113ms
+ ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > renderiza como texto el contenido malicioso devuelto por la API (XSS) 28ms
+ Test Files  3 passed (3)
+      Tests  19 passed (19)
+   Duration  5.67s (tests 64%, environment 20%, import 8%, setup 6%, transform 2%)

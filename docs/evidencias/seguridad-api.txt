@@ -1,0 +1,54 @@
+Verificacion de seguridad de la API SentryGuard
+Fecha: 2026-10-20T08:41:50.134Z
+API:   https://localhost:7166
+
+== Autenticacion (API2) ==
+[OK  ] Endpoint protegido sin token -> 401
+        status=401
+[OK  ] Token invalido o manipulado -> 401
+        status=401
+[OK  ] Login fallido: mismo 401 y mismo mensaje para clave incorrecta y email inexistente (sin enumeracion)
+        cuerpo={"codigo":"CREDENCIALES_INVALIDAS","mensaje":"Correo o contraseña incorrectos, o la cuenta está bloqueada temporalmente."}
+
+== Autorizacion por funcion (API5) ==
+[OK  ] Cliente intenta eliminar un incidente -> 403
+        status=403
+[OK  ] Cliente intenta editar un incidente -> 403
+        status=403
+[OK  ] Cliente intenta crear un usuario Administrador -> 403
+        status=403
+
+== Autorizacion por objeto (API1) ==
+[OK  ] Cliente (org 1) pide por id un incidente de otra organizacion (#7) -> 403
+        status=403
+[OK  ] Cliente crea un incidente sobre un activo de otra organizacion -> 403
+        status=403
+[OK  ] El listado del Cliente no incluye incidentes ajenos
+
+== Validacion de entradas e inyeccion ==
+[OK  ] Datos invalidos -> 400 con errores por campo
+        errores={"titulo":["Debe tener entre 5 y 250 caracteres."],"descripcion":["Debe tener entre 10 y 4000 caracteres."],"severidadId":["La severidad seleccionada no existe."]}
+[OK  ] JSON mal formado -> 400 sin detalles internos (sin stack trace ni nombres de excepcion)
+        cuerpo={"codigo":"SOLICITUD_INVALIDA","mensaje":"La solicitud no tiene un formato v\u00E1lido.","traceId":"0HNPEGGKSUKV9:00000021","timestamp":"2026-10-20T08:41:50.529…
+[OK  ] Busqueda con inyeccion SQL -> 200 sin resultados (EF Core parametriza la consulta)
+        total=0
+[OK  ] Payload XSS se guarda y se devuelve como dato JSON (el frontend lo renderiza como texto)
+        content-type=application/json; charset=utf-8; csp=default-src 'none'; frame-ancestors 'none'
+
+== Exposicion de datos (API3) ==
+[OK  ] Las respuestas no incluyen password_hash ni datos internos
+        campos=id, titulo, descripcion, severidadId, severidad, estadoId, estado, activoId, activo, organizacionId, analistaAsignadoId, analistaAsignado, fechaCreacion, fechaCierre
+[OK  ] pageSize excesivo se acota a 50 (API4)
+        pageSize=50
+
+== Configuracion para el navegador (API8) ==
+[OK  ] CORS: preflight desde https://localhost:5173 recibe Access-Control-Allow-Origin
+[OK  ] CORS: preflight desde https://sitio-malicioso.example NO recibe Access-Control-Allow-Origin
+[OK  ] Cabeceras de seguridad presentes
+        x-content-type-options: nosniff | x-frame-options: DENY | referrer-policy: no-referrer | content-security-policy: default-src 'none'; frame-ancestors 'none' | cache-control: no-store
+
+== Limite de tasa en el login (API4) ==
+[OK  ] Intentos repetidos de login terminan en 429 con Retry-After y mensaje claro
+        estados=401,429; retry-after=60; cuerpo={"codigo":"DEMASIADAS_SOLICITUDES","mensaje":"Demasiados intentos. Espera 60 segundos antes de volver a intentarlo.","reintentarEnSegundos":60}
+
+Resultado: todos los controles verificados.

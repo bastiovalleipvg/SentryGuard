@@ -1,0 +1,21 @@
+Suite de integracion del backend (xUnit + WebApplicationFactory) — 2026-10-20T08:42Z
+Comando: dotnet test SentryGuard.slnx
+
+  Correctas SentryGuard.Tests.SeguridadApiTests.CrearIncidente_ConJsonMalFormado_NoFiltraDetallesInternos [614 ms]
+  Correctas SentryGuard.Tests.SeguridadApiTests.ListarIncidentes_PageSizeExcesivo_SeAcotaA50 [173 ms]
+  Correctas SentryGuard.Tests.SeguridadApiTests.CrearIncidente_ConTituloVacio_Devuelve400ConErrorDeCampo [103 ms]
+  Correctas SentryGuard.Tests.SeguridadApiTests.ListarIncidentes_ConBusqueda_FiltraPorTitulo [196 ms]
+  Correctas SentryGuard.Tests.SeguridadApiTests.Login_EmailInexistenteYPasswordIncorrecta_DevuelvenMismoMensaje [69 ms]
+  Correctas SentryGuard.Tests.SeguridadApiTests.Cors_OrigenNoPermitido_NoRecibeAccessControlAllowOrigin [2 ms]
+  Correctas SentryGuard.Tests.SeguridadApiTests.RespuestasDeApi_IncluyenCabecerasDeSeguridad [28 ms]
+  Correctas SentryGuard.Tests.SeguridadApiTests.Cors_OrigenPermitido_RecibeAccessControlAllowOrigin [2 ms]
+  Correctas SentryGuard.Tests.IncidenteApiTests.ObtenerIncidente_Inexistente_Devuelve404 [161 ms]
+  Correctas SentryGuard.Tests.IncidenteApiTests.ObtenerIncidente_SinToken_Devuelve401 [5 ms]
+  Correctas SentryGuard.Tests.IncidenteApiTests.CrearIncidente_ComoCliente_DevuelveCreated [161 ms]
+  Correctas SentryGuard.Tests.IncidenteApiTests.Cliente_NoPuedeVerIncidenteDeOtraOrganizacion [360 ms]
+  Correctas SentryGuard.Tests.IncidenteApiTests.ListarIncidentes_SinToken_Devuelve401 [2 ms]
+  Correctas SentryGuard.Tests.IncidenteApiTests.EliminarIncidente_ConRolInsuficiente_Devuelve403 [62 ms]
+La serie de pruebas se ejecutó correctamente.
+Pruebas totales: 14
+     Correcto: 14
+ Tiempo total: 4,4804 Segundos
