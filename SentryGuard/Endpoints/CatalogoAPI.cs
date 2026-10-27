@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SentryGuard.Data;
 
 namespace SentryGuard.Endpoints
@@ -46,6 +46,19 @@ namespace SentryGuard.Endpoints
                 .WithName("Crear plan")
                 .RequireAuthorization(policy => policy.RequireRole("Administrador"));
 
+            catalogo.MapPut("/severidades/{id}", ActualizarSeveridad).WithName("Actualizar severidad")
+                .RequireAuthorization(policy => policy.RequireRole("Administrador"));
+            catalogo.MapDelete("/severidades/{id}", EliminarSeveridad).WithName("Eliminar severidad")
+                .RequireAuthorization(policy => policy.RequireRole("Administrador"));
+            catalogo.MapPut("/categorias-activo/{id}", ActualizarCategoriaActivo).WithName("Actualizar categoría")
+                .RequireAuthorization(policy => policy.RequireRole("Administrador"));
+            catalogo.MapDelete("/categorias-activo/{id}", EliminarCategoriaActivo).WithName("Eliminar categoría")
+                .RequireAuthorization(policy => policy.RequireRole("Administrador"));
+            catalogo.MapPut("/planes-servicio/{id}", ActualizarPlanServicio).WithName("Actualizar plan")
+                .RequireAuthorization(policy => policy.RequireRole("Administrador"));
+            catalogo.MapDelete("/planes-servicio/{id}", EliminarPlanServicio).WithName("Eliminar plan")
+                .RequireAuthorization(policy => policy.RequireRole("Administrador"));
+
             // Roles
             catalogo.MapGet("/roles", ListarRoles)
                 .WithName("Listar roles")
@@ -61,6 +74,7 @@ namespace SentryGuard.Endpoints
 
             var total = await db.Severidades.CountAsync();
             var items = await db.Severidades
+                .OrderBy(x => x.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -79,9 +93,13 @@ namespace SentryGuard.Endpoints
             CrearSeveridadRequest request,
             SentryGuardDbContext db)
         {
+            var errores = await ValidarNombreAsync(request.Nombre, n => db.Severidades.AnyAsync(x => x.Nombre == n));
+            Validacion.Horas(errores, "horasSla", request.HorasSla);
+            if (errores.Count > 0) return Results.ValidationProblem(errores);
+
             var severidad = new Models.Severidad
             {
-                Nombre = request.Nombre,
+                Nombre = request.Nombre!.Trim(),
                 HorasSla = request.HorasSla
             };
 
@@ -103,6 +121,7 @@ namespace SentryGuard.Endpoints
             (page, pageSize) = Paginacion.Normalizar(page, pageSize);
             var total = await db.EstadosIncidente.CountAsync();
             var items = await db.EstadosIncidente
+                .OrderBy(x => x.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -121,9 +140,12 @@ namespace SentryGuard.Endpoints
             CrearEstadoRequest request,
             SentryGuardDbContext db)
         {
+            var errores = await ValidarNombreAsync(request.Nombre, n => db.EstadosIncidente.AnyAsync(x => x.Nombre == n));
+            if (errores.Count > 0) return Results.ValidationProblem(errores);
+
             var estado = new Models.EstadoIncidente
             {
-                Nombre = request.Nombre
+                Nombre = request.Nombre!.Trim()
             };
 
             db.EstadosIncidente.Add(estado);
@@ -144,6 +166,7 @@ namespace SentryGuard.Endpoints
             (page, pageSize) = Paginacion.Normalizar(page, pageSize);
             var total = await db.CategoriasActivo.CountAsync();
             var items = await db.CategoriasActivo
+                .OrderBy(x => x.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -162,9 +185,12 @@ namespace SentryGuard.Endpoints
             CrearCategoriaRequest request,
             SentryGuardDbContext db)
         {
+            var errores = await ValidarNombreAsync(request.Nombre, n => db.CategoriasActivo.AnyAsync(x => x.Nombre == n));
+            if (errores.Count > 0) return Results.ValidationProblem(errores);
+
             var categoria = new Models.CategoriaActivo
             {
-                Nombre = request.Nombre
+                Nombre = request.Nombre!.Trim()
             };
 
             db.CategoriasActivo.Add(categoria);
@@ -185,6 +211,7 @@ namespace SentryGuard.Endpoints
             (page, pageSize) = Paginacion.Normalizar(page, pageSize);
             var total = await db.PlanesServicio.CountAsync();
             var items = await db.PlanesServicio
+                .OrderBy(x => x.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -209,10 +236,15 @@ namespace SentryGuard.Endpoints
             CrearPlanRequest request,
             SentryGuardDbContext db)
         {
+            var errores = await ValidarNombreAsync(request.Nombre, n => db.PlanesServicio.AnyAsync(x => x.Nombre == n));
+            Validacion.Texto(errores, "descripcion", request.Descripcion, 0, 500, requerido: false);
+            Validacion.Horas(errores, "tiempoRespuestaBaseH", request.TiempoRespuestaBaseH);
+            if (errores.Count > 0) return Results.ValidationProblem(errores);
+
             var plan = new Models.PlanServicio
             {
-                Nombre = request.Nombre,
-                Descripcion = request.Descripcion,
+                Nombre = request.Nombre!.Trim(),
+                Descripcion = string.IsNullOrWhiteSpace(request.Descripcion) ? null : request.Descripcion.Trim(),
                 TiempoRespuestaBaseH = request.TiempoRespuestaBaseH
             };
 
@@ -226,6 +258,97 @@ namespace SentryGuard.Endpoints
             });
         }
 
+        // Nombre obligatorio (2 a 50 caracteres) y unico en su catalogo (la collation de SQL Server ignora mayusculas).
+        private static async Task<Dictionary<string, string[]>> ValidarNombreAsync(string? nombre, Func<string, Task<bool>> yaExiste)
+        {
+            var errores = new Dictionary<string, string[]>();
+            Validacion.Texto(errores, "nombre", nombre, 2, 50, requerido: true);
+            if (errores.Count == 0 && await yaExiste(nombre!.Trim()))
+                errores["nombre"] = ["Ya existe un elemento con ese nombre."];
+            return errores;
+        }
+
+        private static async Task<IResult> ActualizarSeveridad(int id, CrearSeveridadRequest request, SentryGuardDbContext db)
+        {
+            var severidad = await db.Severidades.FindAsync(id);
+            if (severidad == null) return Results.NotFound();
+
+            var errores = await ValidarNombreAsync(request.Nombre, n => db.Severidades.AnyAsync(x => x.Nombre == n && x.Id != id));
+            Validacion.Horas(errores, "horasSla", request.HorasSla);
+            if (errores.Count > 0) return Results.ValidationProblem(errores);
+
+            severidad.Nombre = request.Nombre!.Trim();
+            severidad.HorasSla = request.HorasSla;
+            await db.SaveChangesAsync();
+            return Results.Ok(new { mensaje = "Actualizado" });
+        }
+
+        private static async Task<IResult> EliminarSeveridad(int id, SentryGuardDbContext db)
+        {
+            var severidad = await db.Severidades.FindAsync(id);
+            if (severidad == null) return Results.NotFound();
+            if (await db.Incidentes.AnyAsync(i => i.SeveridadId == id) || await db.ContratosSlaDetalle.AnyAsync(d => d.SeveridadId == id))
+                return Validacion.Conflicto("EN_USO", "No se puede eliminar: hay incidentes o contratos SLA que usan esta severidad.");
+
+            db.Severidades.Remove(severidad);
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        }
+
+        private static async Task<IResult> ActualizarCategoriaActivo(int id, CrearCategoriaRequest request, SentryGuardDbContext db)
+        {
+            var categoria = await db.CategoriasActivo.FindAsync(id);
+            if (categoria == null) return Results.NotFound();
+
+            var errores = await ValidarNombreAsync(request.Nombre, n => db.CategoriasActivo.AnyAsync(x => x.Nombre == n && x.Id != id));
+            if (errores.Count > 0) return Results.ValidationProblem(errores);
+
+            categoria.Nombre = request.Nombre!.Trim();
+            await db.SaveChangesAsync();
+            return Results.Ok(new { mensaje = "Actualizado" });
+        }
+
+        private static async Task<IResult> EliminarCategoriaActivo(int id, SentryGuardDbContext db)
+        {
+            var categoria = await db.CategoriasActivo.FindAsync(id);
+            if (categoria == null) return Results.NotFound();
+            if (await db.Activos.AnyAsync(a => a.CategoriaId == id))
+                return Validacion.Conflicto("EN_USO", "No se puede eliminar: hay activos de esta categoría.");
+
+            db.CategoriasActivo.Remove(categoria);
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        }
+
+        private static async Task<IResult> ActualizarPlanServicio(int id, CrearPlanRequest request, SentryGuardDbContext db)
+        {
+            var plan = await db.PlanesServicio.FindAsync(id);
+            if (plan == null) return Results.NotFound();
+
+            var errores = await ValidarNombreAsync(request.Nombre, n => db.PlanesServicio.AnyAsync(x => x.Nombre == n && x.Id != id));
+            Validacion.Texto(errores, "descripcion", request.Descripcion, 0, 500, requerido: false);
+            Validacion.Horas(errores, "tiempoRespuestaBaseH", request.TiempoRespuestaBaseH);
+            if (errores.Count > 0) return Results.ValidationProblem(errores);
+
+            plan.Nombre = request.Nombre!.Trim();
+            plan.Descripcion = string.IsNullOrWhiteSpace(request.Descripcion) ? null : request.Descripcion.Trim();
+            plan.TiempoRespuestaBaseH = request.TiempoRespuestaBaseH;
+            await db.SaveChangesAsync();
+            return Results.Ok(new { mensaje = "Actualizado" });
+        }
+
+        private static async Task<IResult> EliminarPlanServicio(int id, SentryGuardDbContext db)
+        {
+            var plan = await db.PlanesServicio.FindAsync(id);
+            if (plan == null) return Results.NotFound();
+            if (await db.Organizaciones.AnyAsync(o => o.PlanContratadoId == id))
+                return Validacion.Conflicto("EN_USO", "No se puede eliminar: hay organizaciones con este plan contratado.");
+
+            db.PlanesServicio.Remove(plan);
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        }
+
         private static async Task<IResult> ListarRoles(SentryGuardDbContext db)
         {
             var roles = await db.Roles.ToListAsync();
@@ -237,9 +360,9 @@ namespace SentryGuard.Endpoints
         }
 
         // DTOs
-        record CrearSeveridadRequest(string Nombre, decimal HorasSla);
-        record CrearEstadoRequest(string Nombre);
-        record CrearCategoriaRequest(string Nombre);
-        record CrearPlanRequest(string Nombre, string? Descripcion, decimal TiempoRespuestaBaseH);
+        record CrearSeveridadRequest(string? Nombre, decimal HorasSla);
+        record CrearEstadoRequest(string? Nombre);
+        record CrearCategoriaRequest(string? Nombre);
+        record CrearPlanRequest(string? Nombre, string? Descripcion, decimal TiempoRespuestaBaseH);
     }
 }

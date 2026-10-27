@@ -32,7 +32,10 @@ namespace SentryGuard.DTOs
         public int Id { get; init; }
         public string Nombre { get; init; } = null!;
         public string Email { get; init; } = null!;
+        public int RolId { get; init; }
         public string Rol { get; init; } = null!;
+        public int? OrganizacionId { get; init; }
+        public string? Organizacion { get; init; }
         public bool Activo { get; init; }
     }
 
@@ -65,7 +68,10 @@ namespace SentryGuard.DTOs
         public int Id { get; init; }
         public string Nombre { get; init; } = null!;
         public string? HostnameIp { get; init; }
+        public int CategoriaId { get; init; }
         public string Categoria { get; init; } = null!;
+        public int OrganizacionId { get; init; }
+        public string Organizacion { get; init; } = null!;
     }
 
     /// <summary>
@@ -76,8 +82,39 @@ namespace SentryGuard.DTOs
         public int Id { get; init; }
         public string RazonSocial { get; init; } = null!;
         public string Rut { get; init; } = null!;
+        public int PlanId { get; init; }
         public string Plan { get; init; } = null!;
         public DateTime FechaAlta { get; init; }
+    }
+
+    /// <summary>
+    /// DTO de contrato SLA de una organizacion, con las horas comprometidas por severidad.
+    /// </summary>
+    public record ContratoSlaDTO
+    {
+        public int Id { get; init; }
+        public DateTime VigenteDesde { get; init; }
+        public DateTime? VigenteHasta { get; init; }
+        public List<ContratoSlaDetalleDTO> Detalles { get; init; } = [];
+    }
+
+    public record ContratoSlaDetalleDTO
+    {
+        public int SeveridadId { get; init; }
+        public string Severidad { get; init; } = null!;
+        public decimal HorasSla { get; init; }
+    }
+
+    /// <summary>
+    /// DTO del registro de auditoria (solo Administrador).
+    /// </summary>
+    public record AuditoriaDTO
+    {
+        public long Id { get; init; }
+        public string? Usuario { get; init; }
+        public string Accion { get; init; } = null!;
+        public string? IpOrigen { get; init; }
+        public DateTime Timestamp { get; init; }
     }
 
     /// <summary>

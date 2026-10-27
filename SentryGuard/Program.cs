@@ -200,6 +200,7 @@ app.MapIncidenteApi();
 app.MapOrganizacionApi();
 app.MapActivoApi();
 app.MapCatalogoApi();
+app.MapAuditoriaApi();
 
 app.Run();
 

@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SentryGuard.Data;
 using SentryGuard.DTOs;
 using SentryGuard.Repositories;
@@ -49,6 +49,15 @@ namespace SentryGuard.Endpoints
         private const int DescripcionMin = 10;
         private const int DescripcionMax = 4000;
         private const int BusquedaMax = 100;
+        private const int ComentarioMax = 2000;
+
+        // Solo https:// absolutas o rutas relativas simples: descarta javascript:, data:, file: y rutas del servidor.
+        private static bool EsRutaEvidenciaValida(string ruta)
+        {
+            if (Uri.TryCreate(ruta, UriKind.Absolute, out var uri))
+                return uri.Scheme == Uri.UriSchemeHttps;
+            return !ruta.StartsWith('/') && !ruta.Contains("..") && ruta.All(c => char.IsLetterOrDigit(c) || c is '.' or '-' or '_' or '/');
+        }
 
         // Proyeccion unica a DTO, traducida a SQL por EF Core (nunca materializa entidades con navegaciones, OWASP API3).
         private static readonly Expression<Func<Models.Incidente, IncidenteDTO>> ADto = i => new IncidenteDTO
@@ -72,7 +81,7 @@ namespace SentryGuard.Endpoints
         // Validacion de servidor obligatoria aunque el frontend tambien valide: el cliente es controlable por el atacante.
         private static void ValidarTexto(Dictionary<string, string[]> errores, string campo, string? valor, int min, int max, bool requerido)
         {
-            if (valor is null)
+            if (valor is null || (!requerido && min == 0 && valor.Trim().Length == 0))
             {
                 if (requerido) errores[campo] = [$"El campo {campo} es obligatorio."];
                 return;
@@ -82,6 +91,18 @@ namespace SentryGuard.Endpoints
             if (largo < min || largo > max)
                 errores[campo] = [$"Debe tener entre {min} y {max} caracteres."];
         }
+
+        // Las acciones del flujo (crear, editar, cambiar estado, asignar) quedan en la bitacora del incidente
+        // con el usuario del JWT, para que el historial no dependa de que alguien lo anote a mano.
+        private static void RegistrarEnBitacora(SentryGuardDbContext db, int incidenteId, int usuarioId, string accion, string? comentario = null) =>
+            db.BitacorasIncidente.Add(new Models.BitacoraIncidente
+            {
+                IncidenteId = incidenteId,
+                UsuarioId = usuarioId,
+                Accion = accion,
+                Comentario = comentario,
+                Timestamp = DateTime.UtcNow
+            });
 
         private static async Task<IResult> CrearIncidente(CrearIncidenteRequest request, IIncidenteRepository repo, SentryGuardDbContext db, HttpContext httpContext, AuthService authService)
         {
@@ -118,11 +139,13 @@ namespace SentryGuard.Endpoints
             };
 
             await repo.AddAsync(incidente);
+            RegistrarEnBitacora(db, incidente.Id, usuario.Id, "Incidente creado");
+            await db.SaveChangesAsync();
             return Results.Created($"/api/v1/incidentes/{incidente.Id}", new { id = incidente.Id, titulo = incidente.Titulo });
         }
 
         private static async Task<IResult> ListarIncidentes(SentryGuardDbContext db, HttpContext httpContext, AuthService authService,
-            int page = 1, int pageSize = 10, string? q = null, int? estadoId = null, int? severidadId = null)
+            int page = 1, int pageSize = 10, string? q = null, int? estadoId = null, int? severidadId = null, int? activoId = null)
         {
             var usuario = await authService.ObtenerUsuarioAutenticadoAsync(httpContext, db);
             if (usuario == null) return Results.Unauthorized();
@@ -146,6 +169,7 @@ namespace SentryGuard.Endpoints
             }
             if (estadoId.HasValue) query = query.Where(i => i.EstadoId == estadoId.Value);
             if (severidadId.HasValue) query = query.Where(i => i.SeveridadId == severidadId.Value);
+            if (activoId.HasValue) query = query.Where(i => i.ActivoId == activoId.Value);
 
             var total = await query.CountAsync();
             var items = await query
@@ -198,6 +222,7 @@ namespace SentryGuard.Endpoints
             if (request.Descripcion is not null) incidente.Descripcion = request.Descripcion.Trim();
             if (request.SeveridadId.HasValue) incidente.SeveridadId = request.SeveridadId.Value;
 
+            RegistrarEnBitacora(db, incidente.Id, usuario.Id, "Datos del incidente actualizados");
             await repo.UpdateAsync(incidente);
             return Results.Ok(new { mensaje = "Actualizado" });
         }
@@ -210,8 +235,11 @@ namespace SentryGuard.Endpoints
             return Results.NoContent();
         }
 
-        private static async Task<IResult> AsignarAnalista(int id, AsignarAnalistaRequest request, IIncidenteRepository repo, SentryGuardDbContext db)
+        private static async Task<IResult> AsignarAnalista(int id, AsignarAnalistaRequest request, IIncidenteRepository repo, SentryGuardDbContext db, HttpContext httpContext, AuthService authService)
         {
+            var usuario = await authService.ObtenerUsuarioAutenticadoAsync(httpContext, db);
+            if (usuario == null) return Results.Unauthorized();
+
             var incidente = await repo.GetByIdAsync(id);
             if (incidente == null) return Results.NotFound();
 
@@ -220,6 +248,7 @@ namespace SentryGuard.Endpoints
                 return Results.BadRequest(new { error = "El usuario indicado no existe o no tiene rol Analista" });
 
             incidente.AnalistaAsignadoId = request.AnalistaId;
+            RegistrarEnBitacora(db, incidente.Id, usuario.Id, "Analista asignado", analista.Nombre);
             await repo.UpdateAsync(incidente);
             return Results.Ok(new { mensaje = "Asignado" });
         }
@@ -237,11 +266,15 @@ namespace SentryGuard.Endpoints
 
             var nuevoEstado = await db.EstadosIncidente.FindAsync(request.EstadoId);
             if (nuevoEstado == null) return Results.BadRequest(new { error = "Estado no existe" });
+            var estadoAnterior = await db.EstadosIncidente.Where(e => e.Id == incidente.EstadoId).Select(e => e.Nombre).FirstOrDefaultAsync();
 
             incidente.EstadoId = request.EstadoId;
+            RegistrarEnBitacora(db, incidente.Id, usuario.Id, "Cambio de estado", $"{estadoAnterior} → {nuevoEstado.Nombre}");
             // Solo se cierra el incidente si el nuevo estado es Resuelto/Cerrado (antes se cerraba en CUALQUIER cambio de estado).
             if (nuevoEstado.Nombre is "Resuelto" or "Cerrado")
-                incidente.FechaCierre = DateTime.UtcNow;
+                incidente.FechaCierre ??= DateTime.UtcNow;
+            else
+                incidente.FechaCierre = null;
 
             await repo.UpdateAsync(incidente);
             return Results.Ok(new { mensaje = "Estado actualizado" });
@@ -258,12 +291,17 @@ namespace SentryGuard.Endpoints
             if (!authService.ValidaAccesoIncidente(usuario, incidente))
                 return Results.Forbid();
 
+            var errores = new Dictionary<string, string[]>();
+            ValidarTexto(errores, "accion", request.Accion, 3, 100, requerido: true);
+            ValidarTexto(errores, "comentario", request.Comentario, 0, ComentarioMax, requerido: false);
+            if (errores.Count > 0) return Results.ValidationProblem(errores);
+
             var bitacora = new Models.BitacoraIncidente
             {
                 IncidenteId = id,
                 UsuarioId = usuario.Id,
-                Accion = request.Accion,
-                Comentario = request.Comentario,
+                Accion = request.Accion!.Trim(),
+                Comentario = string.IsNullOrWhiteSpace(request.Comentario) ? null : request.Comentario.Trim(),
                 Timestamp = DateTime.UtcNow
             };
 
@@ -285,7 +323,7 @@ namespace SentryGuard.Endpoints
 
             var bitacora = await db.BitacorasIncidente
                 .Where(b => b.IncidenteId == id)
-                .OrderBy(b => b.Timestamp)
+                .OrderByDescending(b => b.Timestamp).ThenByDescending(b => b.Id)
                 .Select(b => new BitacoraDTO
                 {
                     Id = b.Id,
@@ -296,7 +334,8 @@ namespace SentryGuard.Endpoints
                 })
                 .ToListAsync();
 
-            return bitacora.Any() ? Results.Ok(new { total = bitacora.Count, items = bitacora }) : Results.NotFound();
+            // Un incidente sin entradas devuelve una lista vacia (antes 404, que se confundia con "incidente inexistente").
+            return Results.Ok(new { total = bitacora.Count, items = bitacora });
         }
 
         private static async Task<IResult> AgregarEvidencia(int id, AgregarEvidenciaRequest request, SentryGuardDbContext db, HttpContext httpContext, AuthService authService)
@@ -310,11 +349,18 @@ namespace SentryGuard.Endpoints
             if (!authService.ValidaAccesoIncidente(usuario, incidente))
                 return Results.Forbid();
 
+            var errores = new Dictionary<string, string[]>();
+            ValidarTexto(errores, "nombreArchivo", request.NombreArchivo, 1, 255, requerido: true);
+            ValidarTexto(errores, "rutaAlmacenamiento", request.RutaAlmacenamiento, 1, 1000, requerido: true);
+            if (!errores.ContainsKey("rutaAlmacenamiento") && !EsRutaEvidenciaValida(request.RutaAlmacenamiento!.Trim()))
+                errores["rutaAlmacenamiento"] = ["Usa una URL https:// o una ruta relativa del repositorio de evidencias (letras, números, punto, guion, guion bajo y /)."];
+            if (errores.Count > 0) return Results.ValidationProblem(errores);
+
             var evidencia = new Models.EvidenciaIncidente
             {
                 IncidenteId = id,
-                NombreArchivo = request.NombreArchivo,
-                RutaAlmacenamiento = request.RutaAlmacenamiento,
+                NombreArchivo = request.NombreArchivo!.Trim(),
+                RutaAlmacenamiento = request.RutaAlmacenamiento!.Trim(),
                 SubidoPorId = usuario.Id,
                 Fecha = DateTime.UtcNow
             };
@@ -337,7 +383,7 @@ namespace SentryGuard.Endpoints
 
             var evidencia = await db.EvidenciasIncidente
                 .Where(e => e.IncidenteId == id)
-                .OrderBy(e => e.Fecha)
+                .OrderByDescending(e => e.Fecha).ThenByDescending(e => e.Id)
                 .Select(e => new EvidenciaDTO
                 {
                     Id = e.Id,
@@ -348,7 +394,7 @@ namespace SentryGuard.Endpoints
                 })
                 .ToListAsync();
 
-            return evidencia.Any() ? Results.Ok(new { total = evidencia.Count, items = evidencia }) : Results.NotFound();
+            return Results.Ok(new { total = evidencia.Count, items = evidencia });
         }
 
         private static async Task<IResult> ConsultarCumplimientoSla(int id, SentryGuardDbContext db, HttpContext httpContext, AuthService authService)
@@ -362,17 +408,35 @@ namespace SentryGuard.Endpoints
             if (!authService.ValidaAccesoIncidente(usuario, incidente))
                 return Results.Forbid();
 
-            var horas = ((incidente.FechaCierre ?? DateTime.UtcNow) - incidente.FechaCreacion).TotalHours;
-            var sla = (double)(incidente.Severidad?.HorasSla ?? 0);
+            // Prioridad: horas pactadas en el contrato SLA vigente al crear el incidente; si no hay, las de la severidad.
+            var horasContrato = await db.ContratosSla
+                .Where(c => c.OrganizacionId == incidente.OrganizacionId
+                    && c.VigenteDesde <= incidente.FechaCreacion
+                    && (c.VigenteHasta == null || c.VigenteHasta >= incidente.FechaCreacion))
+                .Join(db.ContratosSlaDetalle, c => c.Id, d => d.ContratoId, (c, d) => d)
+                .Where(d => d.SeveridadId == incidente.SeveridadId)
+                .Select(d => (decimal?)d.HorasSla)
+                .FirstOrDefaultAsync();
 
-            return Results.Ok(new { horasTranscurridas = horas, horasSLA = sla, cumple = horas <= sla });
+            var horas = ((incidente.FechaCierre ?? DateTime.UtcNow) - incidente.FechaCreacion).TotalHours;
+            var sla = (double)(horasContrato ?? incidente.Severidad?.HorasSla ?? 0);
+
+            return Results.Ok(new
+            {
+                horasTranscurridas = Math.Round(horas, 2),
+                horasSLA = sla,
+                cumple = horas <= sla,
+                fuente = horasContrato.HasValue ? "Contrato SLA" : "Severidad",
+                fechaLimite = incidente.FechaCreacion.AddHours(sla),
+                cerrado = incidente.FechaCierre.HasValue
+            });
         }
 
         record CrearIncidenteRequest(string? Titulo, string? Descripcion, int ActivoId, int SeveridadId);
         record ActualizarIncidenteRequest(string? Titulo, string? Descripcion, int? SeveridadId);
         record AsignarAnalistaRequest(int AnalistaId);
         record CambiarEstadoRequest(int EstadoId);
-        record AgregarBitacoraRequest(string Accion, string? Comentario);
-        record AgregarEvidenciaRequest(string NombreArchivo, string RutaAlmacenamiento);
+        record AgregarBitacoraRequest(string? Accion, string? Comentario);
+        record AgregarEvidenciaRequest(string? NombreArchivo, string? RutaAlmacenamiento);
     }
 }

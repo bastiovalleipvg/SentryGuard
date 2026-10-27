@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using SentryGuard.Data;
+using SentryGuard.DTOs;
 using SentryGuard.Models;
 using SentryGuard.Repositories;
 using SentryGuard.Services;
@@ -15,8 +16,12 @@ namespace SentryGuard.Endpoints
             var usuarios = app.MapGroup("/api/v1/usuarios")
                 .WithTags("Usuarios");
 
-            // Solo Administrador aprovisiona cuentas (evita que cualquiera se auto-asigne un rol, ver OWASP API5).
+            // Solo Administrador aprovisiona y administra cuentas (evita que cualquiera se auto-asigne un rol, ver OWASP API5).
             usuarios.MapPost("/registro", RegistroUsuario).WithName("Registro")
+                .RequireAuthorization(p => p.RequireRole("Administrador"));
+            usuarios.MapGet("", ListarUsuarios).WithName("Listar usuarios")
+                .RequireAuthorization(p => p.RequireRole("Administrador"));
+            usuarios.MapPut("/{id}", ActualizarUsuario).WithName("Actualizar usuario")
                 .RequireAuthorization(p => p.RequireRole("Administrador"));
             // Rate limiting por IP para mitigar fuerza bruta sobre credenciales (OWASP API4).
             usuarios.MapPost("/login", LoginUsuario).WithName("Login")
@@ -29,21 +34,116 @@ namespace SentryGuard.Endpoints
             usuarios.MapPost("/refresh-token", RefrescarToken).RequireAuthorization();
         }
 
+        // Reglas comunes de alta y edicion: un Cliente pertenece a una organizacion; el staff de CyberOps no.
+        private static async Task ValidarRolYOrganizacionAsync(Dictionary<string, string[]> errores, SentryGuardDbContext db, int rolId, int? organizacionId)
+        {
+            var rol = await db.Roles.AsNoTracking().FirstOrDefaultAsync(r => r.Id == rolId);
+            if (rol == null)
+            {
+                errores["rolId"] = ["El rol seleccionado no existe."];
+                return;
+            }
+
+            if (rol.Nombre == "Cliente")
+            {
+                if (!organizacionId.HasValue)
+                    errores["organizacionId"] = ["Un usuario Cliente debe pertenecer a una organización."];
+                else if (!await db.Organizaciones.AnyAsync(o => o.Id == organizacionId.Value))
+                    errores["organizacionId"] = ["La organización seleccionada no existe."];
+            }
+            else if (organizacionId.HasValue)
+                errores["organizacionId"] = ["Solo los usuarios Cliente pertenecen a una organización."];
+        }
+
         private static async Task<IResult> RegistroUsuario(RegistroRequest request, IUsuarioRepository usuarioRepository, SentryGuardDbContext db, AuthService authService)
         {
-            var usuarioExistente = await usuarioRepository.GetByEmailAsync(request.Email);
-            if (usuarioExistente != null)
-                return Results.BadRequest(new { error = "Email ya registrado" });
+            var errores = new Dictionary<string, string[]>();
+            Validacion.Texto(errores, "nombre", request.Nombre, 3, 150, requerido: true);
+            if (!Validacion.EsEmail(request.Email))
+                errores["email"] = ["Ingresa un correo válido."];
+            else if (await usuarioRepository.GetByEmailAsync(request.Email!.Trim()) != null)
+                errores["email"] = ["Ya existe un usuario con ese correo."];
+            var errorPassword = Validacion.ErrorPassword(request.Password);
+            if (errorPassword != null) errores["password"] = [errorPassword];
+            await ValidarRolYOrganizacionAsync(errores, db, request.RolId, request.OrganizacionId);
+            if (errores.Count > 0) return Results.ValidationProblem(errores);
 
-            var rol = await db.Roles.FindAsync(request.RolId);
-            if (rol == null)
-                return Results.BadRequest(new { error = "Rol no existe" });
-
-            var usuario = new Usuario { Nombre = request.Nombre, Email = request.Email, RolId = request.RolId, OrganizacionId = request.OrganizacionId, Activo = true };
-            usuario.PasswordHash = authService.HashPassword(usuario, request.Password);
+            var usuario = new Usuario
+            {
+                Nombre = request.Nombre!.Trim(),
+                Email = request.Email!.Trim(),
+                RolId = request.RolId,
+                OrganizacionId = request.OrganizacionId,
+                Activo = true
+            };
+            usuario.PasswordHash = authService.HashPassword(usuario, request.Password!);
 
             await usuarioRepository.AddAsync(usuario);
+            var rol = await db.Roles.AsNoTracking().FirstAsync(r => r.Id == request.RolId);
             return Results.Created($"/api/v1/usuarios/{usuario.Id}", new { id = usuario.Id, nombre = usuario.Nombre, email = usuario.Email, rol = rol.Nombre });
+        }
+
+        private static async Task<IResult> ListarUsuarios(SentryGuardDbContext db, int page = 1, int pageSize = 10, string? q = null, int? rolId = null, int? organizacionId = null)
+        {
+            (page, pageSize) = Paginacion.Normalizar(page, pageSize);
+
+            IQueryable<Usuario> query = db.Usuarios;
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var termino = q.Trim();
+                if (termino.Length > 100) termino = termino[..100];
+                query = query.Where(u => u.Nombre.Contains(termino) || u.Email.Contains(termino));
+            }
+            if (rolId.HasValue) query = query.Where(u => u.RolId == rolId.Value);
+            if (organizacionId.HasValue) query = query.Where(u => u.OrganizacionId == organizacionId.Value);
+
+            var total = await query.CountAsync();
+            // Proyeccion a DTO: el password_hash nunca sale del servidor (OWASP API3).
+            var items = await query
+                .OrderBy(u => u.Nombre)
+                .ThenBy(u => u.Id)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(u => new UsuarioListDTO
+                {
+                    Id = u.Id,
+                    Nombre = u.Nombre,
+                    Email = u.Email,
+                    RolId = u.RolId,
+                    Rol = u.Rol!.Nombre,
+                    OrganizacionId = u.OrganizacionId,
+                    Organizacion = u.Organizacion != null ? u.Organizacion.RazonSocial : null,
+                    Activo = u.Activo
+                })
+                .ToListAsync();
+
+            return Results.Ok(new { total, page, pageSize, totalPages = (int)Math.Ceiling((double)total / pageSize), items });
+        }
+
+        // No hay DELETE: un usuario con bitacora o evidencias se desactiva (Activo = false) para conservar la trazabilidad.
+        private static async Task<IResult> ActualizarUsuario(int id, ActualizarUsuarioRequest request, HttpContext httpContext, SentryGuardDbContext db)
+        {
+            var usuario = await db.Usuarios.FirstOrDefaultAsync(u => u.Id == id);
+            if (usuario == null) return Results.NotFound();
+
+            var errores = new Dictionary<string, string[]>();
+            Validacion.Texto(errores, "nombre", request.Nombre, 3, 150, requerido: true);
+            await ValidarRolYOrganizacionAsync(errores, db, request.RolId, request.OrganizacionId);
+
+            // El administrador no puede quitarse a si mismo el acceso ni el rol (dejaria el sistema sin administrador).
+            var esUnoMismo = httpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value == id.ToString();
+            if (esUnoMismo && !request.Activo)
+                errores["activo"] = ["No puedes desactivar tu propia cuenta."];
+            if (esUnoMismo && request.RolId != usuario.RolId)
+                errores["rolId"] = ["No puedes cambiar tu propio rol."];
+            if (errores.Count > 0) return Results.ValidationProblem(errores);
+
+            usuario.Nombre = request.Nombre!.Trim();
+            usuario.RolId = request.RolId;
+            usuario.OrganizacionId = request.OrganizacionId;
+            usuario.Activo = request.Activo;
+            await db.SaveChangesAsync();
+            return Results.Ok(new { mensaje = "Actualizado" });
         }
 
         // Mismo mensaje para email inexistente, contraseña incorrecta o cuenta bloqueada: un mensaje
@@ -138,7 +238,8 @@ namespace SentryGuard.Endpoints
             return Results.Ok(new { token = nuevoToken });
         }
 
-        record RegistroRequest(string Nombre, string Email, string Password, int RolId, int? OrganizacionId);
+        record RegistroRequest(string? Nombre, string? Email, string? Password, int RolId, int? OrganizacionId);
+        record ActualizarUsuarioRequest(string? Nombre, int RolId, int? OrganizacionId, bool Activo);
         record LoginRequest(string? Email, string? Password);
         record RefreshTokenRequest(string RefreshToken);
     }
