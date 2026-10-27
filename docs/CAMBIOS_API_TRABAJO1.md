@@ -20,9 +20,19 @@ commit donde se aplicaron.
 | 12 | `System.Security.Cryptography.Pkcs` fijado en 10.0.13. | `Microsoft.Data.SqlClient` traía la 9.0.11, con vulnerabilidades alta y moderada (GHSA-846f-f764-76mx, GHSA-2fmv-rv2c-59x7). | `48dbc08` |
 | 13 | Migración `SeedActivosDemo`: tres activos para la organización de demostración. | Sin activos, un Cliente no podía registrar incidentes desde el frontend (solo Administrador y Supervisor crean activos). | `4cf8c40` |
 | 14 | 8 pruebas de integración nuevas (`SeguridadApiTests`) y ejecución en serie de las clases de prueba. | Cubrir los controles anteriores; las dos clases recrean la misma BD de prueba. | `48dbc08` |
+| 15 | `Endpoints/Validacion.cs`: validación compartida (texto, horas, correo, política de contraseñas, hostname/IP, RUT con dígito verificador) y respuesta 409 con `{ codigo, mensaje }`. | Las altas de activos, organizaciones, usuarios y catálogos aceptaban cualquier valor (nombres vacíos, RUT sin formato, contraseñas de un carácter). | pendiente |
+| 16 | Activos: `PUT` edita nombre, hostname/IP y categoría con validación; filtros `q`, `categoriaId` y `organizacionId` (ignorado para Cliente); DTO con `categoriaId`, `organizacionId` y `organizacion`; `DELETE` responde 409 si el activo tiene incidentes. | El `PUT` solo cambiaba el nombre; las FK son `Restrict`, así que borrar un activo con incidentes terminaba en 500. | pendiente |
+| 17 | Organizaciones: `PUT` edita razón social, RUT y plan; RUT único con dígito verificador (exigido solo si cambia); filtros `q` y `planId`; `DELETE` 409 si tiene activos, incidentes, usuarios o contratos. | Mismo problema de validación y de 500 al borrar. | pendiente |
+| 18 | Contratos SLA: `GET`/`POST /organizaciones/{id}/contratos-sla`, `POST .../{contratoId}/finalizar` y `DELETE`. Valida vigencia, horas (0–720], severidades sin repetir y que los períodos no se superpongan. | `tb_ContratoSLA` y `tb_ContratoSLA_Detalle` existían en el modelo sin ningún endpoint. | pendiente |
+| 19 | `GET /incidentes/sla/cumplimiento/{id}` usa las horas del contrato vigente al crear el incidente (si no hay, las de la severidad) y devuelve `fuente`, `fechaLimite` y `cerrado`. | El contrato SLA no tenía efecto sobre el cálculo. | pendiente |
+| 20 | Bitácora y evidencias: `GET` devuelve lista vacía (200) en vez de 404; validación al agregar; la evidencia solo acepta `https://` o una ruta relativa. Crear, editar, cambiar estado y asignar registran entradas automáticas. Volver a un estado abierto borra `FechaCierre`. Filtro `activoId` en el listado de incidentes. | El 404 se confundía con «incidente inexistente»; una ruta `javascript:` podía terminar en un enlace (XSS); la bitácora solo tenía lo que alguien anotara a mano. | pendiente |
+| 21 | Usuarios: `GET /usuarios` (Administrador, con filtros) y `PUT /usuarios/{id}` (nombre, rol, organización, activo; no se puede desactivar ni cambiar el rol de la propia cuenta). El registro valida correo único, contraseña y que solo el Cliente tenga organización. | No había forma de administrar cuentas; un usuario se «elimina» desactivándolo para conservar su bitácora. | pendiente |
+| 22 | Catálogos: validación con nombre único; `PUT`/`DELETE` de severidades, categorías y planes (409 si están en uso); orden estable en los listados. Los estados solo se crean. | Los `POST` aceptaban valores vacíos o duplicados; no había edición. | pendiente |
+| 23 | Nuevo `GET /api/v1/auditoria` (solo Administrador) sobre `tb_LogAuditoria`. | La tabla se llenaba en cada escritura, pero no se podía consultar. | pendiente |
+| 24 | 9 pruebas de integración nuevas (`MantenedoresApiTests`). | Cubrir 400, 403, 409 y el aislamiento por organización de los recursos nuevos. | pendiente |
 
 Además, el estudiante ya había sacado la clave JWT y la cadena de conexión de
 `appsettings.json`, moviéndolas a User Secrets y rotando la clave (`29ead3a`, `35c57b5`).
 
-La suite de integración del Trabajo 1 sigue pasando completa (14/14, ver
+La suite de integración del Trabajo 1 sigue pasando completa (23/23 con las pruebas nuevas, ver
 `docs/evidencias/pruebas-backend.txt`).

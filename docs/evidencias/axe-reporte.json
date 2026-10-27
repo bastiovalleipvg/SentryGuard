@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-10-20T08:43:28.779Z",
+  "fecha": "2026-10-26T00:25:21.681Z",
   "etiquetas": [
     "wcag2a",
     "wcag2aa",
@@ -19,17 +19,67 @@
       "reglasAprobadas": 28
     },
     "detalle": {
-      "url": "https://localhost:5173/incidentes/8",
+      "url": "https://localhost:5173/incidentes/11",
       "violaciones": [],
-      "reglasAprobadas": 27
+      "reglasAprobadas": 29
     },
     "dialogo-eliminar": {
-      "url": "https://localhost:5173/incidentes/8",
+      "url": "https://localhost:5173/incidentes/11",
       "violaciones": [],
       "reglasAprobadas": 13
     },
     "formulario-con-errores": {
       "url": "https://localhost:5173/incidentes/nuevo",
+      "violaciones": [],
+      "reglasAprobadas": 27
+    },
+    "activos": {
+      "url": "https://localhost:5173/activos",
+      "violaciones": [],
+      "reglasAprobadas": 28
+    },
+    "activo-detalle": {
+      "url": "https://localhost:5173/activos/1",
+      "violaciones": [],
+      "reglasAprobadas": 27
+    },
+    "activo-formulario": {
+      "url": "https://localhost:5173/activos/nuevo",
+      "violaciones": [],
+      "reglasAprobadas": 27
+    },
+    "organizaciones": {
+      "url": "https://localhost:5173/organizaciones",
+      "violaciones": [],
+      "reglasAprobadas": 28
+    },
+    "organizacion-detalle": {
+      "url": "https://localhost:5173/organizaciones/1",
+      "violaciones": [],
+      "reglasAprobadas": 30
+    },
+    "usuarios": {
+      "url": "https://localhost:5173/usuarios",
+      "violaciones": [],
+      "reglasAprobadas": 28
+    },
+    "usuario-formulario": {
+      "url": "https://localhost:5173/usuarios/nuevo",
+      "violaciones": [],
+      "reglasAprobadas": 27
+    },
+    "catalogos": {
+      "url": "https://localhost:5173/catalogos",
+      "violaciones": [],
+      "reglasAprobadas": 28
+    },
+    "auditoria": {
+      "url": "https://localhost:5173/auditoria",
+      "violaciones": [],
+      "reglasAprobadas": 27
+    },
+    "menu-movil": {
+      "url": "https://localhost:5173/auditoria",
       "violaciones": [],
       "reglasAprobadas": 27
     }

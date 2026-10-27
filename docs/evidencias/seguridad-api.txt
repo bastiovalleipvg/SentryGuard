@@ -1,5 +1,5 @@
 Verificacion de seguridad de la API SentryGuard
-Fecha: 2026-10-20T08:41:50.134Z
+Fecha: 2026-10-26T00:26:39.460Z
 API:   https://localhost:7166
 
 == Autenticacion (API2) ==
@@ -19,25 +19,48 @@ API:   https://localhost:7166
         status=403
 
 == Autorizacion por objeto (API1) ==
-[OK  ] Cliente (org 1) pide por id un incidente de otra organizacion (#7) -> 403
+[OK  ] Cliente (org 1) pide por id un incidente de otra organizacion (#13) -> 403
         status=403
 [OK  ] Cliente crea un incidente sobre un activo de otra organizacion -> 403
         status=403
 [OK  ] El listado del Cliente no incluye incidentes ajenos
+[OK  ] Cliente pide los activos de otra organizacion por filtro: la API ignora el filtro y solo devuelve los suyos
+        organizaciones devueltas=1
+[OK  ] Cliente pide los contratos SLA de otra organizacion -> 403
+        status=403
+
+== Recursos relacionados: rol insuficiente (API5) ==
+[OK  ] Cliente intenta listar usuarios -> 403
+        status=403
+[OK  ] Cliente intenta leer la auditoria -> 403
+        status=403
+[OK  ] Cliente intenta eliminar un activo -> 403
+        status=403
+[OK  ] Cliente intenta crear una severidad -> 403
+        status=403
 
 == Validacion de entradas e inyeccion ==
 [OK  ] Datos invalidos -> 400 con errores por campo
         errores={"titulo":["Debe tener entre 5 y 250 caracteres."],"descripcion":["Debe tener entre 10 y 4000 caracteres."],"severidadId":["La severidad seleccionada no existe."]}
 [OK  ] JSON mal formado -> 400 sin detalles internos (sin stack trace ni nombres de excepcion)
-        cuerpo={"codigo":"SOLICITUD_INVALIDA","mensaje":"La solicitud no tiene un formato v\u00E1lido.","traceId":"0HNPEGGKSUKV9:00000021","timestamp":"2026-10-20T08:41:50.529…
+        cuerpo={"codigo":"SOLICITUD_INVALIDA","mensaje":"La solicitud no tiene un formato v\u00E1lido.","traceId":"0HNPIUQVCFD7K:0000002D","timestamp":"2026-10-26T00:26:39.859…
 [OK  ] Busqueda con inyeccion SQL -> 200 sin resultados (EF Core parametriza la consulta)
         total=0
 [OK  ] Payload XSS se guarda y se devuelve como dato JSON (el frontend lo renderiza como texto)
         content-type=application/json; charset=utf-8; csp=default-src 'none'; frame-ancestors 'none'
 
+[OK  ] Evidencia con ruta javascript: -> 400 (solo https:// o ruta relativa)
+        errores={"rutaAlmacenamiento":["Usa una URL https:// o una ruta relativa del repositorio de evidencias (letras, números, punto, guion, guion bajo y /)."]}
+[OK  ] Organizacion con digito verificador invalido -> 400
+        errores={"rut":["El dígito verificador del RUT no es válido."]}
+[OK  ] Eliminar un activo con incidentes -> 409 con mensaje generico (antes terminaba en 500)
+        cuerpo={"codigo":"ACTIVO_CON_INCIDENTES","mensaje":"No se puede eliminar el activo porque tiene incidentes registrados."}
+
 == Exposicion de datos (API3) ==
 [OK  ] Las respuestas no incluyen password_hash ni datos internos
         campos=id, titulo, descripcion, severidadId, severidad, estadoId, estado, activoId, activo, organizacionId, analistaAsignadoId, analistaAsignado, fechaCreacion, fechaCierre
+[OK  ] El listado de usuarios (Administrador) no incluye contraseñas ni hashes
+        campos=id, nombre, email, rolId, rol, organizacionId, organizacion, activo
 [OK  ] pageSize excesivo se acota a 50 (API4)
         pageSize=50
 

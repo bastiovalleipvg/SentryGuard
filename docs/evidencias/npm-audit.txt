@@ -1,4 +1,4 @@
-npm audit — sentryguard-web (2026-10-20T08:41Z)
+npm audit de sentryguard-web (2026-10-26T00:25Z)
 
 found 0 vulnerabilities
 

@@ -1,21 +1,30 @@
-Suite de integracion del backend (xUnit + WebApplicationFactory) — 2026-10-20T08:42Z
+Suite de integracion del backend (xUnit + WebApplicationFactory), ejecutada el 2026-10-26T00:24Z
 Comando: dotnet test SentryGuard.slnx
 
-  Correctas SentryGuard.Tests.SeguridadApiTests.CrearIncidente_ConJsonMalFormado_NoFiltraDetallesInternos [614 ms]
-  Correctas SentryGuard.Tests.SeguridadApiTests.ListarIncidentes_PageSizeExcesivo_SeAcotaA50 [173 ms]
-  Correctas SentryGuard.Tests.SeguridadApiTests.CrearIncidente_ConTituloVacio_Devuelve400ConErrorDeCampo [103 ms]
-  Correctas SentryGuard.Tests.SeguridadApiTests.ListarIncidentes_ConBusqueda_FiltraPorTitulo [196 ms]
-  Correctas SentryGuard.Tests.SeguridadApiTests.Login_EmailInexistenteYPasswordIncorrecta_DevuelvenMismoMensaje [69 ms]
+  Correctas SentryGuard.Tests.SeguridadApiTests.CrearIncidente_ConJsonMalFormado_NoFiltraDetallesInternos [726 ms]
+  Correctas SentryGuard.Tests.SeguridadApiTests.ListarIncidentes_PageSizeExcesivo_SeAcotaA50 [196 ms]
+  Correctas SentryGuard.Tests.SeguridadApiTests.CrearIncidente_ConTituloVacio_Devuelve400ConErrorDeCampo [113 ms]
+  Correctas SentryGuard.Tests.SeguridadApiTests.ListarIncidentes_ConBusqueda_FiltraPorTitulo [274 ms]
+  Correctas SentryGuard.Tests.SeguridadApiTests.Login_EmailInexistenteYPasswordIncorrecta_DevuelvenMismoMensaje [81 ms]
   Correctas SentryGuard.Tests.SeguridadApiTests.Cors_OrigenNoPermitido_NoRecibeAccessControlAllowOrigin [2 ms]
-  Correctas SentryGuard.Tests.SeguridadApiTests.RespuestasDeApi_IncluyenCabecerasDeSeguridad [28 ms]
+  Correctas SentryGuard.Tests.SeguridadApiTests.RespuestasDeApi_IncluyenCabecerasDeSeguridad [34 ms]
   Correctas SentryGuard.Tests.SeguridadApiTests.Cors_OrigenPermitido_RecibeAccessControlAllowOrigin [2 ms]
-  Correctas SentryGuard.Tests.IncidenteApiTests.ObtenerIncidente_Inexistente_Devuelve404 [161 ms]
-  Correctas SentryGuard.Tests.IncidenteApiTests.ObtenerIncidente_SinToken_Devuelve401 [5 ms]
-  Correctas SentryGuard.Tests.IncidenteApiTests.CrearIncidente_ComoCliente_DevuelveCreated [161 ms]
-  Correctas SentryGuard.Tests.IncidenteApiTests.Cliente_NoPuedeVerIncidenteDeOtraOrganizacion [360 ms]
-  Correctas SentryGuard.Tests.IncidenteApiTests.ListarIncidentes_SinToken_Devuelve401 [2 ms]
-  Correctas SentryGuard.Tests.IncidenteApiTests.EliminarIncidente_ConRolInsuficiente_Devuelve403 [62 ms]
+  Correctas SentryGuard.Tests.IncidenteApiTests.ObtenerIncidente_Inexistente_Devuelve404 [205 ms]
+  Correctas SentryGuard.Tests.IncidenteApiTests.ObtenerIncidente_SinToken_Devuelve401 [6 ms]
+  Correctas SentryGuard.Tests.IncidenteApiTests.CrearIncidente_ComoCliente_DevuelveCreated [196 ms]
+  Correctas SentryGuard.Tests.IncidenteApiTests.Cliente_NoPuedeVerIncidenteDeOtraOrganizacion [452 ms]
+  Correctas SentryGuard.Tests.IncidenteApiTests.ListarIncidentes_SinToken_Devuelve401 [1 ms]
+  Correctas SentryGuard.Tests.IncidenteApiTests.EliminarIncidente_ConRolInsuficiente_Devuelve403 [70 ms]
+  Correctas SentryGuard.Tests.MantenedoresApiTests.Activo_ValidaCampos_YSupervisorNoPuedeEliminar [375 ms]
+  Correctas SentryGuard.Tests.MantenedoresApiTests.Bitacora_RegistraAccionesDelFlujo_YEvidenciaRechazaEsquemasPeligrosos [253 ms]
+  Correctas SentryGuard.Tests.MantenedoresApiTests.ContratoSla_SeAplicaAlCumplimiento_YClienteNoVeContratosAjenos [370 ms]
+  Correctas SentryGuard.Tests.MantenedoresApiTests.EliminarActivo_ConIncidentes_Devuelve409_YSinIncidentes_204 [149 ms]
+  Correctas SentryGuard.Tests.MantenedoresApiTests.Catalogos_EliminarEnUsoDevuelve409_YAuditoriaSoloAdministrador [193 ms]
+  Correctas SentryGuard.Tests.MantenedoresApiTests.Registro_ValidaPassword_YOrganizacionDelCliente [80 ms]
+  Correctas SentryGuard.Tests.MantenedoresApiTests.UsuarioDesactivado_NoPuedeIniciarSesion_YAdminNoSeDesactivaASiMismo [179 ms]
+  Correctas SentryGuard.Tests.MantenedoresApiTests.Usuarios_SoloAdministrador_YSinPasswordHash [177 ms]
+  Correctas SentryGuard.Tests.MantenedoresApiTests.Organizacion_RechazaRutInvalido_YRutDuplicado [93 ms]
 La serie de pruebas se ejecutó correctamente.
-Pruebas totales: 14
-     Correcto: 14
- Tiempo total: 4,4804 Segundos
+Pruebas totales: 23
+     Correcto: 23
+ Tiempo total: 8,0589 Segundos

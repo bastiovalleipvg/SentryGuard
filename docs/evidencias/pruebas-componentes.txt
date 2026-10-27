@@ -1,25 +1,38 @@
-Pruebas de componentes (Vitest + Testing Library + MSW) — 2026-10-20T08:43Z
+Pruebas de componentes (Vitest + Testing Library + MSW), ejecutadas el 2026-10-26T00:24Z
 Comando: npm test
 
- ✓ src/features/auth/ProtectedRoute.test.tsx > Rutas protegidas > redirige al login cuando no hay sesión 144ms
- ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > lista los incidentes devueltos por la API 256ms
- ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > muestra el estado vacío cuando no hay resultados 50ms
- ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > muestra un error y permite reintentar si la API falla 57ms
- ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > rechaza una respuesta que no cumple el contrato de la API 36ms
- ✓ src/features/auth/ProtectedRoute.test.tsx > Rutas protegidas > vuelve a la ruta pedida después de iniciar sesión 855ms
- ✓ src/features/auth/ProtectedRoute.test.tsx > Rutas protegidas > muestra acceso denegado cuando el rol no puede entrar a la ruta 23ms
- ✓ src/features/auth/ProtectedRoute.test.tsx > Rutas protegidas > muestra acceso denegado cuando la API responde 403 38ms
- ✓ src/features/auth/LoginPage.test.tsx > Inicio de sesión > inicia sesión, guarda el token y redirige al listado de incidentes 1031ms
- ✓ src/features/auth/LoginPage.test.tsx > Inicio de sesión > valida los campos en el cliente y asocia los errores a cada campo 62ms
- ✓ src/features/auth/ProtectedRoute.test.tsx > Rutas protegidas > cierra la sesión y vuelve al login cuando el token expiró (401) 43ms
- ✓ src/features/auth/ProtectedRoute.test.tsx > Rutas protegidas > oculta las acciones que el rol no puede realizar 61ms
- ✓ src/features/auth/LoginPage.test.tsx > Inicio de sesión > muestra el mensaje genérico de la API ante credenciales inválidas 805ms
- ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > crea un incidente con datos válidos y envía el contrato esperado 1731ms
- ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > valida el formulario en el cliente antes de enviar 146ms
- ✓ src/features/auth/LoginPage.test.tsx > Inicio de sesión > informa con claridad cuando la API limita los intentos (429) 849ms
- ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > muestra junto al campo los errores de validación devueltos por la API (400) 1631ms
- ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > elimina un incidente solo después de confirmar en el diálogo (Administrador) 113ms
- ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > renderiza como texto el contenido malicioso devuelto por la API (XSS) 28ms
- Test Files  3 passed (3)
-      Tests  19 passed (19)
-   Duration  5.67s (tests 64%, environment 20%, import 8%, setup 6%, transform 2%)
+ ✓ src/features/auth/ProtectedRoute.test.tsx > Rutas protegidas > redirige al login cuando no hay sesión 155ms
+ ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > lista los incidentes devueltos por la API 315ms
+ ✓ src/features/mantenedores.test.tsx > Menú por rol > el Cliente ve "Mi organización" y no las vistas de administración 268ms
+ ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > muestra el estado vacío cuando no hay resultados 63ms
+ ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > muestra un error y permite reintentar si la API falla 53ms
+ ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > rechaza una respuesta que no cumple el contrato de la API 27ms
+ ✓ src/features/mantenedores.test.tsx > Menú por rol > el menú móvil se despliega con un botón que informa su estado 130ms
+ ✓ src/features/mantenedores.test.tsx > Menú por rol > un Supervisor que abre /usuarios por URL ve acceso denegado 27ms
+ ✓ src/features/auth/LoginPage.test.tsx > Inicio de sesión > inicia sesión, guarda el token y redirige al listado de incidentes 965ms
+ ✓ src/features/auth/LoginPage.test.tsx > Inicio de sesión > valida los campos en el cliente y asocia los errores a cada campo 52ms
+ ✓ src/features/auth/ProtectedRoute.test.tsx > Rutas protegidas > vuelve a la ruta pedida después de iniciar sesión 818ms
+ ✓ src/features/auth/ProtectedRoute.test.tsx > Rutas protegidas > muestra acceso denegado cuando el rol no puede entrar a la ruta 21ms
+ ✓ src/features/auth/ProtectedRoute.test.tsx > Rutas protegidas > muestra acceso denegado cuando la API responde 403 66ms
+ ✓ src/features/auth/ProtectedRoute.test.tsx > Rutas protegidas > cierra la sesión y vuelve al login cuando el token expiró (401) 69ms
+ ✓ src/features/auth/ProtectedRoute.test.tsx > Rutas protegidas > oculta las acciones que el rol no puede realizar 43ms
+ ✓ src/features/auth/LoginPage.test.tsx > Inicio de sesión > muestra el mensaje genérico de la API ante credenciales inválidas 779ms
+ ✓ src/features/mantenedores.test.tsx > Activos > el Supervisor registra un activo: valida en el cliente y envía el contrato de la API 1441ms
+ ✓ src/features/mantenedores.test.tsx > Activos > el Supervisor no ve "Eliminar" y el Cliente no ve "Editar" en el detalle 62ms
+ ✓ src/features/mantenedores.test.tsx > Activos > si la API rechaza eliminar un activo con incidentes (409), muestra el motivo 175ms
+ ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > crea un incidente con datos válidos y envía el contrato esperado 1755ms
+ ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > valida el formulario en el cliente antes de enviar 182ms
+ ✓ src/features/auth/LoginPage.test.tsx > Inicio de sesión > informa con claridad cuando la API limita los intentos (429) 818ms
+ ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > muestra junto al campo los errores de validación devueltos por la API (400) 1611ms
+ ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > elimina un incidente solo después de confirmar en el diálogo (Administrador) 195ms
+ ✓ src/features/incidentes/incidentes.test.tsx > CRUD de incidentes > renderiza como texto el contenido malicioso devuelto por la API (XSS) 39ms
+ ✓ src/features/mantenedores.test.tsx > Usuarios > exige una contraseña robusta y muestra junto al campo el correo duplicado que rechaza la API 2106ms
+ ✓ src/features/mantenedores.test.tsx > Bitácora y evidencias del incidente > el Administrador agrega una entrada a la bitácora 777ms
+ ✓ src/features/mantenedores.test.tsx > Bitácora y evidencias del incidente > rechaza una ubicación de evidencia con javascript: sin enviarla a la API 695ms
+ ✓ src/features/mantenedores.test.tsx > Bitácora y evidencias del incidente > el Cliente ve la bitácora y el SLA, pero no los formularios de registro 40ms
+ ✓ src/features/mantenedores.test.tsx > Organizaciones y catálogos > valida el dígito verificador del RUT antes de enviar 1132ms
+ ✓ src/features/mantenedores.test.tsx > Organizaciones y catálogos > el Cliente abre "Mi organización" con sus contratos SLA y no puede gestionarlos 343ms
+ ✓ src/features/mantenedores.test.tsx > Organizaciones y catálogos > el Administrador agrega una categoría de activo 509ms
+ Test Files  4 passed (4)
+      Tests  32 passed (32)
+   Duration  9.87s (tests 66%, environment 18%, import 8%, setup 6%, transform 2%)

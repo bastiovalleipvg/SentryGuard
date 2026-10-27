@@ -110,12 +110,31 @@ Qué hizo la IA, por área (cada punto quedó en un commit propio):
 |---|---|---|
 | Ajustes a la API | Errores genéricos, login sin enumeración, validación 400 por campo, filtros, paginación acotada, 429 con mensaje, CORS al origen de Vite, CSP en `/api`, versión parchada de una dependencia vulnerable (ver `docs/CAMBIOS_API_TRABAJO1.md`). | `dotnet build` mostró una vulnerabilidad transitiva alta en `System.Security.Cryptography.Pkcs`; se fijó la versión 10.0.13. |
 | Arquitectura frontend | Vite + React 19 + TypeScript por features, React Router, TanStack Query, React Hook Form + Zod, cliente HTTP único con validación de respuestas. | Varias librerías (React Router 8, MSW 3, Vitest 5, Zod 4.6) eran más nuevas que el conocimiento del modelo: se revisaron sus tipos en `node_modules` antes de usarlas. |
-| Autenticación | JWT en `sessionStorage` con expiración programada, cierre ante 401, `/me` como fuente del rol. | — |
+| Autenticación | JWT en `sessionStorage` con expiración programada, cierre ante 401, `/me` como fuente del rol. | Sin correcciones. |
 | Accesibilidad | Landmarks, foco en cambios de ruta, `aria-live`, campos con `aria-describedby`, diálogo nativo, contraste ≥ 4.5:1, 0 violaciones axe. | Error encontrado por las pruebas E2E: el foco se movía al `<h1>` también en la carga inicial (StrictMode ejecuta los efectos dos veces), impidiendo llegar al enlace «Saltar al contenido». Se corrigió. |
 | Responsivo | Mobile-first, tarjetas bajo 1024 px, tabla en escritorio, objetivos de 44 px. | Las capturas a 768 px mostraron palabras cortadas en la tabla; se cambió el punto de quiebre. |
 | Pruebas | 19 de componentes (MSW), 5 E2E con Playwright contra la API real, 8 de integración nuevas en la API. | La opción `onUnhandledRequest` de MSW 2 se ignoraba en silencio en MSW 3 (`onUnhandledFrame`): lo detectó `tsc`. Las E2E chocaban con el rate limiting del login; se redujeron a 2 inicios de sesión por corrida. |
 | Datos de demostración | Migración con 3 activos para la organización demo. | Sin ellos un Cliente no podía crear incidentes (no puede crear activos). |
 | Evidencias y documentación | Script de verificación de seguridad (19 controles), reportes, capturas, README, informe, presentación, esta bitácora. | La revisión con NVDA no se puede automatizar: quedó como lista para que la complete el estudiante. |
+
+### 3.7 Tablas relacionadas y funciones faltantes (Claude Code, Opus 5.5)
+
+**Prompts:**
+> te faltan hartas cosas, revisa la pauta, faltan hartas tablas aledañas y funciones requeridas
+
+> haz un plan de lo que llevas y lo que falta, necesito apagar el pc
+
+> Dale con todo
+
+El estudiante detectó que el frontend solo operaba incidentes, aunque el modelo tiene 15 tablas.
+La IA comparó la pauta y el modelo con la interfaz, dejó el plan en un archivo para retomarlo
+y luego completó:
+
+| Área | Resultado | Correcciones durante el trabajo |
+|---|---|---|
+| API | Validación compartida (`Validacion.cs`), CRUD completo de activos y organizaciones, contratos SLA (antes sin endpoints), SLA calculado con el contrato vigente, bitácora automática, evidencias solo `https://` o ruta relativa, administración de usuarios, edición y borrado de catálogos, consulta de auditoría, 409 al borrar con dependencias (ver `docs/CAMBIOS_API_TRABAJO1.md`, filas 15 a 24). | El RUT de la organización de demostración no tiene un dígito verificador válido: la API solo exige el DV cuando el RUT cambia, para no bloquear su edición. El script de seguridad generaba RUT aleatorios inválidos; se corrigió. |
+| Frontend | Pantallas de activos, organizaciones (con contratos SLA, activos y usuarios), «Mi organización», usuarios, catálogos y auditoría; paneles de SLA, bitácora y evidencias en el detalle; menú por rol plegable en móvil; componentes reutilizables (`ListadoResponsivo`, `FiltrosListado`, `ConsultaRecurso`, `ResumenErrores`); carga diferida de las vistas nuevas. | Un `<select>` con valor inicial no mostraba la opción si las opciones llegaban después: se vuelve a montar al cargar. React Hook Form convertía `horas.1` en un arreglo: las claves pasaron a `s1`, `s2`. Un control `disabled` no se envía: el rol de la cuenta propia se muestra como texto. oxlint marcó `watch` (incompatible con React Compiler), un `setState` en un efecto y un hook condicional; se corrigieron. |
+| Pruebas | 9 de integración nuevas (23 en total), 13 de componentes nuevas (32), auditoría axe en 15 vistas dentro de la misma E2E, 10 controles nuevos en el script de seguridad (29). | El build superaba 500 kB; con `React.lazy` el bundle inicial quedó en 336 kB. |
 
 ## 4. Qué debe poder explicar el estudiante
 
@@ -128,6 +147,10 @@ Puntos a repasar antes de la exposición:
 - Por qué `ValidaAccesoIncidente` y no el id de la URL decide el acceso (OWASP API1).
 - Por qué React no ejecuta el `<script>` del título y qué agrega la CSP.
 - Cómo se ve el CORS bloqueando un origen no permitido (prueba `e2e/seguridad.spec.ts`).
+- Por qué un Cliente que manda `?organizacionId=` de otra organización igual recibe solo sus activos (`ActivoAPI.Listar`).
+- Por qué borrar un activo con incidentes da 409 y no 500 (FK `Restrict` y el control previo en el endpoint).
+- Por qué la ubicación de una evidencia solo se muestra como enlace si es `https://` (`EvidenciasPanel.tsx`) y qué rechaza la API.
+- Cómo se elige el plazo del SLA: contrato vigente al crear el incidente o, si no hay, la severidad.
 
 ## 5. Notas del estudiante
 

@@ -80,7 +80,7 @@ GO
 
 /* ============================================================
    5. TABLA: tb_Severidad
-   Catálogo de severidades — fuente única de horas_sla por defecto
+   Catálogo de severidades: fuente única de horas_sla por defecto
    ============================================================ */
 
 CREATE TABLE tb_Severidad

@@ -80,7 +80,12 @@ verificar('Cliente intenta crear un usuario Administrador -> 403', registroComoC
 log('')
 
 log('== Autorizacion por objeto (API1) ==')
-const rut = `${Math.floor(10_000_000 + Math.random() * 89_999_999)}-${Math.floor(Math.random() * 10)}`
+// RUT aleatorio con digito verificador valido (la API valida el modulo 11).
+const cuerpoRut = String(Math.floor(10_000_000 + Math.random() * 89_999_999))
+let sumaRut = 0
+for (let i = cuerpoRut.length - 1, f = 2; i >= 0; i -= 1, f = f === 7 ? 2 : f + 1) sumaRut += Number(cuerpoRut[i]) * f
+const restoRut = 11 - (sumaRut % 11)
+const rut = `${cuerpoRut}-${restoRut === 11 ? '0' : restoRut === 10 ? 'K' : restoRut}`
 const org = await llamar('POST', '/api/v1/organizaciones', { token: tokenAdmin, cuerpo: { razonSocial: `Otra organizacion ${rut}`, rut, planId: 1 } })
 const activo = await llamar('POST', '/api/v1/activos', { token: tokenAdmin, cuerpo: { organizacionId: org.json?.id, nombre: 'Activo de otra organizacion', hostnameIp: '10.20.0.1', categoriaId: 1 } })
 const ajeno = await llamar('POST', '/api/v1/incidentes', { token: tokenAdmin, cuerpo: { titulo: 'Incidente de otra organizacion', descripcion: 'Creado por el script de verificacion.', activoId: activo.json?.id, severidadId: 2 } })
@@ -91,6 +96,25 @@ const crearEnAjeno = await llamar('POST', '/api/v1/incidentes', { token: tokenCl
 verificar('Cliente crea un incidente sobre un activo de otra organizacion -> 403', crearEnAjeno.status === 403, `status=${crearEnAjeno.status}`)
 const listaCliente = await llamar('GET', '/api/v1/incidentes?pageSize=50', { token: tokenCliente })
 verificar('El listado del Cliente no incluye incidentes ajenos', listaCliente.status === 200 && !listaCliente.json.items.some((i) => i.id === idAjeno))
+const activosCliente = await llamar('GET', `/api/v1/activos?pageSize=50&organizacionId=${org.json?.id}`, { token: tokenCliente })
+verificar(
+  'Cliente pide los activos de otra organizacion por filtro: la API ignora el filtro y solo devuelve los suyos',
+  activosCliente.status === 200 && activosCliente.json.items.every((a) => a.organizacionId !== org.json?.id),
+  `organizaciones devueltas=${[...new Set(activosCliente.json?.items.map((a) => a.organizacionId))].join(',')}`,
+)
+const contratosAjenos = await llamar('GET', `/api/v1/organizaciones/${org.json?.id}/contratos-sla`, { token: tokenCliente })
+verificar('Cliente pide los contratos SLA de otra organizacion -> 403', contratosAjenos.status === 403, `status=${contratosAjenos.status}`)
+log('')
+
+log('== Recursos relacionados: rol insuficiente (API5) ==')
+const usuariosComoCliente = await llamar('GET', '/api/v1/usuarios', { token: tokenCliente })
+verificar('Cliente intenta listar usuarios -> 403', usuariosComoCliente.status === 403, `status=${usuariosComoCliente.status}`)
+const auditoriaComoCliente = await llamar('GET', '/api/v1/auditoria', { token: tokenCliente })
+verificar('Cliente intenta leer la auditoria -> 403', auditoriaComoCliente.status === 403, `status=${auditoriaComoCliente.status}`)
+const activoComoCliente = await llamar('DELETE', `/api/v1/activos/${activo.json?.id}`, { token: tokenCliente })
+verificar('Cliente intenta eliminar un activo -> 403', activoComoCliente.status === 403, `status=${activoComoCliente.status}`)
+const catalogoComoCliente = await llamar('POST', '/api/v1/catalogos/severidades', { token: tokenCliente, cuerpo: { nombre: 'Inventada', horasSla: 1 } })
+verificar('Cliente intenta crear una severidad -> 403', catalogoComoCliente.status === 403, `status=${catalogoComoCliente.status}`)
 log('')
 
 log('== Validacion de entradas e inyeccion ==')
@@ -114,9 +138,23 @@ verificar(
 )
 log('')
 
+const evidenciaJs = await llamar('POST', `/api/v1/incidentes/${idAjeno}/evidencia`, { token: tokenAdmin, cuerpo: { nombreArchivo: 'x.png', rutaAlmacenamiento: 'javascript:alert(document.cookie)' } })
+verificar('Evidencia con ruta javascript: -> 400 (solo https:// o ruta relativa)', evidenciaJs.status === 400 && evidenciaJs.json?.errors?.rutaAlmacenamiento, `errores=${JSON.stringify(evidenciaJs.json?.errors)}`)
+const rutMalo = await llamar('POST', '/api/v1/organizaciones', { token: tokenAdmin, cuerpo: { razonSocial: 'RUT invalido', rut: '76123456-7', planId: 1 } })
+verificar('Organizacion con digito verificador invalido -> 400', rutMalo.status === 400 && rutMalo.json?.errors?.rut, `errores=${JSON.stringify(rutMalo.json?.errors)}`)
+const borrarConIncidentes = await llamar('DELETE', `/api/v1/activos/${activo.json?.id}`, { token: tokenAdmin })
+verificar(
+  'Eliminar un activo con incidentes -> 409 con mensaje generico (antes terminaba en 500)',
+  borrarConIncidentes.status === 409 && borrarConIncidentes.json?.codigo === 'ACTIVO_CON_INCIDENTES' && !/Exception|System\./.test(borrarConIncidentes.texto),
+  `cuerpo=${recorte(borrarConIncidentes.texto)}`,
+)
+log('')
+
 log('== Exposicion de datos (API3) ==')
 const detalle = await llamar('GET', '/api/v1/incidentes/1', { token: tokenAdmin })
 verificar('Las respuestas no incluyen password_hash ni datos internos', !/password|hash/i.test(detalle.texto), `campos=${Object.keys(detalle.json ?? {}).join(', ')}`)
+const listaUsuarios = await llamar('GET', '/api/v1/usuarios?pageSize=50', { token: tokenAdmin })
+verificar('El listado de usuarios (Administrador) no incluye contraseñas ni hashes', listaUsuarios.status === 200 && !/password|hash/i.test(listaUsuarios.texto), `campos=${Object.keys(listaUsuarios.json?.items?.[0] ?? {}).join(', ')}`)
 const paginaGrande = await llamar('GET', '/api/v1/incidentes?pageSize=100000', { token: tokenAdmin })
 verificar('pageSize excesivo se acota a 50 (API4)', paginaGrande.json?.pageSize === 50, `pageSize=${paginaGrande.json?.pageSize}`)
 log('')

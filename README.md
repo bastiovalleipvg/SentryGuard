@@ -1,4 +1,4 @@
-# SentryGuard — CyberOps Chile SpA
+# SentryGuard (CyberOps Chile SpA)
 
 Sistema de gestión de incidentes de ciberseguridad. Monorepo con:
 
@@ -8,8 +8,26 @@ Sistema de gestión de incidentes de ciberseguridad. Monorepo con:
 | `SentryGuard.Tests/` | Pruebas de integración de la API | xUnit + `WebApplicationFactory` |
 | `sentryguard-web/` | Frontend (Trabajo 2) | React 19 + TypeScript + Vite, React Router, TanStack Query, React Hook Form + Zod |
 | `scripts/` | Verificación de seguridad contra la API en ejecución | Node.js |
-| `docs/` | Informe técnico, cambios a la API, evidencias, presentación | — |
-| `AI_LOG.md` | Bitácora de uso de IA generativa | — |
+| `docs/` | Informe técnico, cambios a la API, evidencias, presentación | Markdown, Word y PowerPoint |
+| `AI_LOG.md` | Bitácora de uso de IA generativa | Markdown |
+
+## Funcionalidades
+
+| Módulo | Qué permite | Tablas | Quién |
+|---|---|---|---|
+| Incidentes (recurso principal) | CRUD con paginación, búsqueda y filtros; cambio de estado y asignación de analista | `tb_Incidente` | Ver: todos (Cliente solo su organización, Analista solo lo asignado). Crear: Admin, Supervisor, Cliente. Editar: Admin, Supervisor, Analista asignado. Eliminar: Admin |
+| Bitácora del incidente | Historial con entradas automáticas (creación, edición, cambio de estado, asignación) y notas manuales | `tb_BitacoraIncidente` | Ver: quien ve el incidente. Agregar: Admin, Supervisor, Analista asignado |
+| Evidencias | Referencias a archivos (`https://` o ruta relativa) | `tb_EvidenciaIncidente` | Igual que la bitácora |
+| Cumplimiento del SLA | Plazo, tiempo transcurrido, fecha límite y estado; usa el contrato SLA vigente o, si no hay, la severidad | `tb_ContratoSLA_Detalle`, `tb_Severidad` | Quien ve el incidente |
+| Activos | CRUD con filtros por nombre/IP, categoría y organización; incidentes de cada activo | `tb_Activo` | Ver: todos (Cliente solo los suyos). Crear/editar: Admin, Supervisor. Eliminar: Admin (409 si tiene incidentes) |
+| Organizaciones | CRUD con RUT validado (dígito verificador); detalle con contratos SLA, activos y usuarios | `tb_Organizacion` | Listar: staff. Ver: staff y el Cliente la suya («Mi organización»). Gestionar: Admin |
+| Contratos SLA | Vigencia y horas por severidad; finalizar y eliminar; sin períodos superpuestos | `tb_ContratoSLA`, `tb_ContratoSLA_Detalle` | Ver: como la organización. Gestionar: Admin |
+| Usuarios | Listado con filtros, alta con política de contraseñas, edición de rol/organización y desactivación | `tb_Usuario`, `tb_Rol` | Admin |
+| Catálogos | Severidades, categorías de activo, planes de servicio (crear, editar, eliminar si no están en uso) y estados (solo crear) | `tb_Severidad`, `tb_CategoriaActivo`, `tb_PlanServicio`, `tb_EstadoIncidente` | Admin |
+| Auditoría | Registro de cada escritura en la API (usuario, acción, IP, fecha) | `tb_LogAuditoria` | Admin |
+
+La interfaz oculta lo que el rol no puede hacer, pero la API valida el rol y la organización en
+cada endpoint: forzar una URL o una petición devuelve 403.
 
 ## Requisitos previos
 
@@ -108,12 +126,12 @@ npm run preview             # https://localhost:4173
 
 | Suite | Comando | Requiere |
 |---|---|---|
-| Integración de la API (14) | `dotnet test SentryGuard.slnx` (en la raíz) | SQL Server (usa la BD descartable `SentryGuardDB_Test`) |
-| Componentes del frontend (19) | `npm test` (en `sentryguard-web/`) | Nada: la API se simula con MSW |
+| Integración de la API (23) | `dotnet test SentryGuard.slnx` (en la raíz) | SQL Server (usa la BD descartable `SentryGuardDB_Test`) |
+| Componentes del frontend (32) | `npm test` (en `sentryguard-web/`) | Nada: la API se simula con MSW |
 | End-to-end (5) | `npx playwright install chromium` (una vez) y `npm run test:e2e` | La BD de desarrollo migrada; Playwright levanta la API y el frontend si no están corriendo |
-| Verificación de seguridad (19 controles) | `node --use-system-ca scripts/verificar-seguridad.mjs` (en la raíz) | La API corriendo |
-| Lint (incluye reglas jsx-a11y) | `npm run lint` | — |
-| Auditoría de dependencias | `npm audit` y `dotnet list SentryGuard.slnx package --vulnerable --include-transitive` | — |
+| Verificación de seguridad (29 controles) | `node --use-system-ca scripts/verificar-seguridad.mjs` (en la raíz) | La API corriendo |
+| Lint (incluye reglas jsx-a11y) | `npm run lint` | Nada adicional |
+| Auditoría de dependencias | `npm audit` y `dotnet list SentryGuard.slnx package --vulnerable --include-transitive` | Nada adicional |
 
 El login de la API admite 5 intentos por minuto por IP: el script de seguridad termina
 disparando ese límite a propósito, así que espera un minuto antes de correr los E2E o iniciar
@@ -145,13 +163,13 @@ La suite de integración usa su propia clave no sensible en `appsettings.Testing
 ```
 SentryGuard/
 ├── SentryGuard/                 API (Endpoints, Services, Repositories, Middleware, Models, Migrations)
-├── SentryGuard.Tests/           Integración (IncidenteApiTests, SeguridadApiTests)
+├── SentryGuard.Tests/           Integración (IncidenteApiTests, SeguridadApiTests, MantenedoresApiTests)
 ├── sentryguard-web/
 │   ├── src/
 │   │   ├── api/                 Cliente HTTP, errores normalizados, contratos (Zod)
 │   │   ├── app/                 Rutas, QueryClient, providers
-│   │   ├── components/          Componentes reutilizables (Layout, FormField, ConfirmDialog…)
-│   │   ├── features/            auth, incidentes, catalogos, activos, usuarios
+│   │   ├── components/          Componentes reutilizables (Layout, FormField, ConfirmDialog, ListadoResponsivo, FiltrosListado…)
+│   │   ├── features/            auth, incidentes, activos, organizaciones, usuarios, catalogos, auditoria
 │   │   ├── pages/               Acceso denegado, no encontrado, error
 │   │   └── test/                MSW (API simulada) y utilidades de prueba
 │   └── e2e/                     Playwright (flujo, accesibilidad, CORS)
