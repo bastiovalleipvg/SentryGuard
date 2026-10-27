@@ -15,6 +15,9 @@ import { useAuth } from '../../auth/useAuth'
 import { useEstados } from '../../catalogos/catalogosService'
 import { useAnalistas } from '../../usuarios/usuariosService'
 import { EstadoBadge, SeveridadBadge } from '../components/Badges'
+import { BitacoraPanel } from '../components/BitacoraPanel'
+import { EvidenciasPanel } from '../components/EvidenciasPanel'
+import { SlaPanel } from '../components/SlaPanel'
 import { useAsignarAnalista, useCambiarEstado, useEliminarIncidente, useIncidente } from '../queries'
 
 export function IncidenteDetailPage() {
@@ -90,10 +93,13 @@ function DetalleIncidente({ incidente }: { incidente: Incidente }) {
         <h2 id="titulo-detalles">Detalles</h2>
         <dl className="datos">
           <div><dt>Número</dt><dd>#{incidente.id}</dd></div>
-          <div><dt>Activo afectado</dt><dd>{incidente.activo}</dd></div>
+          <div><dt>Activo afectado</dt><dd><Link to={`/activos/${incidente.activoId}`}>{incidente.activo}</Link></dd></div>
+          {puede(usuario, 'verOrganizaciones') && (
+            <div><dt>Organización</dt><dd><Link to={`/organizaciones/${incidente.organizacionId}`}>Ver organización #{incidente.organizacionId}</Link></dd></div>
+          )}
           <div><dt>Analista asignado</dt><dd>{incidente.analistaAsignado ?? 'Sin asignar'}</dd></div>
           <div><dt>Creado</dt><dd>{formatearFecha(incidente.fechaCreacion)}</dd></div>
-          <div><dt>Cerrado</dt><dd>{formatearFecha(incidente.fechaCierre)}</dd></div>
+          <div><dt>Cerrado</dt><dd>{formatearFecha(incidente.fechaCierre, 'Aún abierto')}</dd></div>
         </dl>
         <h3>Descripción</h3>
         <p className="texto-largo">{incidente.descripcion}</p>
@@ -108,6 +114,12 @@ function DetalleIncidente({ incidente }: { incidente: Incidente }) {
           </div>
         </section>
       )}
+
+      <SlaPanel incidenteId={incidente.id} />
+
+      <BitacoraPanel incidenteId={incidente.id} puedeRegistrar={puedeSobreIncidente(usuario, 'registrarBitacora', incidente)} />
+
+      <EvidenciasPanel incidenteId={incidente.id} puedeAgregar={puedeSobreIncidente(usuario, 'agregarEvidencia', incidente)} />
 
       <ConfirmDialog
         abierto={confirmando}

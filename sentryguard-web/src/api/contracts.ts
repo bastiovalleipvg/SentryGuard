@@ -41,13 +41,25 @@ export const IncidenteSchema = z.object({
 })
 export type Incidente = z.infer<typeof IncidenteSchema>
 
-export const PaginaIncidentesSchema = z.object({
-  total: z.number().int(),
-  page: z.number().int(),
-  pageSize: z.number().int(),
-  totalPages: z.number().int(),
-  items: z.array(IncidenteSchema),
-})
+/** Respuesta paginada comun de la API: { total, page, pageSize, totalPages, items }. */
+export function paginaDe<T extends z.ZodType>(item: T) {
+  return z.object({
+    total: z.number().int(),
+    page: z.number().int(),
+    pageSize: z.number().int(),
+    totalPages: z.number().int(),
+    items: z.array(item),
+  })
+}
+export interface Pagina<T> {
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+  items: T[]
+}
+
+export const PaginaIncidentesSchema = paginaDe(IncidenteSchema)
 export type PaginaIncidentes = z.infer<typeof PaginaIncidentesSchema>
 
 export const CreadoSchema = z.object({ id: z.number().int() })
@@ -60,22 +72,115 @@ export const SeveridadSchema = ItemCatalogoSchema.extend({ horasSLA: z.number() 
 export const CatalogoSeveridadesSchema = z.object({ items: z.array(SeveridadSchema) })
 export type Severidad = z.infer<typeof SeveridadSchema>
 
+export const PlanServicioSchema = ItemCatalogoSchema.extend({
+  descripcion: z.string().nullable(),
+  tiempoRespuestaBaseH: z.number(),
+})
+export const CatalogoPlanesSchema = z.object({ items: z.array(PlanServicioSchema) })
+export type PlanServicio = z.infer<typeof PlanServicioSchema>
+
 export const ActivoSchema = z.object({
   id: z.number().int(),
   nombre: z.string(),
   hostnameIp: z.string().nullable(),
+  categoriaId: z.number().int(),
   categoria: z.string(),
+  organizacionId: z.number().int(),
+  organizacion: z.string(),
 })
-export const PaginaActivosSchema = z.object({ items: z.array(ActivoSchema) })
+export const PaginaActivosSchema = paginaDe(ActivoSchema)
 export type Activo = z.infer<typeof ActivoSchema>
 
+export const OrganizacionSchema = z.object({
+  id: z.number().int(),
+  razonSocial: z.string(),
+  rut: z.string(),
+  planId: z.number().int(),
+  plan: z.string(),
+  fechaAlta: z.string(),
+})
+export const PaginaOrganizacionesSchema = paginaDe(OrganizacionSchema)
+export type Organizacion = z.infer<typeof OrganizacionSchema>
+
+export const ContratoSlaSchema = z.object({
+  id: z.number().int(),
+  vigenteDesde: z.string(),
+  vigenteHasta: z.string().nullable(),
+  detalles: z.array(z.object({ severidadId: z.number().int(), severidad: z.string(), horasSla: z.number() })),
+})
+export const ListaContratosSlaSchema = z.object({ items: z.array(ContratoSlaSchema) })
+export type ContratoSla = z.infer<typeof ContratoSlaSchema>
+
+// Vista de administracion de usuarios: nunca incluye el hash de la contraseña (la API no lo envia).
+export const UsuarioSchema = z.object({
+  id: z.number().int(),
+  nombre: z.string(),
+  email: z.string(),
+  rolId: z.number().int(),
+  rol: RolSchema,
+  organizacionId: z.number().int().nullable(),
+  organizacion: z.string().nullable(),
+  activo: z.boolean(),
+})
+export const PaginaUsuariosSchema = paginaDe(UsuarioSchema)
+export type Usuario = z.infer<typeof UsuarioSchema>
+export const UsuarioDetalleSchema = UsuarioSchema.omit({ organizacion: true })
+export type UsuarioDetalle = z.infer<typeof UsuarioDetalleSchema>
+
 export const AnalistasSchema = z.array(ItemCatalogoSchema)
+
+export const BitacoraSchema = z.object({
+  id: z.number().int(),
+  accion: z.string(),
+  comentario: z.string().nullable(),
+  usuario: z.string(),
+  timestamp: z.string(),
+})
+export const ListaBitacoraSchema = z.object({ items: z.array(BitacoraSchema) })
+export type EntradaBitacora = z.infer<typeof BitacoraSchema>
+
+export const EvidenciaSchema = z.object({
+  id: z.number().int(),
+  nombreArchivo: z.string(),
+  rutaAlmacenamiento: z.string(),
+  subidoPor: z.string(),
+  fecha: z.string(),
+})
+export const ListaEvidenciasSchema = z.object({ items: z.array(EvidenciaSchema) })
+export type Evidencia = z.infer<typeof EvidenciaSchema>
+
+export const CumplimientoSlaSchema = z.object({
+  horasTranscurridas: z.number(),
+  horasSLA: z.number(),
+  cumple: z.boolean(),
+  fuente: z.enum(['Contrato SLA', 'Severidad']),
+  fechaLimite: z.string(),
+  cerrado: z.boolean(),
+})
+export type CumplimientoSla = z.infer<typeof CumplimientoSlaSchema>
+
+export const AuditoriaSchema = z.object({
+  id: z.number().int(),
+  usuario: z.string().nullable(),
+  accion: z.string(),
+  ipOrigen: z.string().nullable(),
+  timestamp: z.string(),
+})
+export const PaginaAuditoriaSchema = paginaDe(AuditoriaSchema)
+export type RegistroAuditoria = z.infer<typeof AuditoriaSchema>
 
 export interface FiltrosIncidentes {
   page: number
   q?: string
   estadoId?: number
   severidadId?: number
+  activoId?: number
+}
+
+/** Filtros de los listados simples: pagina mas parametros opcionales que van tal cual a la query. */
+export interface FiltrosListado {
+  page: number
+  [parametro: string]: string | number | undefined
 }
 
 export interface CrearIncidenteInput {

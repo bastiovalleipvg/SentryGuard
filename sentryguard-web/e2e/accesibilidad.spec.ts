@@ -46,6 +46,7 @@ test.describe('Accesibilidad (axe, WCAG 2.2 AA) y diseño responsivo', () => {
 
   // Un solo inicio de sesion por archivo: el login de la API admite 5 intentos por minuto por IP.
   test('vistas principales sin violaciones, sin scroll horizontal y operables con teclado', async ({ page }) => {
+    test.setTimeout(240_000)
     await page.goto('/login')
     await auditar(page, 'login')
     await capturar(page, 'login')
@@ -87,5 +88,35 @@ test.describe('Accesibilidad (axe, WCAG 2.2 AA) y diseño responsivo', () => {
     await expect(page.getByText('El título debe tener al menos 5 caracteres.')).toBeVisible()
     await auditar(page, 'formulario-con-errores')
     await capturar(page, 'formulario-con-errores')
+
+    // Recursos relacionados: cada vista se audita y las principales se capturan en los 4 anchos.
+    const vistas: { ruta: string; vista: string; titulo: RegExp | string; capturar?: boolean }[] = [
+      { ruta: '/activos', vista: 'activos', titulo: 'Activos', capturar: true },
+      { ruta: '/activos/1', vista: 'activo-detalle', titulo: 'Servidor web de producción' },
+      { ruta: '/activos/nuevo', vista: 'activo-formulario', titulo: 'Nuevo activo' },
+      { ruta: '/organizaciones', vista: 'organizaciones', titulo: 'Organizaciones' },
+      { ruta: '/organizaciones/1', vista: 'organizacion-detalle', titulo: 'Empresa Demo SpA', capturar: true },
+      { ruta: '/usuarios', vista: 'usuarios', titulo: 'Usuarios', capturar: true },
+      { ruta: '/usuarios/nuevo', vista: 'usuario-formulario', titulo: 'Nuevo usuario' },
+      { ruta: '/catalogos', vista: 'catalogos', titulo: 'Catálogos', capturar: true },
+      { ruta: '/auditoria', vista: 'auditoria', titulo: 'Auditoría' },
+    ]
+    for (const v of vistas) {
+      await page.goto(v.ruta)
+      await expect(page.getByRole('heading', { level: 1, name: v.titulo })).toBeVisible()
+      await page.waitForLoadState('networkidle')
+      await auditar(page, v.vista)
+      if (v.capturar) await capturar(page, v.vista)
+    }
+
+    // Menu movil desplegado.
+    await page.setViewportSize({ width: 320, height: 720 })
+    const menu = page.getByRole('button', { name: /menú/i })
+    await menu.click()
+    await expect(menu).toHaveAttribute('aria-expanded', 'true')
+    await expect(page.getByRole('link', { name: 'Auditoría' })).toBeVisible()
+    await auditar(page, 'menu-movil')
+    await page.screenshot({ path: `${CAPTURAS}/menu-movil-320.png` })
+    await page.setViewportSize({ width: 1280, height: 900 })
   })
 })

@@ -6,6 +6,9 @@ export const incidentesKeys = {
   todos: ['incidentes'] as const,
   lista: (filtros: FiltrosIncidentes) => ['incidentes', 'lista', filtros] as const,
   detalle: (id: number) => ['incidentes', 'detalle', id] as const,
+  bitacora: (id: number) => ['incidentes', 'bitacora', id] as const,
+  evidencias: (id: number) => ['incidentes', 'evidencias', id] as const,
+  sla: (id: number) => ['incidentes', 'sla', id] as const,
 }
 
 export function useIncidentes(filtros: FiltrosIncidentes) {
@@ -71,4 +74,35 @@ export function useCambiarEstado(id: number) {
     mutationFn: (estadoId: number) => incidentesService.cambiarEstado(id, estadoId),
     onSuccess: invalidar,
   })
+}
+
+// Las acciones del flujo (editar, cambiar estado, asignar) agregan entradas automaticas a la bitacora:
+// por eso las mutaciones invalidan todo el prefijo ['incidentes'] y la bitacora se recarga sola.
+
+export function useBitacora(id: number) {
+  return useQuery({ queryKey: incidentesKeys.bitacora(id), queryFn: ({ signal }) => incidentesService.bitacora(id, signal) })
+}
+
+export function useAgregarBitacora(id: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: { accion: string; comentario: string | null }) => incidentesService.agregarBitacora(id, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: incidentesKeys.bitacora(id) }),
+  })
+}
+
+export function useEvidencias(id: number) {
+  return useQuery({ queryKey: incidentesKeys.evidencias(id), queryFn: ({ signal }) => incidentesService.evidencias(id, signal) })
+}
+
+export function useAgregarEvidencia(id: number) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: { nombreArchivo: string; rutaAlmacenamiento: string }) => incidentesService.agregarEvidencia(id, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: incidentesKeys.evidencias(id) }),
+  })
+}
+
+export function useCumplimientoSla(id: number) {
+  return useQuery({ queryKey: incidentesKeys.sla(id), queryFn: ({ signal }) => incidentesService.cumplimientoSla(id, signal) })
 }

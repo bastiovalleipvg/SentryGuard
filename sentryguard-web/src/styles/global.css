@@ -1,5 +1,5 @@
 /*
- * SentryGuard — estilos globales, mobile-first.
+ * SentryGuard: estilos globales, mobile-first.
  * Contrastes (texto normal >= 4.5:1, componentes >= 3:1):
  *   --texto #1f2937 / blanco 14.7:1 · --texto-suave #4b5563 / blanco 7.6:1
  *   --primario #1d4ed8 / blanco 6.7:1 · --peligro #b91c1c / blanco 6.5:1
@@ -163,17 +163,36 @@ a:hover {
   color: #60a5fa;
 }
 
+/* Movil y tableta: el menu se despliega con el boton "Menú" (aria-expanded). */
+.boton--menu {
+  margin-left: auto;
+  background: transparent;
+  color: #ffffff;
+  border-color: #ffffff;
+}
+
+.boton--menu:hover:not(:disabled) {
+  background: rgb(255 255 255 / 0.12);
+}
+
 .nav {
-  flex: 1 1 auto;
+  flex: 1 1 100%;
 }
 
 .nav__lista {
-  display: flex;
-  flex-wrap: wrap;
+  display: none;
+}
+
+.nav__lista--abierta {
+  display: grid;
   gap: 0.25rem;
   margin: 0;
-  padding: 0;
+  padding: 0 0 0.5rem;
   list-style: none;
+}
+
+.nav__lista--abierta .nav__enlace {
+  width: 100%;
 }
 
 .nav__enlace {
@@ -705,6 +724,156 @@ dd {
   margin-top: 1rem;
 }
 
+
+/* ---------- Componentes de los mantenedores ---------- */
+.encabezado-seccion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.encabezado-seccion h2 {
+  margin: 0;
+}
+
+.formulario--compacto {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--borde);
+  max-width: none;
+}
+
+.formulario--compacto h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.campos-en-linea {
+  display: grid;
+  gap: 1rem;
+}
+
+.grupo-campos {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.75rem 1rem 1rem;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+
+.grupo-campos legend {
+  padding-inline: 0.25rem;
+}
+
+.casilla {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: var(--tactil);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.casilla input {
+  width: 1.5rem;
+  height: 1.5rem;
+  min-height: 0;
+  accent-color: var(--primario);
+}
+
+.acciones--fila {
+  gap: 0.5rem;
+}
+
+.acciones--tarjeta {
+  margin-top: 0.75rem;
+}
+
+.tarjetas--simples {
+  margin-bottom: 0;
+}
+
+.indice ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.indice a {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tactil);
+}
+
+code {
+  font-family: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  font-size: 0.9em;
+  overflow-wrap: anywhere;
+}
+
+/* Bitacora: lista ordenada con una linea vertical; la hora y el autor van en texto. */
+.linea-tiempo {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-left: 3px solid var(--borde);
+}
+
+.linea-tiempo__item {
+  position: relative;
+  padding: 0 0 1rem 1rem;
+}
+
+.linea-tiempo__item::before {
+  content: '';
+  position: absolute;
+  left: -0.5rem;
+  top: 0.4rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  background: var(--primario);
+  border: 2px solid var(--superficie);
+  border-radius: 50%;
+}
+
+.linea-tiempo__accion {
+  margin-bottom: 0.25rem;
+  font-weight: 700;
+}
+
+.linea-tiempo__meta {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--texto-suave);
+}
+
+/* Barra decorativa del SLA (el dato tambien esta en texto). */
+.barra-sla {
+  height: 0.75rem;
+  margin-bottom: 1rem;
+  background: #e5e7eb;
+  border: 1px solid var(--borde-control);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.barra-sla__relleno {
+  display: block;
+  height: 100%;
+  background: #166534;
+}
+
+.barra-sla__relleno--vencido {
+  background: var(--peligro);
+}
+
 /* ---------- Tableta (>= 48rem / 768 px) ---------- */
 @media (min-width: 48rem) {
   .principal {
@@ -718,6 +887,18 @@ dd {
 
   .filtros__acciones {
     grid-column: 1 / -1;
+  }
+
+  .filtros--1 {
+    grid-template-columns: 1fr;
+  }
+
+  .filtros--2 {
+    grid-template-columns: 2fr 1fr;
+  }
+
+  .campos-en-linea {
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
   }
 
   .formulario-linea {
@@ -751,6 +932,37 @@ dd {
 
   .filtros__acciones {
     grid-column: auto;
+  }
+
+  .filtros--1 {
+    grid-template-columns: 1fr auto;
+  }
+
+  .filtros--2 {
+    grid-template-columns: 2fr 1fr auto;
+  }
+
+  /* Escritorio: menu siempre visible y sin boton. */
+  .boton--menu {
+    display: none;
+  }
+
+  .nav {
+    flex: 1 1 auto;
+  }
+
+  .nav__lista,
+  .nav__lista--abierta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .nav__lista--abierta .nav__enlace {
+    width: auto;
   }
 
   .datos {

@@ -80,7 +80,8 @@ export function IncidenteForm({ modo, valoresIniciales, textoEnviar, urlCancelar
 
       {modo === 'crear' && (
         <FormField label="Activo afectado" obligatorio error={errors.activoId?.message}>
-          <select disabled={activos.isPending} {...register('activoId')}>
+          {/* key: al llegar las opciones el select se vuelve a montar y RHF le aplica el valor inicial. */}
+          <select key={activos.isPending ? 'cargando' : 'listo'} disabled={activos.isPending} {...register('activoId')}>
             <option value="">{activos.isPending ? 'Cargando activos…' : 'Selecciona un activo'}</option>
             {activos.data?.map((a) => (
               <option key={a.id} value={String(a.id)}>
@@ -92,7 +93,7 @@ export function IncidenteForm({ modo, valoresIniciales, textoEnviar, urlCancelar
       )}
 
       <FormField label="Severidad" obligatorio error={errors.severidadId?.message}>
-        <select disabled={severidades.isPending} {...register('severidadId')}>
+        <select key={severidades.isPending ? 'cargando' : 'listo'} disabled={severidades.isPending} {...register('severidadId')}>
           <option value="">{severidades.isPending ? 'Cargando severidades…' : 'Selecciona la severidad'}</option>
           {severidades.data?.map((s) => (
             <option key={s.id} value={String(s.id)}>

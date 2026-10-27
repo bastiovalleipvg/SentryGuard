@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import { API, INCIDENTES, USUARIOS } from './fixtures'
+import { ACTIVOS, API, INCIDENTES, ORGANIZACIONES, USUARIOS, USUARIOS_ADMIN, pagina } from './fixtures'
 
 function usuarioDeLaPeticion(request: Request) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '')
@@ -7,6 +7,15 @@ function usuarioDeLaPeticion(request: Request) {
 }
 
 const noAutorizado = () => new HttpResponse(null, { status: 401 })
+const prohibido = () => new HttpResponse(null, { status: 403 })
+
+/** Simula RequireRole de la API: 401 sin token, 403 si el rol no esta en la lista. */
+function exigirRol(request: Request, roles: string[]) {
+  const usuario = usuarioDeLaPeticion(request)
+  if (!usuario) return noAutorizado()
+  if (!roles.includes(usuario.rol)) return prohibido()
+  return null
+}
 
 // API simulada con el mismo contrato que SentryGuard (incluidos 401, 403, 400 y 429).
 export const handlers = [
@@ -84,15 +93,103 @@ export const handlers = [
   ),
 
   http.get(`${API}/api/v1/activos`, ({ request }) => {
+    const usuario = usuarioDeLaPeticion(request)
+    if (!usuario) return noAutorizado()
+    const q = new URL(request.url).searchParams.get('q')?.toLowerCase()
+    const items = ACTIVOS.filter((a) => (usuario.rol !== 'Cliente' || a.organizacionId === usuario.organizacionId) && (!q || a.nombre.toLowerCase().includes(q)))
+    return HttpResponse.json(pagina(items))
+  }),
+
+  http.get(`${API}/api/v1/activos/:id`, ({ request, params }) => {
+    if (!usuarioDeLaPeticion(request)) return noAutorizado()
+    const activo = ACTIVOS.find((a) => a.id === Number(params.id))
+    return activo ? HttpResponse.json(activo) : new HttpResponse(null, { status: 404 })
+  }),
+
+  http.post(`${API}/api/v1/activos`, async ({ request }) => {
+    const denegado = exigirRol(request, ['Administrador', 'Supervisor'])
+    if (denegado) return denegado
+    const cuerpo = (await request.json()) as { nombre: string; hostnameIp: string | null; categoriaId: number; organizacionId: number }
+    return HttpResponse.json({ ...ACTIVOS[0], ...cuerpo, id: 10 }, { status: 201 })
+  }),
+
+  http.delete(`${API}/api/v1/activos/:id`, ({ request }) => {
+    const denegado = exigirRol(request, ['Administrador'])
+    if (denegado) return denegado
+    return HttpResponse.json(
+      { codigo: 'ACTIVO_CON_INCIDENTES', mensaje: 'No se puede eliminar el activo porque tiene incidentes registrados.' },
+      { status: 409 },
+    )
+  }),
+
+  http.get(`${API}/api/v1/catalogos/categorias-activo`, () => HttpResponse.json({ items: [{ id: 1, nombre: 'Servidor' }, { id: 3, nombre: 'Red' }] })),
+  http.get(`${API}/api/v1/catalogos/planes-servicio`, () =>
+    HttpResponse.json({
+      items: [
+        { id: 1, nombre: 'Básico', descripcion: null, tiempoRespuestaBaseH: 24 },
+        { id: 2, nombre: 'Estándar', descripcion: 'Plan estándar', tiempoRespuestaBaseH: 12 },
+      ],
+    }),
+  ),
+  http.get(`${API}/api/v1/catalogos/roles`, () =>
+    HttpResponse.json({ items: [{ id: 1, nombre: 'Administrador' }, { id: 2, nombre: 'Supervisor' }, { id: 3, nombre: 'Analista' }, { id: 4, nombre: 'Cliente' }] }),
+  ),
+  http.post(`${API}/api/v1/catalogos/:tipo`, ({ request }) => {
+    const denegado = exigirRol(request, ['Administrador'])
+    return denegado ?? HttpResponse.json({ id: 99 }, { status: 201 })
+  }),
+
+  http.get(`${API}/api/v1/organizaciones`, ({ request }) => {
+    const denegado = exigirRol(request, ['Administrador', 'Supervisor', 'Analista'])
+    return denegado ?? HttpResponse.json(pagina(ORGANIZACIONES))
+  }),
+  http.get(`${API}/api/v1/organizaciones/:id`, ({ request, params }) => {
+    const usuario = usuarioDeLaPeticion(request)
+    if (!usuario) return noAutorizado()
+    if (usuario.rol === 'Cliente' && usuario.organizacionId !== Number(params.id)) return prohibido()
+    const org = ORGANIZACIONES.find((o) => o.id === Number(params.id))
+    return org ? HttpResponse.json(org) : new HttpResponse(null, { status: 404 })
+  }),
+  http.get(`${API}/api/v1/organizaciones/:id/contratos-sla`, ({ request }) => {
     if (!usuarioDeLaPeticion(request)) return noAutorizado()
     return HttpResponse.json({
-      total: 2,
-      page: 1,
-      pageSize: 50,
-      items: [
-        { id: 1, nombre: 'Servidor web de producción', hostnameIp: '10.10.0.10', categoria: 'Servidor' },
-        { id: 2, nombre: 'Firewall perimetral', hostnameIp: '10.10.0.1', categoria: 'Red' },
-      ],
+      total: 1,
+      items: [{ id: 1, vigenteDesde: '2026-01-01T00:00:00', vigenteHasta: null, detalles: [{ severidadId: 4, severidad: 'Crítica', horasSla: 0.5 }] }],
     })
+  }),
+
+  http.get(`${API}/api/v1/usuarios`, ({ request }) => {
+    const denegado = exigirRol(request, ['Administrador'])
+    return denegado ?? HttpResponse.json(pagina(USUARIOS_ADMIN))
+  }),
+  http.post(`${API}/api/v1/usuarios/registro`, async ({ request }) => {
+    const denegado = exigirRol(request, ['Administrador'])
+    if (denegado) return denegado
+    const cuerpo = (await request.json()) as { email: string }
+    if (USUARIOS_ADMIN.some((u) => u.email === cuerpo.email)) {
+      return HttpResponse.json({ status: 400, errors: { email: ['Ya existe un usuario con ese correo.'] } }, { status: 400 })
+    }
+    return HttpResponse.json({ id: 50 }, { status: 201 })
+  }),
+
+  http.get(`${API}/api/v1/incidentes/sla/cumplimiento/:id`, ({ request }) => {
+    if (!usuarioDeLaPeticion(request)) return noAutorizado()
+    return HttpResponse.json({ horasTranscurridas: 0.4, horasSLA: 1, cumple: true, fuente: 'Severidad', fechaLimite: '2026-10-20T13:00:00', cerrado: false })
+  }),
+  http.get(`${API}/api/v1/incidentes/:id/bitacora`, ({ request }) => {
+    if (!usuarioDeLaPeticion(request)) return noAutorizado()
+    return HttpResponse.json({ total: 1, items: [{ id: 1, accion: 'Incidente creado', comentario: null, usuario: 'Cliente Demo', timestamp: '2026-10-20T12:00:00' }] })
+  }),
+  http.post(`${API}/api/v1/incidentes/:id/bitacora`, ({ request }) => {
+    const denegado = exigirRol(request, ['Administrador', 'Supervisor', 'Analista'])
+    return denegado ?? HttpResponse.json({ id: 2 }, { status: 201 })
+  }),
+  http.get(`${API}/api/v1/incidentes/:id/evidencia`, ({ request }) => {
+    if (!usuarioDeLaPeticion(request)) return noAutorizado()
+    return HttpResponse.json({ total: 0, items: [] })
+  }),
+  http.post(`${API}/api/v1/incidentes/:id/evidencia`, ({ request }) => {
+    const denegado = exigirRol(request, ['Administrador', 'Supervisor', 'Analista'])
+    return denegado ?? HttpResponse.json({ id: 1 }, { status: 201 })
   }),
 ]

@@ -1,6 +1,7 @@
-import { useNavigate } from 'react-router'
+import { useNavigate, useSearchParams } from 'react-router'
 import { useNotifications } from '../../../components/Notifications'
 import { PageHeading } from '../../../components/PageHeading'
+import { aEntero } from '../../../hooks/useParametrosListado'
 import { IncidenteForm } from '../components/IncidenteForm'
 import { useCrearIncidente } from '../queries'
 
@@ -8,6 +9,8 @@ export function IncidenteCreatePage() {
   const navigate = useNavigate()
   const { notificar } = useNotifications()
   const crear = useCrearIncidente()
+  // Desde el detalle de un activo se llega con ?activoId=N preseleccionado.
+  const activoId = aEntero(useSearchParams()[0].get('activoId'))
 
   return (
     <>
@@ -16,7 +19,8 @@ export function IncidenteCreatePage() {
       <IncidenteForm
         modo="crear"
         textoEnviar="Registrar incidente"
-        urlCancelar="/incidentes"
+        urlCancelar={activoId ? `/activos/${activoId}` : '/incidentes'}
+        valoresIniciales={activoId ? { activoId: String(activoId) } : undefined}
         onEnviar={async (v) => {
           const id = await crear.mutateAsync({
             titulo: v.titulo,

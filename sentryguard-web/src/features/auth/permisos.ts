@@ -10,6 +10,17 @@ export const PERMISOS = {
   eliminarIncidente: ['Administrador'],
   asignarAnalista: ['Administrador', 'Supervisor'],
   cambiarEstado: ['Administrador', 'Supervisor', 'Analista'],
+  registrarBitacora: ['Administrador', 'Supervisor', 'Analista'],
+  agregarEvidencia: ['Administrador', 'Supervisor', 'Analista'],
+  crearActivo: ['Administrador', 'Supervisor'],
+  editarActivo: ['Administrador', 'Supervisor'],
+  eliminarActivo: ['Administrador'],
+  verOrganizaciones: ['Administrador', 'Supervisor', 'Analista'],
+  gestionarOrganizaciones: ['Administrador'],
+  gestionarContratosSla: ['Administrador'],
+  gestionarUsuarios: ['Administrador'],
+  gestionarCatalogos: ['Administrador'],
+  verAuditoria: ['Administrador'],
 } as const satisfies Record<string, readonly Rol[]>
 
 export type Accion = keyof typeof PERMISOS

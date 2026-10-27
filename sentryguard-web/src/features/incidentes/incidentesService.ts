@@ -1,9 +1,15 @@
 import {
   CreadoSchema,
+  CumplimientoSlaSchema,
   IncidenteSchema,
+  ListaBitacoraSchema,
+  ListaEvidenciasSchema,
   PaginaIncidentesSchema,
   type ActualizarIncidenteInput,
   type CrearIncidenteInput,
+  type CumplimientoSla,
+  type EntradaBitacora,
+  type Evidencia,
   type FiltrosIncidentes,
   type Incidente,
   type PaginaIncidentes,
@@ -16,7 +22,14 @@ export const TAMANO_PAGINA = 10
 export const incidentesService = {
   listar(filtros: FiltrosIncidentes, signal?: AbortSignal): Promise<PaginaIncidentes> {
     return apiRequest(BASE, {
-      query: { page: filtros.page, pageSize: TAMANO_PAGINA, q: filtros.q, estadoId: filtros.estadoId, severidadId: filtros.severidadId },
+      query: {
+        page: filtros.page,
+        pageSize: TAMANO_PAGINA,
+        q: filtros.q,
+        estadoId: filtros.estadoId,
+        severidadId: filtros.severidadId,
+        activoId: filtros.activoId,
+      },
       schema: PaginaIncidentesSchema,
       signal,
     })
@@ -45,5 +58,28 @@ export const incidentesService = {
 
   async cambiarEstado(id: number, estadoId: number): Promise<void> {
     await apiRequest(`${BASE}/${id}/cambiar-estado`, { method: 'POST', body: { estadoId } })
+  },
+
+  // Tablas relacionadas del incidente: bitacora (tb_BitacoraIncidente), evidencias y cumplimiento del SLA.
+  async bitacora(id: number, signal?: AbortSignal): Promise<EntradaBitacora[]> {
+    const r = await apiRequest(`${BASE}/${id}/bitacora`, { schema: ListaBitacoraSchema, signal })
+    return r.items
+  },
+
+  async agregarBitacora(id: number, input: { accion: string; comentario: string | null }): Promise<void> {
+    await apiRequest(`${BASE}/${id}/bitacora`, { method: 'POST', body: input })
+  },
+
+  async evidencias(id: number, signal?: AbortSignal): Promise<Evidencia[]> {
+    const r = await apiRequest(`${BASE}/${id}/evidencia`, { schema: ListaEvidenciasSchema, signal })
+    return r.items
+  },
+
+  async agregarEvidencia(id: number, input: { nombreArchivo: string; rutaAlmacenamiento: string }): Promise<void> {
+    await apiRequest(`${BASE}/${id}/evidencia`, { method: 'POST', body: input })
+  },
+
+  cumplimientoSla(id: number, signal?: AbortSignal): Promise<CumplimientoSla> {
+    return apiRequest(`${BASE}/sla/cumplimiento/${id}`, { schema: CumplimientoSlaSchema, signal })
   },
 }

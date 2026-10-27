@@ -1,6 +1,8 @@
-import { NavLink, Outlet } from 'react-router'
+import { useState } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router'
 import { useAuth } from '../features/auth/useAuth'
-import { puede } from '../features/auth/permisos'
+import { puede, type Accion } from '../features/auth/permisos'
+import type { Rol } from '../api/contracts'
 
 function Logo() {
   return (
@@ -11,8 +13,34 @@ function Logo() {
   )
 }
 
+interface Enlace {
+  a: string
+  texto: string
+  /** Accion de permisos.ts que habilita el enlace; sin ella lo ven todos los roles. */
+  accion?: Accion
+  soloRol?: Rol
+}
+
+// El menu solo muestra lo que el rol puede abrir; la ruta y la API vuelven a validar el permiso.
+const ENLACES: Enlace[] = [
+  { a: '/incidentes', texto: 'Incidentes' },
+  { a: '/activos', texto: 'Activos' },
+  { a: '/organizaciones', texto: 'Organizaciones', accion: 'verOrganizaciones' },
+  { a: '/mi-organizacion', texto: 'Mi organización', soloRol: 'Cliente' },
+  { a: '/usuarios', texto: 'Usuarios', accion: 'gestionarUsuarios' },
+  { a: '/catalogos', texto: 'Catálogos', accion: 'gestionarCatalogos' },
+  { a: '/auditoria', texto: 'Auditoría', accion: 'verAuditoria' },
+]
+
 export function Layout() {
   const { usuario, cerrarSesion } = useAuth()
+  const { pathname } = useLocation()
+  // En movil el menu queda abierto solo en la ruta donde se abrio: al navegar se cierra solo
+  // (y el foco pasa al encabezado de la nueva vista).
+  const [abiertoEn, setAbiertoEn] = useState<string | null>(null)
+  const menuAbierto = abiertoEn === pathname
+
+  const enlaces = ENLACES.filter((e) => (e.soloRol ? usuario?.rol === e.soloRol : !e.accion || puede(usuario, e.accion)))
 
   return (
     <div className="app">
@@ -27,20 +55,25 @@ export function Layout() {
             <span>SentryGuard</span>
           </NavLink>
 
+          <button
+            type="button"
+            className="boton boton--menu"
+            aria-expanded={menuAbierto}
+            aria-controls="menu-principal"
+            onClick={() => setAbiertoEn(menuAbierto ? null : pathname)}
+          >
+            <span aria-hidden="true">{menuAbierto ? '✕' : '☰'} </span>Menú
+          </button>
+
           <nav aria-label="Principal" className="nav">
-            <ul className="nav__lista">
-              <li>
-                <NavLink to="/incidentes" end className="nav__enlace">
-                  Incidentes
-                </NavLink>
-              </li>
-              {puede(usuario, 'crearIncidente') && (
-                <li>
-                  <NavLink to="/incidentes/nuevo" className="nav__enlace">
-                    Nuevo incidente
+            <ul id="menu-principal" className={`nav__lista${menuAbierto ? ' nav__lista--abierta' : ''}`}>
+              {enlaces.map((e) => (
+                <li key={e.a}>
+                  <NavLink to={e.a} end={e.a === '/mi-organizacion'} className="nav__enlace">
+                    {e.texto}
                   </NavLink>
                 </li>
-              )}
+              ))}
             </ul>
           </nav>
 
