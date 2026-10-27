@@ -6,6 +6,7 @@ import { ConfirmDialog } from '../../../components/ConfirmDialog'
 import { ErrorState, mensajeDeError } from '../../../components/ErrorState'
 import { LoadingState } from '../../../components/LoadingState'
 import { useNotifications } from '../../../components/Notifications'
+import { Icono } from '../../../components/Icono'
 import { PageHeading } from '../../../components/PageHeading'
 import { AccessDeniedContent } from '../../../pages/AccessDeniedPage'
 import { NotFoundContent } from '../../../pages/NotFoundPage'
@@ -66,60 +67,69 @@ function DetalleIncidente({ incidente }: { incidente: Incidente }) {
   return (
     <>
       <p className="miga">
-        <Link to="/incidentes"><span aria-hidden="true">←</span>Volver al listado</Link>
+        <Link to="/incidentes"><Icono nombre="volver" />Volver al listado</Link>
       </p>
 
       <div className="encabezado-pagina">
-        {/* El titulo viene de la API y se renderiza como texto: React escapa cualquier HTML o script. */}
-        <PageHeading tituloDocumento={`Incidente #${incidente.id}`}>{incidente.titulo}</PageHeading>
+        <div className="encabezado-pagina__texto">
+          {/* El titulo viene de la API y se renderiza como texto: React escapa cualquier HTML o script. */}
+          <PageHeading tituloDocumento={`Incidente #${incidente.id}`}>{incidente.titulo}</PageHeading>
+          <p className="insignias">
+            <SeveridadBadge severidad={incidente.severidad} />
+            <EstadoBadge estado={incidente.estado} />
+            <span className="meta">#{incidente.id} · creado el {formatearFecha(incidente.fechaCreacion)}</span>
+          </p>
+        </div>
         {(puedeEditar || puedeEliminar) && (
           <div className="acciones">
             {puedeEditar && (
-              <Link to={`/incidentes/${incidente.id}/editar`} className="boton boton--secundario">Editar</Link>
+              <Link to={`/incidentes/${incidente.id}/editar`} className="boton boton--secundario"><Icono nombre="editar" />Editar</Link>
             )}
             {puedeEliminar && (
-              <button type="button" className="boton boton--peligro" onClick={() => setConfirmando(true)}>Eliminar</button>
+              <button type="button" className="boton boton--peligro-suave" onClick={() => setConfirmando(true)}><Icono nombre="eliminar" />Eliminar</button>
             )}
           </div>
         )}
       </div>
 
-      <p className="insignias">
-        <SeveridadBadge severidad={incidente.severidad} />
-        <EstadoBadge estado={incidente.estado} />
-      </p>
+      {/* Escritorio: contenido a la izquierda; estado, SLA y gestion a la derecha. En movil, una columna. */}
+      <div className="detalle">
+        <div className="detalle__principal">
+          <section aria-labelledby="titulo-detalles" className="panel">
+            <h2 id="titulo-detalles">Detalles</h2>
+            <dl className="datos">
+              <div><dt>Activo afectado</dt><dd><Link to={`/activos/${incidente.activoId}`}>{incidente.activo}</Link></dd></div>
+              {puede(usuario, 'verOrganizaciones') && (
+                <div><dt>Organización</dt><dd><Link to={`/organizaciones/${incidente.organizacionId}`}>Ver organización #{incidente.organizacionId}</Link></dd></div>
+              )}
+              <div><dt>Analista asignado</dt><dd>{incidente.analistaAsignado ?? 'Sin asignar'}</dd></div>
+              <div><dt>Número</dt><dd>#{incidente.id}</dd></div>
+              <div><dt>Creado</dt><dd>{formatearFecha(incidente.fechaCreacion)}</dd></div>
+              <div><dt>Cerrado</dt><dd>{formatearFecha(incidente.fechaCierre, 'Aún abierto')}</dd></div>
+            </dl>
+            <h3>Descripción</h3>
+            <p className="texto-largo">{incidente.descripcion}</p>
+          </section>
 
-      <section aria-labelledby="titulo-detalles" className="panel">
-        <h2 id="titulo-detalles">Detalles</h2>
-        <dl className="datos">
-          <div><dt>Número</dt><dd>#{incidente.id}</dd></div>
-          <div><dt>Activo afectado</dt><dd><Link to={`/activos/${incidente.activoId}`}>{incidente.activo}</Link></dd></div>
-          {puede(usuario, 'verOrganizaciones') && (
-            <div><dt>Organización</dt><dd><Link to={`/organizaciones/${incidente.organizacionId}`}>Ver organización #{incidente.organizacionId}</Link></dd></div>
+          <BitacoraPanel incidenteId={incidente.id} puedeRegistrar={puedeSobreIncidente(usuario, 'registrarBitacora', incidente)} />
+
+          <EvidenciasPanel incidenteId={incidente.id} puedeAgregar={puedeSobreIncidente(usuario, 'agregarEvidencia', incidente)} />
+        </div>
+
+        <div className="detalle__lateral">
+          <SlaPanel incidenteId={incidente.id} />
+
+          {(puedeSobreIncidente(usuario, 'cambiarEstado', incidente) || puede(usuario, 'asignarAnalista')) && (
+            <section aria-labelledby="titulo-gestion" className="panel">
+              <h2 id="titulo-gestion">Gestión</h2>
+              <div className="gestion">
+                {puedeSobreIncidente(usuario, 'cambiarEstado', incidente) && <CambiarEstadoForm incidente={incidente} />}
+                {puede(usuario, 'asignarAnalista') && <AsignarAnalistaForm incidente={incidente} />}
+              </div>
+            </section>
           )}
-          <div><dt>Analista asignado</dt><dd>{incidente.analistaAsignado ?? 'Sin asignar'}</dd></div>
-          <div><dt>Creado</dt><dd>{formatearFecha(incidente.fechaCreacion)}</dd></div>
-          <div><dt>Cerrado</dt><dd>{formatearFecha(incidente.fechaCierre, 'Aún abierto')}</dd></div>
-        </dl>
-        <h3>Descripción</h3>
-        <p className="texto-largo">{incidente.descripcion}</p>
-      </section>
-
-      {(puedeSobreIncidente(usuario, 'cambiarEstado', incidente) || puede(usuario, 'asignarAnalista')) && (
-        <section aria-labelledby="titulo-gestion" className="panel">
-          <h2 id="titulo-gestion">Gestión</h2>
-          <div className="gestion">
-            {puedeSobreIncidente(usuario, 'cambiarEstado', incidente) && <CambiarEstadoForm incidente={incidente} />}
-            {puede(usuario, 'asignarAnalista') && <AsignarAnalistaForm incidente={incidente} />}
-          </div>
-        </section>
-      )}
-
-      <SlaPanel incidenteId={incidente.id} />
-
-      <BitacoraPanel incidenteId={incidente.id} puedeRegistrar={puedeSobreIncidente(usuario, 'registrarBitacora', incidente)} />
-
-      <EvidenciasPanel incidenteId={incidente.id} puedeAgregar={puedeSobreIncidente(usuario, 'agregarEvidencia', incidente)} />
+        </div>
+      </div>
 
       <ConfirmDialog
         abierto={confirmando}

@@ -178,7 +178,7 @@ function SeccionCatalogo<T extends { id: number; nombre: string }>({ config }: {
               <button type="button" className="boton boton--secundario" onClick={() => setEditando(item)}>
                 Editar<span className="visualmente-oculto"> {item.nombre}</span>
               </button>
-              <button type="button" className="boton boton--peligro" onClick={() => setEliminando(item)}>
+              <button type="button" className="boton boton--peligro-suave" onClick={() => setEliminando(item)}>
                 Eliminar<span className="visualmente-oculto"> {item.nombre}</span>
               </button>
             </div>
@@ -194,7 +194,7 @@ function SeccionCatalogo<T extends { id: number; nombre: string }>({ config }: {
 
       {config.consulta.isPending && <LoadingState mensaje={`Cargando ${config.titulo.toLowerCase()}…`} />}
       {config.consulta.isError && <ErrorState error={config.consulta.error} onReintentar={() => config.consulta.refetch()} />}
-      {datos?.length === 0 && <EmptyState titulo="Sin elementos" />}
+      {datos?.length === 0 && <EmptyState compacto titulo="Sin elementos" />}
       {datos && datos.length > 0 && (
         <ListadoResponsivo
           items={datos}

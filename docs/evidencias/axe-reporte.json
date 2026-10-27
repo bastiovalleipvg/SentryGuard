@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-10-26T00:25:21.681Z",
+  "fecha": "2026-10-27T01:08:16.363Z",
   "etiquetas": [
     "wcag2a",
     "wcag2aa",
@@ -11,7 +11,7 @@
     "login": {
       "url": "https://localhost:5173/login",
       "violaciones": [],
-      "reglasAprobadas": 22
+      "reglasAprobadas": 24
     },
     "listado": {
       "url": "https://localhost:5173/incidentes#contenido",
@@ -19,12 +19,12 @@
       "reglasAprobadas": 28
     },
     "detalle": {
-      "url": "https://localhost:5173/incidentes/11",
+      "url": "https://localhost:5173/incidentes/15",
       "violaciones": [],
       "reglasAprobadas": 29
     },
     "dialogo-eliminar": {
-      "url": "https://localhost:5173/incidentes/11",
+      "url": "https://localhost:5173/incidentes/15",
       "violaciones": [],
       "reglasAprobadas": 13
     },

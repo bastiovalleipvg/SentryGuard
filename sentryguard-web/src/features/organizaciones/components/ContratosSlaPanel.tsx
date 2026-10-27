@@ -45,7 +45,7 @@ export function ContratosSlaPanel({ organizacionId, puedeGestionar }: Props) {
       {consulta.isPending && <LoadingState mensaje="Cargando contratos…" />}
       {consulta.isError && <ErrorState error={consulta.error} titulo="No se pudieron cargar los contratos" onReintentar={() => consulta.refetch()} />}
       {consulta.data?.length === 0 && (
-        <EmptyState titulo="Sin contratos SLA">
+        <EmptyState compacto titulo="Sin contratos SLA">
           <p>Los incidentes de esta organización usan las horas definidas en cada severidad.</p>
         </EmptyState>
       )}
@@ -73,7 +73,7 @@ export function ContratosSlaPanel({ organizacionId, puedeGestionar }: Props) {
                         Finalizar<span className="visualmente-oculto"> contrato #{c.id}</span>
                       </button>
                     )}
-                    <button type="button" className="boton boton--peligro" onClick={() => setAccion({ tipo: 'eliminar', contrato: c })}>
+                    <button type="button" className="boton boton--peligro-suave" onClick={() => setAccion({ tipo: 'eliminar', contrato: c })}>
                       Eliminar<span className="visualmente-oculto"> contrato #{c.id}</span>
                     </button>
                   </div>

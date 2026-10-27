@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Icono } from '../../../components/Icono'
 import { Link, useNavigate, useParams } from 'react-router'
 import type { Activo } from '../../../api/contracts'
 import { ConfirmDialog } from '../../../components/ConfirmDialog'
@@ -53,7 +54,7 @@ function DetalleActivo({ activo }: { activo: Activo }) {
 
   return (
     <>
-      <p className="miga"><Link to="/activos"><span aria-hidden="true">←</span>Volver a activos</Link></p>
+      <p className="miga"><Link to="/activos"><Icono nombre="volver" />Volver a activos</Link></p>
 
       <div className="encabezado-pagina">
         <PageHeading tituloDocumento={`Activo ${activo.nombre}`}>{activo.nombre}</PageHeading>
@@ -62,10 +63,10 @@ function DetalleActivo({ activo }: { activo: Activo }) {
             <Link to={`/incidentes/nuevo?activoId=${activo.id}`} className="boton boton--primario">Registrar incidente</Link>
           )}
           {puede(usuario, 'editarActivo') && (
-            <Link to={`/activos/${activo.id}/editar`} className="boton boton--secundario">Editar</Link>
+            <Link to={`/activos/${activo.id}/editar`} className="boton boton--secundario"><Icono nombre="editar" />Editar</Link>
           )}
           {puede(usuario, 'eliminarActivo') && (
-            <button type="button" className="boton boton--peligro" onClick={() => setConfirmando(true)}>Eliminar</button>
+            <button type="button" className="boton boton--peligro-suave" onClick={() => setConfirmando(true)}><Icono nombre="eliminar" />Eliminar</button>
           )}
         </div>
       </div>
@@ -112,7 +113,7 @@ function IncidentesDelActivo({ activoId }: { activoId: number }) {
       <h2 id="titulo-incidentes-activo">Incidentes de este activo</h2>
       {consulta.isPending && <LoadingState mensaje="Cargando incidentes…" />}
       {consulta.isError && <ErrorState error={consulta.error} onReintentar={() => consulta.refetch()} />}
-      {datos?.items.length === 0 && <EmptyState titulo="Este activo no tiene incidentes que puedas ver" />}
+      {datos?.items.length === 0 && <EmptyState compacto titulo="Este activo no tiene incidentes que puedas ver" />}
       {datos && datos.items.length > 0 && (
         <>
           <ListadoResponsivo

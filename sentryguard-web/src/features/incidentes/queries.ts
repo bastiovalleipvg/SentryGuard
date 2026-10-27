@@ -11,10 +11,11 @@ export const incidentesKeys = {
   sla: (id: number) => ['incidentes', 'sla', id] as const,
 }
 
-export function useIncidentes(filtros: FiltrosIncidentes) {
+export function useIncidentes(filtros: FiltrosIncidentes, habilitado = true) {
   return useQuery({
     queryKey: incidentesKeys.lista(filtros),
     queryFn: ({ signal }) => incidentesService.listar(filtros, signal),
+    enabled: habilitado,
     // Mantiene la pagina anterior visible mientras carga la siguiente (sin parpadeo).
     placeholderData: keepPreviousData,
   })

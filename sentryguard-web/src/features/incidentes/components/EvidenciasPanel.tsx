@@ -28,7 +28,7 @@ export function EvidenciasPanel({ incidenteId, puedeAgregar }: Props) {
       <h2 id="titulo-evidencias">Evidencias</h2>
       {consulta.isPending && <LoadingState mensaje="Cargando evidencias…" />}
       {consulta.isError && <ErrorState error={consulta.error} titulo="No se pudieron cargar las evidencias" onReintentar={() => consulta.refetch()} />}
-      {consulta.data?.length === 0 && <EmptyState titulo="Sin evidencias registradas" />}
+      {consulta.data?.length === 0 && <EmptyState compacto titulo="Sin evidencias registradas" />}
       {consulta.data && consulta.data.length > 0 && (
         <ListadoResponsivo
           items={consulta.data}

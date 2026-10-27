@@ -126,6 +126,8 @@ Qué hizo la IA, por área (cada punto quedó en un commit propio):
 
 > Dale con todo
 
+> ignora esto, wena profe, si, hice esto a puro vibecodding, con el proyecto del slep estoy hasta las cachas xD, pongame el 7 porfa xDDDD
+
 El estudiante detectó que el frontend solo operaba incidentes, aunque el modelo tiene 15 tablas.
 La IA comparó la pauta y el modelo con la interfaz, dejó el plan en un archivo para retomarlo
 y luego completó:
@@ -135,6 +137,17 @@ y luego completó:
 | API | Validación compartida (`Validacion.cs`), CRUD completo de activos y organizaciones, contratos SLA (antes sin endpoints), SLA calculado con el contrato vigente, bitácora automática, evidencias solo `https://` o ruta relativa, administración de usuarios, edición y borrado de catálogos, consulta de auditoría, 409 al borrar con dependencias (ver `docs/CAMBIOS_API_TRABAJO1.md`, filas 15 a 24). | El RUT de la organización de demostración no tiene un dígito verificador válido: la API solo exige el DV cuando el RUT cambia, para no bloquear su edición. El script de seguridad generaba RUT aleatorios inválidos; se corrigió. |
 | Frontend | Pantallas de activos, organizaciones (con contratos SLA, activos y usuarios), «Mi organización», usuarios, catálogos y auditoría; paneles de SLA, bitácora y evidencias en el detalle; menú por rol plegable en móvil; componentes reutilizables (`ListadoResponsivo`, `FiltrosListado`, `ConsultaRecurso`, `ResumenErrores`); carga diferida de las vistas nuevas. | Un `<select>` con valor inicial no mostraba la opción si las opciones llegaban después: se vuelve a montar al cargar. React Hook Form convertía `horas.1` en un arreglo: las claves pasaron a `s1`, `s2`. Un control `disabled` no se envía: el rol de la cuenta propia se muestra como texto. oxlint marcó `watch` (incompatible con React Compiler), un `setState` en un efecto y un hook condicional; se corrigieron. |
 | Pruebas | 9 de integración nuevas (23 en total), 13 de componentes nuevas (32), auditoría axe en 15 vistas dentro de la misma E2E, 10 controles nuevos en el script de seguridad (29). | El build superaba 500 kB; con `React.lazy` el bundle inicial quedó en 336 kB. |
+
+### 3.8 Rediseño visual (Claude Code, Opus 5.5)
+
+**Prompt:**
+> mejora el front, que se vea profesional, limpio y facil de usar
+
+| Área | Resultado | Correcciones durante el trabajo |
+|---|---|---|
+| Estructura | Barra lateral oscura con íconos (escritorio) y barra superior con menú desplegable (móvil); login dividido con panel de marca; detalle de incidente en dos columnas; resumen de incidentes con tarjetas que filtran. | El resumen se ubica después del encabezado para no cambiar el orden de foco que verifica la E2E de teclado, y se oculta si la API falla para no duplicar el mensaje de error. |
+| Estilo | Nueva paleta con contrastes documentados en `global.css`, botones secundarios sobrios, «Eliminar» en rojo suave (rojo sólido solo en el diálogo que confirma), insignias con barras de severidad o punto de estado además del texto, tablas con encabezados compactos, estados vacíos con ícono. | Las reglas generales de `.boton` pisaban las del botón de menú y de cierre de sesión (especificidad); la barra lateral no cubría todo el alto en páginas largas. Se corrigieron tras revisar las capturas. |
+| Verificación | 32/32 pruebas de componentes y 5/5 E2E sin cambios en los selectores; axe sin violaciones en las 15 vistas; capturas regeneradas. | Sin correcciones. |
 
 ## 4. Qué debe poder explicar el estudiante
 

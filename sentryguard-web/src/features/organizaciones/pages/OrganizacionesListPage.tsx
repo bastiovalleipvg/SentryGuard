@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { Icono } from '../../../components/Icono'
 import { EmptyState } from '../../../components/EmptyState'
 import { ErrorState } from '../../../components/ErrorState'
 import { FiltrosListado } from '../../../components/FiltrosListado'
@@ -25,7 +26,7 @@ export function OrganizacionesListPage() {
       <div className="encabezado-pagina">
         <PageHeading>Organizaciones</PageHeading>
         {puede(usuario, 'gestionarOrganizaciones') && (
-          <Link to="/organizaciones/nueva" className="boton boton--primario"><span aria-hidden="true">+ </span>Nueva organización</Link>
+          <Link to="/organizaciones/nueva" className="boton boton--primario"><Icono nombre="mas" />Nueva organización</Link>
         )}
       </div>
       <p className="introduccion">Empresas clientes de CyberOps Chile con su plan de servicio contratado.</p>

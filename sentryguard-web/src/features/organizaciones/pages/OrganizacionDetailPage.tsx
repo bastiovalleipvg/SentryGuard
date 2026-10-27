@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Icono } from '../../../components/Icono'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import type { Organizacion } from '../../../api/contracts'
 import { ConfirmDialog } from '../../../components/ConfirmDialog'
@@ -66,15 +67,15 @@ function DetalleOrganizacion({ organizacion }: { organizacion: Organizacion }) {
   return (
     <>
       {puede(usuario, 'verOrganizaciones') && (
-        <p className="miga"><Link to="/organizaciones"><span aria-hidden="true">←</span>Volver a organizaciones</Link></p>
+        <p className="miga"><Link to="/organizaciones"><Icono nombre="volver" />Volver a organizaciones</Link></p>
       )}
 
       <div className="encabezado-pagina">
         <PageHeading tituloDocumento={organizacion.razonSocial}>{organizacion.razonSocial}</PageHeading>
         {esAdmin && (
           <div className="acciones">
-            <Link to={`/organizaciones/${organizacion.id}/editar`} className="boton boton--secundario">Editar</Link>
-            <button type="button" className="boton boton--peligro" onClick={() => setConfirmando(true)}>Eliminar</button>
+            <Link to={`/organizaciones/${organizacion.id}/editar`} className="boton boton--secundario"><Icono nombre="editar" />Editar</Link>
+            <button type="button" className="boton boton--peligro-suave" onClick={() => setConfirmando(true)}><Icono nombre="eliminar" />Eliminar</button>
           </div>
         )}
       </div>
@@ -118,13 +119,13 @@ function ActivosDeLaOrganizacion({ organizacionId, puedeCrear }: { organizacionI
         <h2 id="titulo-activos-org">Activos</h2>
         {puedeCrear && (
           <Link to={`/activos/nuevo?organizacionId=${organizacionId}`} className="boton boton--secundario">
-            <span aria-hidden="true">+ </span>Nuevo activo
+            <Icono nombre="mas" />Nuevo activo
           </Link>
         )}
       </div>
       {consulta.isPending && <LoadingState mensaje="Cargando activos…" />}
       {consulta.isError && <ErrorState error={consulta.error} onReintentar={() => consulta.refetch()} />}
-      {datos?.items.length === 0 && <EmptyState titulo="Esta organización no tiene activos registrados" />}
+      {datos?.items.length === 0 && <EmptyState compacto titulo="Esta organización no tiene activos registrados" />}
       {datos && datos.items.length > 0 && (
         <>
           <ListadoResponsivo
@@ -155,12 +156,12 @@ function UsuariosDeLaOrganizacion({ organizacionId }: { organizacionId: number }
       <div className="encabezado-seccion">
         <h2 id="titulo-usuarios-org">Usuarios de la organización</h2>
         <Link to={`/usuarios/nuevo?organizacionId=${organizacionId}`} className="boton boton--secundario">
-          <span aria-hidden="true">+ </span>Nuevo usuario
+          <Icono nombre="mas" />Nuevo usuario
         </Link>
       </div>
       {consulta.isPending && <LoadingState mensaje="Cargando usuarios…" />}
       {consulta.isError && <ErrorState error={consulta.error} onReintentar={() => consulta.refetch()} />}
-      {datos?.items.length === 0 && <EmptyState titulo="Esta organización no tiene usuarios" />}
+      {datos?.items.length === 0 && <EmptyState compacto titulo="Esta organización no tiene usuarios" />}
       {datos && datos.items.length > 0 && (
         <>
           <ListadoResponsivo

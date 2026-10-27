@@ -23,12 +23,9 @@ export function BitacoraPanel({ incidenteId, puedeRegistrar }: Props) {
   return (
     <section aria-labelledby="titulo-bitacora" className="panel">
       <h2 id="titulo-bitacora">Bitácora</h2>
-      {puedeRegistrar && <FormularioBitacora incidenteId={incidenteId} />}
-
-      <h3>Historial</h3>
       {consulta.isPending && <LoadingState mensaje="Cargando bitácora…" />}
       {consulta.isError && <ErrorState error={consulta.error} titulo="No se pudo cargar la bitácora" onReintentar={() => consulta.refetch()} />}
-      {consulta.data?.length === 0 && <EmptyState titulo="Sin entradas en la bitácora" />}
+      {consulta.data?.length === 0 && <EmptyState compacto titulo="Sin entradas en la bitácora" />}
       {consulta.data && consulta.data.length > 0 && (
         <ol className="linea-tiempo" aria-label="Entradas de la bitácora, de la más reciente a la más antigua">
           {consulta.data.map((entrada) => (
@@ -43,6 +40,8 @@ export function BitacoraPanel({ incidenteId, puedeRegistrar }: Props) {
           ))}
         </ol>
       )}
+
+      {puedeRegistrar && <FormularioBitacora incidenteId={incidenteId} />}
     </section>
   )
 }

@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import { Icono } from '../../../components/Icono'
 import { EmptyState } from '../../../components/EmptyState'
 import { ErrorState } from '../../../components/ErrorState'
 import { FiltrosListado, type CampoFiltro } from '../../../components/FiltrosListado'
@@ -54,7 +55,7 @@ export function ActivosListPage() {
       <div className="encabezado-pagina">
         <PageHeading>Activos</PageHeading>
         {puede(usuario, 'crearActivo') && (
-          <Link to="/activos/nuevo" className="boton boton--primario"><span aria-hidden="true">+ </span>Nuevo activo</Link>
+          <Link to="/activos/nuevo" className="boton boton--primario"><Icono nombre="mas" />Nuevo activo</Link>
         )}
       </div>
       {!esStaff && <p className="introduccion">Activos registrados para tu organización.</p>}

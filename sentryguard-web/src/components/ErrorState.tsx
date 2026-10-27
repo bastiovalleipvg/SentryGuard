@@ -1,4 +1,5 @@
 import { isApiError } from '../api/apiError'
+import { Icono } from './Icono'
 
 interface Props {
   error: unknown
@@ -14,6 +15,7 @@ export function mensajeDeError(error: unknown): string {
 export function ErrorState({ error, titulo = 'No se pudo cargar la información', onReintentar }: Props) {
   return (
     <div className="estado estado--error" role="alert">
+      <Icono nombre="error" className="estado__icono" />
       <h2 className="estado__titulo">{titulo}</h2>
       <p>{mensajeDeError(error)}</p>
       {onReintentar && (

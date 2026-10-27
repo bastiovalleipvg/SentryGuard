@@ -11,6 +11,8 @@ import { useAuth } from '../../auth/useAuth'
 import { IncidentesCards } from '../components/IncidentesCards'
 import { IncidentesFilters, type ValoresFiltro } from '../components/IncidentesFilters'
 import { IncidentesTable } from '../components/IncidentesTable'
+import { ResumenIncidentes } from '../components/ResumenIncidentes'
+import { Icono } from '../../../components/Icono'
 import { useIncidentes } from '../queries'
 
 function aEntero(valor: string | null): number | undefined {
@@ -53,13 +55,24 @@ export function IncidentesListPage() {
   return (
     <>
       <div className="encabezado-pagina">
-        <PageHeading>Incidentes</PageHeading>
+        <div className="encabezado-pagina__texto">
+          <PageHeading>Incidentes</PageHeading>
+          <p className="introduccion">
+            {usuario?.rol === 'Cliente'
+              ? 'Incidentes reportados por tu organización.'
+              : usuario?.rol === 'Analista'
+                ? 'Incidentes asignados a ti.'
+                : 'Todos los incidentes de las organizaciones cliente.'}
+          </p>
+        </div>
         {puede(usuario, 'crearIncidente') && (
           <Link to="/incidentes/nuevo" className="boton boton--primario">
-            <span aria-hidden="true">+ </span>Nuevo incidente
+            <Icono nombre="mas" />Nuevo incidente
           </Link>
         )}
       </div>
+
+      <ResumenIncidentes estadoId={filtros.estadoId} severidadId={filtros.severidadId} hayOtrosFiltros={Boolean(filtros.q)} />
 
       <IncidentesFilters
         key={params.toString()}

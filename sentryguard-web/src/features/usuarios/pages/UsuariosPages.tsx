@@ -1,4 +1,5 @@
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
+import { Icono } from '../../../components/Icono'
 import { ConsultaRecurso } from '../../../components/ConsultaRecurso'
 import { EmptyState } from '../../../components/EmptyState'
 import { ErrorState } from '../../../components/ErrorState'
@@ -25,7 +26,7 @@ export function UsuariosListPage() {
     <>
       <div className="encabezado-pagina">
         <PageHeading>Usuarios</PageHeading>
-        <Link to="/usuarios/nuevo" className="boton boton--primario"><span aria-hidden="true">+ </span>Nuevo usuario</Link>
+        <Link to="/usuarios/nuevo" className="boton boton--primario"><Icono nombre="mas" />Nuevo usuario</Link>
       </div>
       <p className="introduccion">Cuentas de acceso a SentryGuard. Solo el Administrador puede crearlas y modificarlas.</p>
 
@@ -124,7 +125,7 @@ export function UsuarioEditPage() {
     <ConsultaRecurso consulta={consulta} titulo="Editar usuario" mensajeCarga="Cargando usuario…">
       {(u) => (
         <>
-          <p className="miga"><Link to="/usuarios"><span aria-hidden="true">←</span>Volver a usuarios</Link></p>
+          <p className="miga"><Link to="/usuarios"><Icono nombre="volver" />Volver a usuarios</Link></p>
           <PageHeading tituloDocumento={`Editar usuario ${u.nombre}`}>Editar usuario</PageHeading>
           <p className="introduccion">Correo: {u.email}. El correo no se modifica porque identifica la cuenta.</p>
           <UsuarioForm

@@ -6,6 +6,8 @@ import { z } from 'zod'
 import { isApiError } from '../../api/apiError'
 import { mensajeDeError } from '../../components/ErrorState'
 import { FormField } from '../../components/FormField'
+import { Icono } from '../../components/Icono'
+import { Logo } from '../../components/Layout'
 import { PageHeading } from '../../components/PageHeading'
 import { useAuth } from './useAuth'
 
@@ -49,11 +51,26 @@ export function LoginPage() {
   })
 
   return (
-    <main id="contenido" className="login">
+    <div className="login">
+      {/* Panel de marca: decorativo y solo en pantallas anchas; el contenido esencial esta en <main>. */}
+      <aside className="login__marca-panel" aria-label="Acerca de SentryGuard">
+        <p className="marca marca--grande">
+          <Logo />
+          <span>SentryGuard</span>
+        </p>
+        <p className="login__lema">Gestión de incidentes de ciberseguridad para CyberOps Chile SpA.</p>
+        <ul className="login__puntos">
+          <li><Icono nombre="incidentes" />Registro y seguimiento de incidentes con bitácora y evidencias</li>
+          <li><Icono nombre="reloj" />Cumplimiento del SLA según el contrato de cada organización</li>
+          <li><Icono nombre="candado" />Acceso por rol: cada usuario ve solo lo que le corresponde</li>
+        </ul>
+      </aside>
+
+      <main id="contenido" className="login__principal">
       <div className="login__tarjeta">
-        <p className="login__marca" aria-hidden="true">SentryGuard</p>
+        <p className="login__marca" aria-hidden="true"><Logo />SentryGuard</p>
         <PageHeading tituloDocumento="Iniciar sesión">Iniciar sesión</PageHeading>
-        <p className="introduccion">Plataforma de gestión de incidentes de CyberOps Chile SpA.</p>
+        <p className="introduccion">Ingresa con tu cuenta de la plataforma de gestión de incidentes.</p>
 
         <div role="alert" className="resumen-errores-contenedor">
           {errorGeneral && <div className="resumen-errores"><p>{errorGeneral}</p></div>}
@@ -77,6 +94,7 @@ export function LoginPage() {
           </button>
         </form>
       </div>
-    </main>
+      </main>
+    </div>
   )
 }
