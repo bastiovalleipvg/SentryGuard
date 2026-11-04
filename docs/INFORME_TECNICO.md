@@ -80,15 +80,15 @@ El riesgo aceptado (lectura por XSS) se mitiga con: renderizado siempre como tex
 |---|---|---|---|---|
 | Ver incidentes | Todos | Todos | Solo asignados | Solo de su organización |
 | Crear incidente | Sí | Sí | No | Sí (sobre activos propios) |
-| Editar incidente | Sí | Sí | Solo asignados | No |
-| Cambiar estado | Sí | Sí | Solo asignados | No |
+| Editar incidente | Sí | Sí | No | No |
+| Cambiar estado | Sí | Sí | No | No |
 | Asignar analista | Sí | Sí | No | No |
 | Eliminar incidente | Sí | No | No | No |
 | Agregar a la bitácora y evidencias | Sí | Sí | Solo asignados | No (solo ve) |
-| Ver activos | Todos | Todos | Todos | Solo de su organización |
+| Ver activos | Todos | Todos | Solo los de sus incidentes asignados | Solo de su organización |
 | Crear y editar activos | Sí | Sí | No | No |
 | Eliminar activos | Sí | No | No | No |
-| Ver organizaciones | Todas | Todas | Todas | Solo la suya («Mi organización») |
+| Ver organizaciones | Todas | Todas | No | Solo la suya («Mi organización») |
 | Gestionar organizaciones y contratos SLA | Sí | No | No | No |
 | Usuarios, catálogos y auditoría | Sí | No | No | No |
 

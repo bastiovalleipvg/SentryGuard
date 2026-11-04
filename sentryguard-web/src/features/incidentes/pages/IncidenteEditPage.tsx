@@ -33,7 +33,7 @@ export function IncidenteEditPage() {
   }
 
   const incidente = consulta.data
-  // Un Analista solo edita lo que tiene asignado; si llega por URL ve "acceso denegado" (la API igual responde 403).
+  // Solo Administrador y Supervisor editan; si alguien mas llega por URL ve "acceso denegado" (la API igual responde 403).
   if (!puedeSobreIncidente(usuario, 'editarIncidente', incidente)) return <AccessDeniedContent />
 
   return (

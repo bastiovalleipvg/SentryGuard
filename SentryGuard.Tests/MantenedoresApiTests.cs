@@ -232,6 +232,37 @@ public class MantenedoresApiTests : IClassFixture<SentryGuardApiFactory>
     }
 
     [Fact]
+    public async Task Analista_SoloDocumentaSusIncidentes_YNoVeOrganizacionesNiActivosAjenos()
+    {
+        var admin = await ClienteAsync("admin@sentryguard.cl");
+        var activoAsignado = await CrearActivoAsync(admin);
+        var activoAjeno = await CrearActivoAsync(admin);
+        var incidenteId = await CrearIncidenteAsync(admin, activoAsignado);
+        (await admin.PostAsJsonAsync($"/api/v1/incidentes/{incidenteId}/asignar", new { analistaId = 3 })).EnsureSuccessStatusCode();
+
+        var analista = await ClienteAsync("analista@sentryguard.cl");
+
+        // Sobre su incidente asignado: documenta (bitacora y evidencias), pero no edita ni mueve el estado.
+        Assert.Equal(HttpStatusCode.Forbidden, (await analista.PutAsJsonAsync($"/api/v1/incidentes/{incidenteId}", new { titulo = "Cambio del analista" })).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await analista.PostAsJsonAsync($"/api/v1/incidentes/{incidenteId}/cambiar-estado", new { estadoId = 2 })).StatusCode);
+        Assert.Equal(HttpStatusCode.Created, (await analista.PostAsJsonAsync($"/api/v1/incidentes/{incidenteId}/bitacora", new { accion = "Revision de logs" })).StatusCode);
+        Assert.Equal(HttpStatusCode.Created, (await analista.PostAsJsonAsync($"/api/v1/incidentes/{incidenteId}/evidencia", new { nombreArchivo = "log.txt", rutaAlmacenamiento = "incidentes/log.txt" })).StatusCode);
+
+        // Organizaciones: sin acceso por organizacion.
+        Assert.Equal(HttpStatusCode.Forbidden, (await analista.GetAsync("/api/v1/organizaciones")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await analista.GetAsync("/api/v1/organizaciones/1")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await analista.GetAsync("/api/v1/organizaciones/1/contratos-sla")).StatusCode);
+
+        // Activos: solo los de sus incidentes asignados.
+        var activos = await analista.GetFromJsonAsync<JsonElement>("/api/v1/activos?pageSize=50");
+        var ids = activos.GetProperty("items").EnumerateArray().Select(a => a.GetProperty("id").GetInt32()).ToList();
+        Assert.Contains(activoAsignado, ids);
+        Assert.DoesNotContain(activoAjeno, ids);
+        Assert.Equal(HttpStatusCode.OK, (await analista.GetAsync($"/api/v1/activos/{activoAsignado}")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await analista.GetAsync($"/api/v1/activos/{activoAjeno}")).StatusCode);
+    }
+
+    [Fact]
     public async Task Catalogos_EliminarEnUsoDevuelve409_YAuditoriaSoloAdministrador()
     {
         var admin = await ClienteAsync("admin@sentryguard.cl");

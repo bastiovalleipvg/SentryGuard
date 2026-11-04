@@ -58,7 +58,11 @@ export function ActivosListPage() {
           <Link to="/activos/nuevo" className="boton boton--primario"><Icono nombre="mas" />Nuevo activo</Link>
         )}
       </div>
-      {!esStaff && <p className="introduccion">Activos registrados para tu organización.</p>}
+      {!esStaff && (
+        <p className="introduccion">
+          {usuario?.rol === 'Analista' ? 'Activos afectados por los incidentes que tienes asignados.' : 'Activos registrados para tu organización.'}
+        </p>
+      )}
 
       <FiltrosListado key={claveFormulario} etiqueta="Filtrar activos" campos={campos} valores={valores} onAplicar={aplicar} />
 

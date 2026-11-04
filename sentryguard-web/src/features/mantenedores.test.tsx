@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
-import { API } from '../test/fixtures'
+import { API, crearIncidente } from '../test/fixtures'
 import { renderApp } from '../test/renderApp'
 import { server } from '../test/server'
 
@@ -147,6 +147,22 @@ describe('Bitácora y evidencias del incidente', () => {
 
     expect(await screen.findByText(/usa una url que empiece con https/i)).toBeInTheDocument()
     expect(enviada).toBe(false)
+  })
+
+  it('el Analista documenta su incidente asignado, pero no lo edita ni cambia el estado', async () => {
+    server.use(
+      http.get(`${API}/api/v1/incidentes/:id`, () =>
+        HttpResponse.json(crearIncidente({ analistaAsignadoId: 3, analistaAsignado: 'Analista Demo' })),
+      ),
+    )
+    renderApp('/incidentes/1', { sesion: 'analista' })
+
+    expect(await screen.findByRole('button', { name: 'Agregar a la bitácora' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Registrar evidencia' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /editar/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Cambiar estado' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Gestión' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Organizaciones', hidden: true })).not.toBeInTheDocument()
   })
 
   it('el Cliente ve la bitácora y el SLA, pero no los formularios de registro', async () => {

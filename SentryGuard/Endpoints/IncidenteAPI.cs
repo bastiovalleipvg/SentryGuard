@@ -24,9 +24,10 @@ namespace SentryGuard.Endpoints
             // Listar/Obtener/Bitacora/Evidencia/SLA: abiertos a los 4 roles, filtrados/validados dentro del handler.
             incidentes.MapGet("", ListarIncidentes).WithName("Listar incidentes");
             incidentes.MapGet("/{id}", ObtenerIncidente).WithName("Obtener incidente");
-            // Analista solo si esta asignado (validado dentro del handler); Cliente no edita incidentes.
+            // Editar datos y mover estados es tarea del staff que coordina (Administrador/Supervisor).
+            // El Analista documenta su trabajo en la bitacora y las evidencias de lo que tiene asignado.
             incidentes.MapPut("/{id}", ActualizarIncidente).WithName("Actualizar incidente")
-                .RequireAuthorization(p => p.RequireRole("Administrador", "Supervisor", "Analista"));
+                .RequireAuthorization(p => p.RequireRole("Administrador", "Supervisor"));
             // Eliminar es destructivo: solo Administrador.
             incidentes.MapDelete("/{id}", EliminarIncidente).WithName("Eliminar incidente")
                 .RequireAuthorization(p => p.RequireRole("Administrador"));
@@ -34,7 +35,7 @@ namespace SentryGuard.Endpoints
             incidentes.MapPost("/{id}/asignar", AsignarAnalista).WithName("Asignar analista")
                 .RequireAuthorization(p => p.RequireRole("Administrador", "Supervisor"));
             incidentes.MapPost("/{id}/cambiar-estado", CambiarEstado).WithName("Cambiar estado")
-                .RequireAuthorization(p => p.RequireRole("Administrador", "Supervisor", "Analista"));
+                .RequireAuthorization(p => p.RequireRole("Administrador", "Supervisor"));
             incidentes.MapPost("/{id}/bitacora", AgregarBitacora).WithName("Agregar bitácora")
                 .RequireAuthorization(p => p.RequireRole("Administrador", "Supervisor", "Analista"));
             incidentes.MapGet("/{id}/bitacora", ObtenerBitacora).WithName("Obtener bitácora");

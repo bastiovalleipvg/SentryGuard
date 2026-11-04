@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using SentryGuard.Data;
 using SentryGuard.DTOs;
@@ -12,10 +12,11 @@ namespace SentryGuard.Endpoints
         public static void MapOrganizacionApi(this WebApplication app)
         {
             var grupo = app.MapGroup("/api/v1/organizaciones").WithTags("Organizaciones").RequireAuthorization();
-            // Listar todas las organizaciones es solo para staff de CyberOps; un Cliente no necesita ver otras.
+            // Listar todas las organizaciones es para quien administra o coordina; el Analista trabaja por
+            // incidente asignado, no por organizacion, y un Cliente no necesita ver otras.
             grupo.MapGet("", Listar).WithName("Listar organizaciones")
-                .RequireAuthorization(p => p.RequireRole("Administrador", "Supervisor", "Analista"));
-            // Obtener por id: abierto a los 4 roles, pero Cliente solo puede pedir la suya (validado dentro del handler).
+                .RequireAuthorization(p => p.RequireRole("Administrador", "Supervisor"));
+            // Obtener por id: Administrador/Supervisor cualquiera, Cliente solo la suya, Analista ninguna (ValidaAccesoOrganizacion).
             grupo.MapGet("/{id}", Obtener).WithName("Obtener organizacion");
             grupo.MapPost("", Crear).WithName("Crear organizacion")
                 .RequireAuthorization(p => p.RequireRole("Administrador"));
@@ -73,12 +74,12 @@ namespace SentryGuard.Endpoints
             return Results.Ok(new { total, page, pageSize, totalPages = (int)Math.Ceiling((double)total / pageSize), items });
         }
 
-        // Cliente solo accede a su propia organizacion (OWASP API1).
+        // Misma regla que el resto de la API (OWASP API1): Cliente solo la suya; Analista no accede por organizacion.
         private static async Task<IResult?> ValidarAccesoAsync(int id, SentryGuardDbContext db, HttpContext httpContext, AuthService authService)
         {
             var usuario = await authService.ObtenerUsuarioAutenticadoAsync(httpContext, db);
             if (usuario == null) return Results.Unauthorized();
-            if (usuario.Rol?.Nombre == "Cliente" && usuario.OrganizacionId != id) return Results.Forbid();
+            if (!authService.ValidaAccesoOrganizacion(usuario, id)) return Results.Forbid();
             return null;
         }
 

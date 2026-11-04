@@ -1,4 +1,4 @@
-using System.Linq.Expressions;
+﻿using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using SentryGuard.Data;
 using SentryGuard.DTOs;
@@ -46,10 +46,13 @@ namespace SentryGuard.Endpoints
             var usuario = await authService.ObtenerUsuarioAutenticadoAsync(httpContext, db);
             if (usuario == null) return Results.Unauthorized();
 
-            // Cliente solo ve los activos de su propia organizacion (OWASP API1): el filtro que mande se ignora.
+            // Cliente: solo los activos de su organizacion. Analista: solo los activos de sus incidentes asignados.
+            // En ambos casos el filtro de organizacion que manden se ignora (OWASP API1).
             IQueryable<Models.Activo> query = db.Activos;
             if (usuario.Rol?.Nombre == "Cliente")
                 query = query.Where(a => a.OrganizacionId == usuario.OrganizacionId);
+            else if (usuario.Rol?.Nombre == "Analista")
+                query = query.Where(a => db.Incidentes.Any(i => i.ActivoId == a.Id && i.AnalistaAsignadoId == usuario.Id));
             else if (organizacionId.HasValue)
                 query = query.Where(a => a.OrganizacionId == organizacionId.Value);
 
@@ -83,6 +86,8 @@ namespace SentryGuard.Endpoints
             if (activo == null) return Results.NotFound();
 
             if (usuario.Rol?.Nombre == "Cliente" && usuario.OrganizacionId != activo.OrganizacionId)
+                return Results.Forbid();
+            if (usuario.Rol?.Nombre == "Analista" && !await db.Incidentes.AnyAsync(i => i.ActivoId == id && i.AnalistaAsignadoId == usuario.Id))
                 return Results.Forbid();
 
             var dto = await db.Activos.Where(a => a.Id == id).Select(ADto).FirstAsync();

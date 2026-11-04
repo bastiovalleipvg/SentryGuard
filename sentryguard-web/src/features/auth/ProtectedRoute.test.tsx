@@ -25,7 +25,7 @@ describe('Rutas protegidas', () => {
   })
 
   it('muestra acceso denegado cuando el rol no puede entrar a la ruta', async () => {
-    // Un Cliente no puede editar incidentes (solo Administrador, Supervisor o Analista asignado).
+    // Un Cliente no puede editar incidentes (solo Administrador y Supervisor).
     const { router } = renderApp('/incidentes/1/editar', { sesion: 'cliente' })
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Acceso denegado' })).toBeInTheDocument()

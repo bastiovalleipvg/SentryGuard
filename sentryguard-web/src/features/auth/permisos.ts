@@ -6,16 +6,17 @@ import type { Incidente, Rol, UsuarioActual } from '../../api/contracts'
  */
 export const PERMISOS = {
   crearIncidente: ['Administrador', 'Supervisor', 'Cliente'],
-  editarIncidente: ['Administrador', 'Supervisor', 'Analista'],
+  // El Analista no edita ni mueve estados: documenta su trabajo en bitacora y evidencias.
+  editarIncidente: ['Administrador', 'Supervisor'],
   eliminarIncidente: ['Administrador'],
   asignarAnalista: ['Administrador', 'Supervisor'],
-  cambiarEstado: ['Administrador', 'Supervisor', 'Analista'],
+  cambiarEstado: ['Administrador', 'Supervisor'],
   registrarBitacora: ['Administrador', 'Supervisor', 'Analista'],
   agregarEvidencia: ['Administrador', 'Supervisor', 'Analista'],
   crearActivo: ['Administrador', 'Supervisor'],
   editarActivo: ['Administrador', 'Supervisor'],
   eliminarActivo: ['Administrador'],
-  verOrganizaciones: ['Administrador', 'Supervisor', 'Analista'],
+  verOrganizaciones: ['Administrador', 'Supervisor'],
   gestionarOrganizaciones: ['Administrador'],
   gestionarContratosSla: ['Administrador'],
   gestionarUsuarios: ['Administrador'],
@@ -29,7 +30,7 @@ export function puede(usuario: UsuarioActual | null, accion: Accion): boolean {
   return usuario !== null && (PERMISOS[accion] as readonly Rol[]).includes(usuario.rol)
 }
 
-/** El Analista solo gestiona los incidentes que tiene asignados (igual que ValidaAccesoIncidente). */
+/** El Analista solo documenta (bitacora y evidencias) los incidentes que tiene asignados (igual que ValidaAccesoIncidente). */
 export function puedeSobreIncidente(usuario: UsuarioActual | null, accion: Accion, incidente: Incidente): boolean {
   if (!puede(usuario, accion)) return false
   if (usuario?.rol === 'Analista') return incidente.analistaAsignadoId === usuario.id

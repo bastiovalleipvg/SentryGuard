@@ -44,3 +44,8 @@ certs/
 
 # macOS
 .DS_Store
+GUION_VIDEO.md
+
+# Videos y respaldos locales pesados (GitHub rechaza archivos de mas de 100 MB)
+docs/Video.mov
+docs/docs.zip
