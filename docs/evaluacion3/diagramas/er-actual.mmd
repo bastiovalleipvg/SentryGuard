@@ -1,0 +1,124 @@
+erDiagram
+    tb_PlanServicio ||--o{ tb_Organizacion : "plan_contratado_id"
+    tb_Organizacion ||--o{ tb_ContratoSLA : "organizacion_id"
+    tb_ContratoSLA ||--o{ tb_ContratoSLA_Detalle : "contrato_id"
+    tb_Severidad ||--o{ tb_ContratoSLA_Detalle : "severidad_id"
+    tb_Organizacion |o--o{ tb_Usuario : "organizacion_id"
+    tb_Rol ||--o{ tb_Usuario : "rol_id"
+    tb_Usuario ||--o{ tb_RefreshToken : "usuario_id"
+    tb_CategoriaActivo ||--o{ tb_Activo : "categoria_id"
+    tb_Organizacion ||--o{ tb_Activo : "organizacion_id"
+    tb_Activo ||--o{ tb_Incidente : "activo_id"
+    tb_Usuario |o--o{ tb_Incidente : "analista_asignado_id"
+    tb_EstadoIncidente ||--o{ tb_Incidente : "estado_id"
+    tb_Organizacion ||--o{ tb_Incidente : "organizacion_id"
+    tb_Severidad ||--o{ tb_Incidente : "severidad_id"
+    tb_Incidente ||--o{ tb_BitacoraIncidente : "incidente_id"
+    tb_Usuario ||--o{ tb_BitacoraIncidente : "usuario_id"
+    tb_Incidente ||--o{ tb_EvidenciaIncidente : "incidente_id"
+    tb_Usuario ||--o{ tb_EvidenciaIncidente : "subido_por_id"
+    tb_Usuario |o--o{ tb_LogAuditoria : "usuario_id"
+    tb_Rol {
+        int id PK
+        nvarchar_50 nombre UK
+    }
+    tb_PlanServicio {
+        int id PK
+        nvarchar_500 descripcion
+        nvarchar_50 nombre UK
+        decimal_10_2 tiempo_respuesta_base_h
+    }
+    tb_CategoriaActivo {
+        int id PK
+        nvarchar_50 nombre UK
+    }
+    tb_Severidad {
+        int id PK
+        decimal_10_2 horas_sla
+        nvarchar_50 nombre UK
+    }
+    tb_EstadoIncidente {
+        int id PK
+        nvarchar_50 nombre UK
+    }
+    tb_Organizacion {
+        int id PK
+        datetime2_0 fecha_alta
+        int plan_contratado_id FK
+        nvarchar_200 razon_social
+        nvarchar_10 rut UK
+    }
+    tb_ContratoSLA {
+        int id PK
+        int organizacion_id FK,UK
+        datetime2_0 vigente_desde
+        datetime2_0 vigente_hasta
+    }
+    tb_ContratoSLA_Detalle {
+        int id PK
+        int contrato_id FK
+        decimal_10_2 horas_sla
+        int severidad_id FK
+    }
+    tb_Usuario {
+        int id PK
+        bit activo
+        datetime2_0 bloqueado_hasta
+        nvarchar_320 email UK
+        int intentos_fallidos
+        nvarchar_150 nombre
+        int organizacion_id FK
+        nvarchar_500 password_hash
+        int rol_id FK
+    }
+    tb_RefreshToken {
+        bigint id PK
+        datetime2_0 fecha_emision
+        datetime2_0 fecha_expira
+        bit revocado
+        nvarchar_500 token_hash
+        int usuario_id FK
+    }
+    tb_Activo {
+        int id PK
+        int categoria_id FK
+        nvarchar_255 hostname_ip
+        nvarchar_150 nombre
+        int organizacion_id FK
+    }
+    tb_Incidente {
+        int id PK
+        int activo_id FK
+        int analista_asignado_id FK
+        nvarchar_max descripcion
+        int estado_id FK
+        datetime2_0 fecha_cierre
+        datetime2_0 fecha_creacion
+        int organizacion_id FK
+        rowversion row_version
+        int severidad_id FK
+        nvarchar_250 titulo
+    }
+    tb_BitacoraIncidente {
+        bigint id PK
+        nvarchar_100 accion
+        nvarchar_max comentario
+        int incidente_id FK
+        datetime2_0 timestamp
+        int usuario_id FK
+    }
+    tb_EvidenciaIncidente {
+        bigint id PK
+        datetime2_0 fecha
+        int incidente_id FK
+        nvarchar_255 nombre_archivo
+        nvarchar_1000 ruta_almacenamiento
+        int subido_por_id FK
+    }
+    tb_LogAuditoria {
+        bigint id PK
+        nvarchar_150 accion
+        nvarchar_45 ip_origen
+        datetime2_0 timestamp
+        int usuario_id FK
+    }

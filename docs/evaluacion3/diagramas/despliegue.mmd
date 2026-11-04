@@ -1,0 +1,25 @@
+flowchart TB
+    U["Usuario<br/>(navegador)"]
+
+    subgraph Host["Equipo con Docker"]
+        subgraph Frontal["red: frontal"]
+            WEB["web<br/>nginx (alpine)<br/>sirve la SPA y hace de proxy a /api<br/>puertos 443 y 80"]
+        end
+        subgraph Interna["red: interna (sin acceso desde el host)"]
+            APIC["api<br/>ASP.NET Core (imagen aspnet ligera)<br/>puerto 8080<br/>health check /health"]
+            SQLC[("db<br/>SQL Server 2022<br/>puerto 1433")]
+            SEED["seed (se ejecuta una vez)<br/>migraciones y datos sintéticos"]
+        end
+        V1[["volumen sqldata"]]
+        V2[["volumen backups"]]
+    end
+
+    IA["API de IA externa"]
+
+    U -- "HTTPS 443" --> WEB
+    WEB -- "/api/*" --> APIC
+    APIC --> SQLC
+    SEED --> SQLC
+    SQLC --- V1
+    SQLC --- V2
+    APIC -- "HTTPS saliente" --> IA

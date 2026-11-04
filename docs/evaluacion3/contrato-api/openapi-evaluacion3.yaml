@@ -1,0 +1,403 @@
+openapi: 3.1.1
+info:
+  title: SentryGuard API (endpoints nuevos de la Evaluación 3)
+  version: 1.1.0-diseno
+  description: |
+    Contrato de los endpoints que se agregan en la Evaluación 3. Se define en el Hito 1, ANTES de implementarlos.
+    El contrato de lo ya implementado se exporta desde la API en ejecución (openapi-implementado.json).
+    Todos los errores usan el modelo Error (ProblemDetails, RFC 9457) con las extensiones codigo y traceId.
+    Los datos son sintéticos; el dominio (CyberOps Chile SpA) es ficticio.
+servers:
+  - url: https://localhost:7166
+    description: Desarrollo
+  - url: https://localhost
+    description: docker compose (nginx hace de proxy a la API)
+security:
+  - Bearer: []
+tags:
+  - name: Incidentes
+    description: Recurso principal; aquí solo los cambios de la Evaluación 3 (orden, filtros, transiciones)
+  - name: Catálogos
+    description: Nuevo catálogo de categorías de incidente
+  - name: Dashboard
+    description: Indicadores y series agregadas para el dashboard
+  - name: Reportes
+    description: Reportes operativo, gerencial y de SLA, con exportación
+  - name: IA
+    description: Funciones apoyadas por un servicio de IA externo
+
+paths:
+  /api/v1/incidentes:
+    get:
+      operationId: listarIncidentes
+      tags: [Incidentes]
+      summary: Listar incidentes (se agregan el orden y el filtro por categoría y fechas)
+      description: La visibilidad depende del rol (Cliente, su organización; Analista, sus asignados).
+      parameters:
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Orden'
+        - { name: q, in: query, schema: { type: string, maxLength: 100 } }
+        - { name: estadoId, in: query, schema: { type: integer } }
+        - { name: severidadId, in: query, schema: { type: integer } }
+        - { name: categoriaId, in: query, schema: { type: integer } }
+        - { name: activoId, in: query, schema: { type: integer } }
+        - $ref: '#/components/parameters/Desde'
+        - $ref: '#/components/parameters/Hasta'
+      responses:
+        '200': { description: Página de incidentes, content: { application/json: { schema: { $ref: '#/components/schemas/PaginaIncidentes' } } } }
+        '400': { $ref: '#/components/responses/Validacion' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+
+  /api/v1/incidentes/{id}/transiciones:
+    get:
+      operationId: listarTransicionesPermitidas
+      tags: [Incidentes]
+      summary: Estados a los que puede pasar el incidente desde su estado actual
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      responses:
+        '200':
+          description: Estados permitidos (vacío si el incidente está Cerrado)
+          content: { application/json: { schema: { type: array, items: { $ref: '#/components/schemas/ItemCatalogo' } } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+
+  /api/v1/incidentes/{id}/cambiar-estado:
+    post:
+      operationId: cambiarEstadoIncidente
+      tags: [Incidentes]
+      summary: Cambiar el estado (Administrador y Supervisor); valida la transición
+      parameters: [ { $ref: '#/components/parameters/Id' } ]
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [estadoId], properties: { estadoId: { type: integer } } } } }
+      responses:
+        '200': { description: Estado actualizado y registrado en la bitácora }
+        '400': { $ref: '#/components/responses/Validacion' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '404': { $ref: '#/components/responses/NoEncontrado' }
+        '409':
+          description: 'Transición no permitida (codigo: TRANSICION_INVALIDA)'
+          content: { application/problem+json: { schema: { $ref: '#/components/schemas/Error' } } }
+
+  /api/v1/catalogos/categorias-incidente:
+    get:
+      operationId: listarCategoriasIncidente
+      tags: [Catálogos]
+      summary: Listar categorías de incidente
+      security: []
+      responses:
+        '200': { description: Catálogo, content: { application/json: { schema: { type: object, properties: { items: { type: array, items: { $ref: '#/components/schemas/ItemCatalogo' } } } } } } }
+    post:
+      operationId: crearCategoriaIncidente
+      tags: [Catálogos]
+      summary: Crear categoría de incidente (Administrador)
+      requestBody:
+        required: true
+        content: { application/json: { schema: { type: object, required: [nombre], properties: { nombre: { type: string, minLength: 2, maxLength: 50 } } } } }
+      responses:
+        '201': { description: Creada }
+        '400': { $ref: '#/components/responses/Validacion' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+
+  /api/v1/dashboard/indicadores:
+    get:
+      operationId: obtenerIndicadores
+      tags: [Dashboard]
+      summary: Indicadores del período filtrado (respeta la visibilidad del rol)
+      parameters: &filtrosDashboard
+        - $ref: '#/components/parameters/Desde'
+        - $ref: '#/components/parameters/Hasta'
+        - { name: organizacionId, in: query, description: Ignorado para el Cliente, schema: { type: integer } }
+        - { name: severidadId, in: query, schema: { type: integer } }
+        - { name: categoriaId, in: query, schema: { type: integer } }
+      responses:
+        '200': { description: Indicadores, content: { application/json: { schema: { $ref: '#/components/schemas/Indicadores' } } } }
+        '400': { $ref: '#/components/responses/Validacion' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+
+  /api/v1/dashboard/series:
+    get:
+      operationId: obtenerSeriesDashboard
+      tags: [Dashboard]
+      summary: Series para los gráficos (por mes, por severidad, por categoría, por organización y carga por analista)
+      parameters: *filtrosDashboard
+      responses:
+        '200': { description: Series, content: { application/json: { schema: { $ref: '#/components/schemas/SeriesDashboard' } } } }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+
+  /api/v1/reportes/{tipo}:
+    get:
+      operationId: obtenerReporte
+      tags: [Reportes]
+      summary: Datos paginados de un reporte, para mostrarlo en pantalla
+      description: |
+        operativo = detalle de incidentes; gerencial = totales por organización, severidad y estado;
+        sla = cumplimiento del SLA y tiempo de resolución por mes dentro del rango.
+        Administrador y Supervisor ven todo; el Cliente solo su organización; el Analista no tiene acceso (403).
+      parameters:
+        - $ref: '#/components/parameters/TipoReporte'
+        - $ref: '#/components/parameters/Desde'
+        - $ref: '#/components/parameters/Hasta'
+        - { name: organizacionId, in: query, schema: { type: integer } }
+        - { name: severidadId, in: query, schema: { type: integer } }
+        - { name: estadoId, in: query, schema: { type: integer } }
+        - { name: categoriaId, in: query, schema: { type: integer } }
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/Orden'
+      responses:
+        '200': { description: Página del reporte, content: { application/json: { schema: { $ref: '#/components/schemas/PaginaReporte' } } } }
+        '400': { $ref: '#/components/responses/Validacion' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+
+  /api/v1/reportes/{tipo}/exportar:
+    get:
+      operationId: exportarReporte
+      tags: [Reportes]
+      summary: Exportar el reporte con los mismos filtros (queda registrado en la auditoría)
+      parameters:
+        - $ref: '#/components/parameters/TipoReporte'
+        - { name: formato, in: query, required: true, schema: { type: string, enum: [xlsx, pdf, csv] } }
+        - $ref: '#/components/parameters/Desde'
+        - $ref: '#/components/parameters/Hasta'
+        - { name: organizacionId, in: query, schema: { type: integer } }
+        - { name: severidadId, in: query, schema: { type: integer } }
+        - { name: estadoId, in: query, schema: { type: integer } }
+        - { name: categoriaId, in: query, schema: { type: integer } }
+      responses:
+        '200':
+          description: Archivo. CSV en UTF-8 con BOM y separador punto y coma (;), para que Excel en español lo abra bien.
+          headers:
+            Content-Disposition: { schema: { type: string }, example: 'attachment; filename="reporte-operativo-2026-11-04.xlsx"' }
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet: { schema: { type: string, format: binary } }
+            application/pdf: { schema: { type: string, format: binary } }
+            text/csv: { schema: { type: string } }
+        '400': { $ref: '#/components/responses/Validacion' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '429': { $ref: '#/components/responses/DemasiadasSolicitudes' }
+
+  /api/v1/ia/clasificar-incidente:
+    post:
+      operationId: clasificarIncidenteConIA
+      tags: [IA]
+      summary: Sugerir severidad y categoría a partir del texto del incidente (no guarda nada)
+      description: Administrador, Supervisor y Cliente. La persona confirma o cambia la sugerencia antes de crear el incidente.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [titulo, descripcion]
+              properties:
+                titulo: { type: string, minLength: 5, maxLength: 250 }
+                descripcion: { type: string, minLength: 20, maxLength: 4000 }
+      responses:
+        '200': { description: Sugerencia, content: { application/json: { schema: { $ref: '#/components/schemas/SugerenciaClasificacion' } } } }
+        '400': { $ref: '#/components/responses/Validacion' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '429': { $ref: '#/components/responses/DemasiadasSolicitudes' }
+        '502': { $ref: '#/components/responses/ErrorServicioIA' }
+        '504': { $ref: '#/components/responses/TiempoAgotadoIA' }
+
+  /api/v1/ia/resumir:
+    post:
+      operationId: resumirConIA
+      tags: [IA]
+      summary: Resumen en lenguaje natural del dashboard o de un reporte filtrado (Administrador y Supervisor)
+      description: La API calcula los datos con los filtros dados y solo envía cifras agregadas al servicio de IA, nunca datos de usuarios.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fuente]
+              properties:
+                fuente: { type: string, enum: [dashboard, operativo, gerencial, sla] }
+                desde: { type: string, format: date }
+                hasta: { type: string, format: date }
+                organizacionId: { type: integer }
+                severidadId: { type: integer }
+                categoriaId: { type: integer }
+      responses:
+        '200': { description: Resumen, content: { application/json: { schema: { $ref: '#/components/schemas/ResumenIA' } } } }
+        '400': { $ref: '#/components/responses/Validacion' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '403': { $ref: '#/components/responses/SinPermiso' }
+        '429': { $ref: '#/components/responses/DemasiadasSolicitudes' }
+        '502': { $ref: '#/components/responses/ErrorServicioIA' }
+        '504': { $ref: '#/components/responses/TiempoAgotadoIA' }
+
+  /health:
+    get:
+      operationId: estadoDeSalud
+      summary: Estado de la API y de la conexión a la base (para el health check del contenedor)
+      security: []
+      responses:
+        '200': { description: Sana }
+        '503': { description: La base no responde }
+
+components:
+  securitySchemes:
+    Bearer: { type: http, scheme: bearer, bearerFormat: JWT }
+
+  parameters:
+    Id: { name: id, in: path, required: true, schema: { type: integer, minimum: 1 } }
+    Page: { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+    PageSize: { name: pageSize, in: query, description: Se acota a 50, schema: { type: integer, minimum: 1, maximum: 50, default: 10 } }
+    Orden:
+      name: orden
+      in: query
+      description: 'Campo y dirección, por ejemplo fechaCreacion:desc. Campos permitidos según el recurso; uno no permitido responde 400.'
+      schema: { type: string, pattern: '^[a-zA-Z]+:(asc|desc)$', example: 'fechaCreacion:desc' }
+    Desde: { name: desde, in: query, description: Fecha inicial (incluida), schema: { type: string, format: date } }
+    Hasta: { name: hasta, in: query, description: Fecha final (incluida); debe ser mayor o igual que desde, schema: { type: string, format: date } }
+    TipoReporte: { name: tipo, in: path, required: true, schema: { type: string, enum: [operativo, gerencial, sla] } }
+
+  responses:
+    Validacion:
+      description: 'Datos inválidos: errores por campo'
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NoAutenticado:
+      description: Sin token o con un token inválido o expirado
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Error' } } }
+    SinPermiso:
+      description: El rol o la organización no permiten la operación
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Error' } } }
+    NoEncontrado:
+      description: El recurso no existe
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Error' } } }
+    DemasiadasSolicitudes:
+      description: Límite de tasa superado; trae la cabecera Retry-After
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Error' } } }
+    ErrorServicioIA:
+      description: 'El servicio de IA respondió con un error o un formato inválido (codigo: IA_NO_DISPONIBLE)'
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Error' } } }
+    TiempoAgotadoIA:
+      description: 'El servicio de IA no respondió dentro de 15 s (codigo: IA_TIEMPO_AGOTADO)'
+      content: { application/problem+json: { schema: { $ref: '#/components/schemas/Error' } } }
+
+  schemas:
+    Error:
+      description: Formato de error estándar (ProblemDetails, RFC 9457) para toda la API
+      type: object
+      required: [status, title, codigo, traceId]
+      properties:
+        type: { type: string, example: 'https://sentryguard.local/errores/transicion-invalida' }
+        title: { type: string, example: Transición de estado no permitida }
+        status: { type: integer, example: 409 }
+        detail: { type: string, example: No se puede pasar de Abierto a Cerrado. }
+        codigo: { type: string, example: TRANSICION_INVALIDA }
+        traceId: { type: string, example: '00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01' }
+        errors:
+          type: object
+          description: Solo en los 400 de validación; clave = campo en camelCase
+          additionalProperties: { type: array, items: { type: string } }
+          example: { titulo: [Debe tener entre 5 y 250 caracteres.] }
+
+    ItemCatalogo:
+      type: object
+      required: [id, nombre]
+      properties: { id: { type: integer }, nombre: { type: string } }
+
+    Incidente:
+      type: object
+      properties:
+        id: { type: integer }
+        titulo: { type: string }
+        descripcion: { type: string }
+        severidadId: { type: integer }
+        severidad: { type: string }
+        categoriaId: { type: [integer, 'null'] }
+        categoria: { type: [string, 'null'] }
+        estadoId: { type: integer }
+        estado: { type: string }
+        activoId: { type: integer }
+        activo: { type: string }
+        organizacionId: { type: integer }
+        analistaAsignadoId: { type: [integer, 'null'] }
+        analistaAsignado: { type: [string, 'null'] }
+        fechaCreacion: { type: string, format: date-time }
+        fechaCierre: { type: [string, 'null'], format: date-time }
+
+    PaginaIncidentes:
+      type: object
+      properties:
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+        totalPages: { type: integer }
+        items: { type: array, items: { $ref: '#/components/schemas/Incidente' } }
+
+    Indicador:
+      type: object
+      required: [clave, nombre, valor, unidad, formula]
+      properties:
+        clave: { type: string, example: cumplimientoSla }
+        nombre: { type: string, example: Cumplimiento del SLA }
+        valor: { type: [number, 'null'], example: 87.5 }
+        unidad: { type: string, enum: [cantidad, porcentaje, horas], example: porcentaje }
+        formula: { type: string, example: 'cerrados dentro del plazo / cerrados × 100' }
+        variacion: { type: [number, 'null'], description: Diferencia contra el período anterior de igual duración }
+
+    Indicadores:
+      type: object
+      properties:
+        desde: { type: string, format: date }
+        hasta: { type: string, format: date }
+        items: { type: array, minItems: 6, items: { $ref: '#/components/schemas/Indicador' } }
+
+    PuntoSerie:
+      type: object
+      properties: { etiqueta: { type: string }, valor: { type: number } }
+
+    SeriesDashboard:
+      type: object
+      properties:
+        incidentesPorMes: { type: array, items: { $ref: '#/components/schemas/PuntoSerie' } }
+        cumplimientoSlaPorMes: { type: array, items: { $ref: '#/components/schemas/PuntoSerie' } }
+        porSeveridad: { type: array, items: { $ref: '#/components/schemas/PuntoSerie' } }
+        porCategoria: { type: array, items: { $ref: '#/components/schemas/PuntoSerie' } }
+        porOrganizacion: { type: array, items: { $ref: '#/components/schemas/PuntoSerie' } }
+        cargaPorAnalista: { type: array, items: { $ref: '#/components/schemas/PuntoSerie' } }
+
+    PaginaReporte:
+      type: object
+      properties:
+        tipo: { type: string, enum: [operativo, gerencial, sla] }
+        filtros: { type: object, additionalProperties: true }
+        totales: { type: object, additionalProperties: { type: number } }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+        totalPages: { type: integer }
+        columnas: { type: array, items: { type: string } }
+        filas: { type: array, items: { type: object, additionalProperties: true } }
+
+    SugerenciaClasificacion:
+      type: object
+      required: [severidadId, severidad, categoriaId, categoria, justificacion, generadoConIA]
+      properties:
+        severidadId: { type: integer, description: Siempre una severidad existente del catálogo }
+        severidad: { type: string, example: Alta }
+        categoriaId: { type: integer, description: Siempre una categoría existente del catálogo }
+        categoria: { type: string, example: Phishing }
+        justificacion: { type: string, maxLength: 400, example: Correo que suplanta al banco y pide credenciales. }
+        generadoConIA: { type: boolean, const: true }
+
+    ResumenIA:
+      type: object
+      required: [resumen, generadoConIA, fuente]
+      properties:
+        resumen: { type: string, maxLength: 2000 }
+        fuente: { type: string }
+        generadoConIA: { type: boolean, const: true }
+        generadoEn: { type: string, format: date-time }

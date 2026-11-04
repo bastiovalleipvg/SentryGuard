@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maqueta: Reportes · SentryGuard</title>
+<link rel="stylesheet" href="../../../../sentryguard-web/src/styles/global.css">
+
+<style>
+  .maqueta-nota { margin: 0 0 1rem; padding: .5rem .75rem; font-size: .8125rem; color: #7c2d12; background: #ffedd5; border-radius: .5rem; }
+  .indicadores { display: grid; gap: .75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 0 1.25rem; padding: 0; list-style: none; }
+  @media (min-width: 64rem) { .indicadores { grid-template-columns: repeat(3, minmax(0, 1fr)); } .graficos { grid-template-columns: 1fr 1fr; } }
+  .indicador { padding: 1rem; background: #fff; border: 1px solid var(--borde); border-radius: .75rem; box-shadow: var(--sombra); }
+  .indicador__valor { display: block; font-size: 1.75rem; font-weight: 750; letter-spacing: -.02em; }
+  .indicador__nombre { font-size: .875rem; font-weight: 600; color: var(--texto-suave); }
+  .indicador__formula { display: block; margin-top: .35rem; font-size: .75rem; color: var(--texto-suave); }
+  .sube { color: #166534; } .baja { color: #b91c1c; }
+  .graficos { display: grid; gap: 1.25rem; }
+  .grafico svg { width: 100%; height: auto; }
+  .grafico details { margin-top: .5rem; font-size: .875rem; }
+  .barra-h { display: grid; grid-template-columns: 7rem 1fr 2.5rem; gap: .5rem; align-items: center; font-size: .875rem; margin-bottom: .4rem; }
+  .barra-h span:nth-child(2) { height: .75rem; background: var(--primario); border-radius: 999px; }
+  .resumen-ia { border-left: 4px solid #7c3aed; }
+  .etiqueta-ia { display: inline-flex; gap: .35rem; align-items: center; padding: .15rem .6rem; font-size: .75rem; font-weight: 700; color: #5b21b6; background: #ede9fe; border-radius: 999px; }
+  .sugerencia { padding: 1rem; background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: .75rem; }
+  .sugerencia dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem 1rem; margin: .75rem 0; }
+  .exportar { display: flex; flex-wrap: wrap; gap: .5rem; }
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header class="cabecera">
+    <div class="cabecera__barra">
+      <a href="#" class="marca"><svg class="marca__logo" viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16 2 4 6.5v8.2c0 7.3 5.1 13.6 12 15.3 6.9-1.7 12-8 12-15.3V6.5L16 2z"/><path fill="#fff" d="m14.2 20.6-4.6-4.6 1.9-1.9 2.7 2.7 6.3-6.3 1.9 1.9z"/></svg><span>SentryGuard</span></a>
+      <button type="button" class="boton boton--menu" aria-expanded="false">Menú</button>
+    </div>
+    <div class="cabecera__menu">
+      <nav aria-label="Principal" class="nav"><ul class="nav__lista"><li><a class="nav__enlace" href="#">Incidentes</a></li><li><a class="nav__enlace" href="#">Dashboard</a></li><li><a class="nav__enlace" href="#" aria-current="page">Reportes</a></li><li><a class="nav__enlace" href="#">Activos</a></li><li><a class="nav__enlace" href="#">Organizaciones</a></li></ul></nav>
+      <div class="sesion">
+        <span class="sesion__avatar" aria-hidden="true">SD</span>
+        <p class="sesion__usuario"><span class="sesion__nombre">Supervisor Demo</span><span class="sesion__rol">Rol: Supervisor</span></p>
+        <button type="button" class="boton boton--sesion">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+  <div class="area">
+    <main id="contenido" class="contenedor principal">
+      <p class="maqueta-nota">Maqueta de diseño (Hito 1). Datos ficticios de ejemplo.</p>
+      
+<div class="encabezado-pagina"><div class="encabezado-pagina__texto"><h1 class="titulo-pagina">Reportes</h1>
+<p class="introduccion">Elige el reporte y sus filtros. La exportación usa los mismos filtros y queda registrada en la auditoría.</p></div></div>
+<nav class="indice" aria-label="Tipo de reporte"><ul><li><a href="#" aria-current="page">Operativo (detalle)</a></li><li><a href="#">Gerencial (resumen)</a></li><li><a href="#">SLA por rango de fechas</a></li></ul></nav>
+
+<search class="filtros-contenedor" aria-label="Filtros">
+  <form class="filtros">
+    <div class="campo"><label class="campo__etiqueta" for="f-desde">Desde</label><input id="f-desde" type="date" value="2025-11-01"></div>
+    <div class="campo"><label class="campo__etiqueta" for="f-hasta">Hasta</label><input id="f-hasta" type="date" value="2026-10-31"></div>
+    <div class="campo"><label class="campo__etiqueta" for="f-org">Organización</label><select id="f-org"><option>Todas</option></select></div>
+    <div class="acciones filtros__acciones"><button class="boton boton--primario" type="button">Aplicar filtros</button></div>
+  </form>
+</search>
+<div class="encabezado-seccion"><p class="resultado-busqueda">612 incidentes · Total de horas de resolución: 5.875,2 h</p>
+<div class="exportar"><button class="boton boton--secundario" type="button">Exportar Excel</button><button class="boton boton--secundario" type="button">Exportar PDF</button><button class="boton boton--secundario" type="button">Exportar CSV</button><button class="boton boton--secundario" type="button">Imprimir</button></div></div>
+<div class="tabla-contenedor"><table class="tabla"><caption class="visualmente-oculto">Reporte operativo</caption>
+<thead><tr><th scope="col">N.º</th><th scope="col">Título</th><th scope="col">Organización</th><th scope="col">Severidad</th><th scope="col">Estado</th><th scope="col">Creado</th><th scope="col">Resolución</th></tr></thead>
+<tbody>
+<tr><th scope="row">#612</th><td>Correo que suplanta al banco</td><td>Empresa Demo SpA</td><td><span class="insignia insignia--alta">Alta</span></td><td><span class="insignia insignia--punto insignia--resuelto">Resuelto</span></td><td>30-10-2026</td><td>3,5 h</td></tr>
+<tr><th scope="row">#611</th><td>Ransomware en servidor de archivos</td><td>Comercial Andes Ltda.</td><td><span class="insignia insignia--critica">Crítica</span></td><td><span class="insignia insignia--punto insignia--progreso">En progreso</span></td><td>29-10-2026</td><td>—</td></tr>
+<tr><th scope="row">#610</th><td>Acceso desde IP desconocida</td><td>Empresa Demo SpA</td><td><span class="insignia insignia--media">Media</span></td><td><span class="insignia insignia--punto insignia--cerrado">Cerrado</span></td><td>28-10-2026</td><td>11,0 h</td></tr>
+</tbody></table></div>
+<nav class="paginacion" aria-label="Paginación del reporte"><button class="boton boton--secundario" disabled>Anterior</button><p class="paginacion__estado">Página 1 de 62</p><button class="boton boton--secundario">Siguiente</button></nav>
+    </main>
+  </div>
+</div>
+</body>
+</html>

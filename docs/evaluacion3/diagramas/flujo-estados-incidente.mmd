@@ -1,0 +1,12 @@
+stateDiagram-v2
+    [*] --> Abierto: Cliente o Supervisor lo reporta
+    Abierto --> EnProgreso: Supervisor lo asigna y lo inicia
+    EnProgreso --> Escalado: Requiere un nivel superior
+    Escalado --> EnProgreso: Se retoma
+    EnProgreso --> Resuelto: Se aplicó la solución
+    Escalado --> Resuelto: Se aplicó la solución
+    Resuelto --> EnProgreso: La solución no funcionó (se reabre)
+    Resuelto --> Cerrado: Se confirma el cierre
+    Cerrado --> [*]
+
+    EnProgreso: En progreso

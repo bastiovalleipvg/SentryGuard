@@ -1,0 +1,24 @@
+erDiagram
+    tb_CategoriaIncidente ||--o{ tb_Incidente : "categoria_id (nueva)"
+    tb_EstadoIncidente ||--o{ tb_TransicionEstado : "estado_origen_id"
+    tb_EstadoIncidente ||--o{ tb_TransicionEstado : "estado_destino_id"
+    tb_CategoriaIncidente {
+        int id PK
+        nvarchar_50 nombre UK
+    }
+    tb_TransicionEstado {
+        int id PK
+        int estado_origen_id FK
+        int estado_destino_id FK
+    }
+    tb_LogAuditoria {
+        bigint id PK
+        int usuario_id FK
+        nvarchar_150 accion
+        nvarchar_100 entidad "nueva"
+        nvarchar_50 entidad_id "nueva"
+        nvarchar_20 operacion "nueva"
+        nvarchar_max detalle "nueva (JSON)"
+        nvarchar_45 ip_origen
+        datetime2_0 timestamp
+    }

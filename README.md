@@ -11,16 +11,27 @@ Sistema de gestión de incidentes de ciberseguridad. Monorepo con:
 | `docs/` | Informe técnico, cambios a la API, evidencias, presentación | Markdown, Word y PowerPoint |
 | `AI_LOG.md` | Bitácora de uso de IA generativa | Markdown |
 
+> **Evaluación 3 (proyecto integrador):** la documentación del Hito 1 (dominio, requerimientos, arquitectura, modelo de datos, contrato de la API, maquetas y plan de trabajo) está en [docs/evaluacion3/](docs/evaluacion3/README.md).
+
+## Uso de IA en el desarrollo
+
+| Herramienta | Propósito |
+|---|---|
+| Claude Code (modelos Claude Sonnet 5 y Claude Opus 5.5, de Anthropic) | Apoyo en el diseño, el código, las pruebas y la documentación. Todo lo generado fue revisado y probado por el equipo |
+| GitHub Copilot y Claude en claude.ai | Apoyo puntual al inicio del Trabajo 1 |
+
+El detalle de los prompts y de lo que se aceptó, corrigió o descartó está en [AI_LOG.md](AI_LOG.md). La IA *dentro del producto* (clasificar incidentes y resumir el dashboard) se describe aparte, en [docs/evaluacion3/](docs/evaluacion3/README.md).
+
 ## Funcionalidades
 
 | Módulo | Qué permite | Tablas | Quién |
 |---|---|---|---|
-| Incidentes (recurso principal) | CRUD con paginación, búsqueda y filtros; cambio de estado y asignación de analista | `tb_Incidente` | Ver: todos (Cliente solo su organización, Analista solo lo asignado). Crear: Admin, Supervisor, Cliente. Editar: Admin, Supervisor, Analista asignado. Eliminar: Admin |
+| Incidentes (recurso principal) | CRUD con paginación, búsqueda y filtros; cambio de estado y asignación de analista | `tb_Incidente` | Ver: todos (Cliente solo su organización, Analista solo lo asignado). Crear: Admin, Supervisor, Cliente. Editar y cambiar estado: Admin, Supervisor. Eliminar: Admin |
 | Bitácora del incidente | Historial con entradas automáticas (creación, edición, cambio de estado, asignación) y notas manuales | `tb_BitacoraIncidente` | Ver: quien ve el incidente. Agregar: Admin, Supervisor, Analista asignado |
 | Evidencias | Referencias a archivos (`https://` o ruta relativa) | `tb_EvidenciaIncidente` | Igual que la bitácora |
 | Cumplimiento del SLA | Plazo, tiempo transcurrido, fecha límite y estado; usa el contrato SLA vigente o, si no hay, la severidad | `tb_ContratoSLA_Detalle`, `tb_Severidad` | Quien ve el incidente |
-| Activos | CRUD con filtros por nombre/IP, categoría y organización; incidentes de cada activo | `tb_Activo` | Ver: todos (Cliente solo los suyos). Crear/editar: Admin, Supervisor. Eliminar: Admin (409 si tiene incidentes) |
-| Organizaciones | CRUD con RUT validado (dígito verificador); detalle con contratos SLA, activos y usuarios | `tb_Organizacion` | Listar: staff. Ver: staff y el Cliente la suya («Mi organización»). Gestionar: Admin |
+| Activos | CRUD con filtros por nombre/IP, categoría y organización; incidentes de cada activo | `tb_Activo` | Ver: Admin y Supervisor todos; Cliente los de su organización; Analista los de sus incidentes asignados. Crear/editar: Admin, Supervisor. Eliminar: Admin (409 si tiene incidentes) |
+| Organizaciones | CRUD con RUT validado (dígito verificador); detalle con contratos SLA, activos y usuarios | `tb_Organizacion` | Listar y ver: Admin y Supervisor; el Cliente ve la suya («Mi organización»); el Analista no tiene acceso. Gestionar: Admin |
 | Contratos SLA | Vigencia y horas por severidad; finalizar y eliminar; sin períodos superpuestos | `tb_ContratoSLA`, `tb_ContratoSLA_Detalle` | Ver: como la organización. Gestionar: Admin |
 | Usuarios | Listado con filtros, alta con política de contraseñas, edición de rol/organización y desactivación | `tb_Usuario`, `tb_Rol` | Admin |
 | Catálogos | Severidades, categorías de activo, planes de servicio (crear, editar, eliminar si no están en uso) y estados (solo crear) | `tb_Severidad`, `tb_CategoriaActivo`, `tb_PlanServicio`, `tb_EstadoIncidente` | Admin |

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maqueta: Dashboard · SentryGuard</title>
+<link rel="stylesheet" href="../../../../sentryguard-web/src/styles/global.css">
+
+<style>
+  .maqueta-nota { margin: 0 0 1rem; padding: .5rem .75rem; font-size: .8125rem; color: #7c2d12; background: #ffedd5; border-radius: .5rem; }
+  .indicadores { display: grid; gap: .75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 0 1.25rem; padding: 0; list-style: none; }
+  @media (min-width: 64rem) { .indicadores { grid-template-columns: repeat(3, minmax(0, 1fr)); } .graficos { grid-template-columns: 1fr 1fr; } }
+  .indicador { padding: 1rem; background: #fff; border: 1px solid var(--borde); border-radius: .75rem; box-shadow: var(--sombra); }
+  .indicador__valor { display: block; font-size: 1.75rem; font-weight: 750; letter-spacing: -.02em; }
+  .indicador__nombre { font-size: .875rem; font-weight: 600; color: var(--texto-suave); }
+  .indicador__formula { display: block; margin-top: .35rem; font-size: .75rem; color: var(--texto-suave); }
+  .sube { color: #166534; } .baja { color: #b91c1c; }
+  .graficos { display: grid; gap: 1.25rem; }
+  .grafico svg { width: 100%; height: auto; }
+  .grafico details { margin-top: .5rem; font-size: .875rem; }
+  .barra-h { display: grid; grid-template-columns: 7rem 1fr 2.5rem; gap: .5rem; align-items: center; font-size: .875rem; margin-bottom: .4rem; }
+  .barra-h span:nth-child(2) { height: .75rem; background: var(--primario); border-radius: 999px; }
+  .resumen-ia { border-left: 4px solid #7c3aed; }
+  .etiqueta-ia { display: inline-flex; gap: .35rem; align-items: center; padding: .15rem .6rem; font-size: .75rem; font-weight: 700; color: #5b21b6; background: #ede9fe; border-radius: 999px; }
+  .sugerencia { padding: 1rem; background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: .75rem; }
+  .sugerencia dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem 1rem; margin: .75rem 0; }
+  .exportar { display: flex; flex-wrap: wrap; gap: .5rem; }
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header class="cabecera">
+    <div class="cabecera__barra">
+      <a href="#" class="marca"><svg class="marca__logo" viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16 2 4 6.5v8.2c0 7.3 5.1 13.6 12 15.3 6.9-1.7 12-8 12-15.3V6.5L16 2z"/><path fill="#fff" d="m14.2 20.6-4.6-4.6 1.9-1.9 2.7 2.7 6.3-6.3 1.9 1.9z"/></svg><span>SentryGuard</span></a>
+      <button type="button" class="boton boton--menu" aria-expanded="false">Menú</button>
+    </div>
+    <div class="cabecera__menu">
+      <nav aria-label="Principal" class="nav"><ul class="nav__lista"><li><a class="nav__enlace" href="#">Incidentes</a></li><li><a class="nav__enlace" href="#" aria-current="page">Dashboard</a></li><li><a class="nav__enlace" href="#">Reportes</a></li><li><a class="nav__enlace" href="#">Activos</a></li><li><a class="nav__enlace" href="#">Organizaciones</a></li></ul></nav>
+      <div class="sesion">
+        <span class="sesion__avatar" aria-hidden="true">SD</span>
+        <p class="sesion__usuario"><span class="sesion__nombre">Supervisor Demo</span><span class="sesion__rol">Rol: Supervisor</span></p>
+        <button type="button" class="boton boton--sesion">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+  <div class="area">
+    <main id="contenido" class="contenedor principal">
+      <p class="maqueta-nota">Maqueta de diseño (Hito 1). Datos ficticios de ejemplo.</p>
+      
+<div class="encabezado-pagina">
+  <div class="encabezado-pagina__texto"><h1 class="titulo-pagina">Dashboard</h1>
+  <p class="introduccion">Indicadores de los últimos 12 meses. Los filtros recalculan todo con los datos del sistema.</p></div>
+  <button class="boton boton--secundario" type="button">Resumir con IA</button>
+</div>
+
+<search class="filtros-contenedor" aria-label="Filtros">
+  <form class="filtros">
+    <div class="campo"><label class="campo__etiqueta" for="f-desde">Desde</label><input id="f-desde" type="date" value="2025-11-01"></div>
+    <div class="campo"><label class="campo__etiqueta" for="f-hasta">Hasta</label><input id="f-hasta" type="date" value="2026-10-31"></div>
+    <div class="campo"><label class="campo__etiqueta" for="f-org">Organización</label><select id="f-org"><option>Todas</option></select></div>
+    <div class="acciones filtros__acciones"><button class="boton boton--primario" type="button">Aplicar filtros</button></div>
+  </form>
+</search>
+<ul class="indicadores" aria-label="Indicadores">
+<li class="indicador"><span class="indicador__valor">612</span><span class="indicador__nombre">Incidentes en el período</span><span class="indicador__formula">Total creados entre desde y hasta</span><span class="indicador__formula baja">+8 % vs. período anterior</span></li><li class="indicador"><span class="indicador__valor">87,4 %</span><span class="indicador__nombre">Cumplimiento del SLA</span><span class="indicador__formula">Cerrados dentro del plazo / cerrados × 100</span><span class="indicador__formula sube">+3,1 pts</span></li><li class="indicador"><span class="indicador__valor">9,6 h</span><span class="indicador__nombre">Tiempo medio de resolución</span><span class="indicador__formula">Promedio (fecha_cierre − fecha_creacion) de los cerrados</span><span class="indicador__formula sube">−1,2 h</span></li><li class="indicador"><span class="indicador__valor">1,8 h</span><span class="indicador__nombre">Tiempo medio hasta asignar</span><span class="indicador__formula">Promedio (asignación − creación)</span><span class="indicador__formula sube">−0,4 h</span></li><li class="indicador"><span class="indicador__valor">41</span><span class="indicador__nombre">Backlog abierto</span><span class="indicador__formula">Incidentes no Resueltos ni Cerrados al final del período</span><span class="indicador__formula baja">+6</span></li><li class="indicador"><span class="indicador__valor">12,3 %</span><span class="indicador__nombre">Proporción de críticos</span><span class="indicador__formula">Críticos / total × 100</span><span class="indicador__formula sube">−0,8 pts</span></li>
+</ul>
+<section class="panel resumen-ia" aria-labelledby="ria">
+  <h2 id="ria">Resumen <span class="etiqueta-ia">Generado con IA</span></h2>
+  <p>En los últimos 12 meses se registraron 612 incidentes, un 8 % más que el período anterior. El cumplimiento del SLA subió a 87,4 %, pero sigue bajo la meta de 90 %: la mayor parte de los incumplimientos son de severidad Alta en Empresa Demo SpA. Se recomienda revisar la asignación de esos casos.</p>
+</section>
+<div class="graficos">
+<section class="panel grafico" aria-labelledby="g1">
+  <h2 id="g1">Incidentes por mes</h2>
+  <p class="campo__ayuda" id="g1d">Crecen de 38 en noviembre a 62 en octubre: un 63 % más en 12 meses.</p>
+  <svg viewBox="0 0 600 220" role="img" aria-labelledby="g1 g1d"><rect x="20" y="91.2" width="36" height="98.8" rx="4" fill="#2563eb"/><text x="38.0" y="85.2" font-size="12" text-anchor="middle" fill="#0f172a">38</text><text x="38.0" y="210" font-size="12" text-anchor="middle" fill="#475569">nov</text><rect x="68" y="80.8" width="36" height="109.2" rx="4" fill="#2563eb"/><text x="86.0" y="74.8" font-size="12" text-anchor="middle" fill="#0f172a">42</text><text x="86.0" y="210" font-size="12" text-anchor="middle" fill="#475569">dic</text><rect x="116" y="67.8" width="36" height="122.2" rx="4" fill="#2563eb"/><text x="134.0" y="61.8" font-size="12" text-anchor="middle" fill="#0f172a">47</text><text x="134.0" y="210" font-size="12" text-anchor="middle" fill="#475569">ene</text><rect x="164" y="73.0" width="36" height="117.0" rx="4" fill="#2563eb"/><text x="182.0" y="67.0" font-size="12" text-anchor="middle" fill="#0f172a">45</text><text x="182.0" y="210" font-size="12" text-anchor="middle" fill="#475569">feb</text><rect x="212" y="57.400000000000006" width="36" height="132.6" rx="4" fill="#2563eb"/><text x="230.0" y="51.400000000000006" font-size="12" text-anchor="middle" fill="#0f172a">51</text><text x="230.0" y="210" font-size="12" text-anchor="middle" fill="#475569">mar</text><rect x="260" y="47.0" width="36" height="143.0" rx="4" fill="#2563eb"/><text x="278.0" y="41.0" font-size="12" text-anchor="middle" fill="#0f172a">55</text><text x="278.0" y="210" font-size="12" text-anchor="middle" fill="#475569">abr</text><rect x="308" y="62.599999999999994" width="36" height="127.4" rx="4" fill="#2563eb"/><text x="326.0" y="56.599999999999994" font-size="12" text-anchor="middle" fill="#0f172a">49</text><text x="326.0" y="210" font-size="12" text-anchor="middle" fill="#475569">may</text><rect x="356" y="52.19999999999999" width="36" height="137.8" rx="4" fill="#2563eb"/><text x="374.0" y="46.19999999999999" font-size="12" text-anchor="middle" fill="#0f172a">53</text><text x="374.0" y="210" font-size="12" text-anchor="middle" fill="#475569">jun</text><rect x="404" y="39.19999999999999" width="36" height="150.8" rx="4" fill="#2563eb"/><text x="422.0" y="33.19999999999999" font-size="12" text-anchor="middle" fill="#0f172a">58</text><text x="422.0" y="210" font-size="12" text-anchor="middle" fill="#475569">jul</text><rect x="452" y="54.79999999999998" width="36" height="135.20000000000002" rx="4" fill="#2563eb"/><text x="470.0" y="48.79999999999998" font-size="12" text-anchor="middle" fill="#0f172a">52</text><text x="470.0" y="210" font-size="12" text-anchor="middle" fill="#475569">ago</text><rect x="500" y="34.0" width="36" height="156.0" rx="4" fill="#2563eb"/><text x="518.0" y="28.0" font-size="12" text-anchor="middle" fill="#0f172a">60</text><text x="518.0" y="210" font-size="12" text-anchor="middle" fill="#475569">sep</text><rect x="548" y="28.799999999999983" width="36" height="161.20000000000002" rx="4" fill="#2563eb"/><text x="566.0" y="22.799999999999983" font-size="12" text-anchor="middle" fill="#0f172a">62</text><text x="566.0" y="210" font-size="12" text-anchor="middle" fill="#475569">oct</text><line x1="10" y1="190" x2="590" y2="190" stroke="#cbd5e1"/></svg>
+  <details><summary>Ver los datos en tabla</summary><table class="tabla"><thead><tr><th scope="col">Mes</th><th scope="col">Incidentes</th></tr></thead><tbody><tr><th scope="row">nov</th><td>38</td></tr><tr><th scope="row">dic</th><td>42</td></tr><tr><th scope="row">ene</th><td>47</td></tr><tr><th scope="row">feb</th><td>45</td></tr><tr><th scope="row">mar</th><td>51</td></tr><tr><th scope="row">abr</th><td>55</td></tr><tr><th scope="row">may</th><td>49</td></tr><tr><th scope="row">jun</th><td>53</td></tr><tr><th scope="row">jul</th><td>58</td></tr><tr><th scope="row">ago</th><td>52</td></tr><tr><th scope="row">sep</th><td>60</td></tr><tr><th scope="row">oct</th><td>62</td></tr></tbody></table></details>
+</section>
+<section class="panel grafico" aria-labelledby="g2">
+  <h2 id="g2">Cumplimiento del SLA por mes</h2>
+  <p class="campo__ayuda" id="g2d">Sube de 81 % a 91 %; la meta es 90 % (línea punteada).</p>
+  <svg viewBox="0 0 600 220" role="img" aria-labelledby="g2 g2d">
+    <line x1="20" y1="60" x2="590" y2="60" stroke="#b91c1c" stroke-dasharray="6 4"/><text x="590" y="52" font-size="12" text-anchor="end" fill="#b91c1c">Meta 90 %</text>
+    <polyline points="30,123 80,109 130,130 180,102 230,88 280,95 330,74 380,81 430,67 480,74 530,60 580,53" fill="none" stroke="#166534" stroke-width="3"/>
+    <circle cx="30" cy="123" r="4" fill="#166534"/><circle cx="80" cy="109" r="4" fill="#166534"/><circle cx="130" cy="130" r="4" fill="#166534"/><circle cx="180" cy="102" r="4" fill="#166534"/><circle cx="230" cy="88" r="4" fill="#166534"/><circle cx="280" cy="95" r="4" fill="#166534"/><circle cx="330" cy="74" r="4" fill="#166534"/><circle cx="380" cy="81" r="4" fill="#166534"/><circle cx="430" cy="67" r="4" fill="#166534"/><circle cx="480" cy="74" r="4" fill="#166534"/><circle cx="530" cy="60" r="4" fill="#166534"/><circle cx="580" cy="53" r="4" fill="#166534"/>
+  </svg>
+  <details><summary>Ver los datos en tabla</summary></details>
+</section>
+<section class="panel grafico" aria-labelledby="g3">
+  <h2 id="g3">Incidentes por categoría</h2>
+  <p class="campo__ayuda">Phishing concentra el 30 % del total.</p>
+  <div role="img" aria-label="Incidentes por categoría: Phishing 182, Malware 141, Acceso no aut. 117, Denegación 74, Fuga de datos 52, Otro 46"><div class="barra-h"><span>Phishing</span><span style="width:100%"></span><span>182</span></div><div class="barra-h"><span>Malware</span><span style="width:77%"></span><span>141</span></div><div class="barra-h"><span>Acceso no aut.</span><span style="width:64%"></span><span>117</span></div><div class="barra-h"><span>Denegación</span><span style="width:41%"></span><span>74</span></div><div class="barra-h"><span>Fuga de datos</span><span style="width:29%"></span><span>52</span></div><div class="barra-h"><span>Otro</span><span style="width:25%"></span><span>46</span></div></div>
+  <details><summary>Ver los datos en tabla</summary></details>
+</section>
+<section class="panel grafico" aria-labelledby="g4">
+  <h2 id="g4">Carga por analista (abiertos)</h2>
+  <p class="campo__ayuda">La carga está desbalanceada: el primero tiene el doble que el último.</p>
+  <div role="img" aria-label="Carga por analista (abiertos): Analista Demo 14, Analista 2 11, Analista 3 9, Analista 4 7"><div class="barra-h"><span>Analista Demo</span><span style="width:100%"></span><span>14</span></div><div class="barra-h"><span>Analista 2</span><span style="width:79%"></span><span>11</span></div><div class="barra-h"><span>Analista 3</span><span style="width:64%"></span><span>9</span></div><div class="barra-h"><span>Analista 4</span><span style="width:50%"></span><span>7</span></div></div>
+  <details><summary>Ver los datos en tabla</summary></details>
+</section>
+</div>
+    </main>
+  </div>
+</div>
+</body>
+</html>

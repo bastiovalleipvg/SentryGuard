@@ -149,6 +149,21 @@ y luego completó:
 | Estilo | Nueva paleta con contrastes documentados en `global.css`, botones secundarios sobrios, «Eliminar» en rojo suave (rojo sólido solo en el diálogo que confirma), insignias con barras de severidad o punto de estado además del texto, tablas con encabezados compactos, estados vacíos con ícono. | Las reglas generales de `.boton` pisaban las del botón de menú y de cierre de sesión (especificidad); la barra lateral no cubría todo el alto en páginas largas. Se corrigieron tras revisar las capturas. |
 | Verificación | 32/32 pruebas de componentes y 5/5 E2E sin cambios en los selectores; axe sin violaciones en las 15 vistas; capturas regeneradas. | Sin correcciones. |
 
+### 3.9 Evaluación 3, Hito 1: propuesta y diseño (Claude Code, Opus 5.5)
+
+**Prompts:**
+> Vamos a preparar la Evaluación 3 de Lenguaje de Programación Web II con este proyecto. El enunciado está en […]\Evaluacion3_LPWII.docx: léelo completo […] Primera tarea (solo análisis, sin cambios de código): compara el proyecto con la rúbrica y dame una tabla de brechas […], un plan por hito con riesgos, y las decisiones que debo tomar con tu recomendación. […] Lo que no puedas verificar márcalo como [NO VERIFICADO]. No hagas nada más hasta que apruebe el plan.
+
+> este es el proyecto de la ev2 de bastian, en cual consideras que es mejor hacer la ev3?
+
+> Vamos entonces con el mío […] Sugiero que hagamos hasta el hito 1 (toda la documentacion, se entrega mañana) y luego incorporamos todo lo que hizo Bastian y lo del hito 2 […] deja un archivo .md aparte […] sobre como integrar todo lo bueno y que nos conviene del proyecto de Bastian.
+
+| Área | Resultado | Correcciones o decisiones del equipo |
+|---|---|---|
+| Análisis | Tabla de brechas contra la rúbrica, plan por hito y 12 decisiones con recomendación. Se detectó una clave JWT antigua en el historial (rotada: se comprobó comparando hashes sin mostrarla) | El estudiante pidió solo análisis antes de cualquier cambio |
+| Elección de la base | Comparación de SentryGuard con SentryGuard-2 (fork de Bastián): se eligió SentryGuard y se documentó qué traer del fork. Al revisarlo aparecieron dos fallas de seguridad en SentryGuard (refresh token en texto plano, usuario desactivado con acceso hasta que vence el JWT) que el fork ya tenía resueltas | La decisión final fue del estudiante |
+| Documentación del Hito 1 | `docs/evaluacion3/`: dominio, requerimientos e historias de usuario, arquitectura, ADR, modelo de datos, contrato OpenAPI, maquetas y guía de estilos, plan de trabajo, plan de integración | El diagrama ER y el diccionario se generaron con un script desde el *snapshot* de EF Core, para que coincidan con el esquema real; el primer intento duplicaba columnas y omitía las FK sin navegación, y se corrigió. El contrato nuevo se validó con Redocly CLI. Los contrastes de la guía se recalcularon. Las maquetas nuevas usan el CSS real de la aplicación y se verificaron sin desplazamiento horizontal |
+
 ## 4. Qué debe poder explicar el estudiante
 
 Aunque la IA escribió la mayor parte del código, la pauta exige entenderlo y poder modificarlo.

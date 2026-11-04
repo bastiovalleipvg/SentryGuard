@@ -1,0 +1,39 @@
+flowchart LR
+    subgraph Navegador["Navegador (SPA React)"]
+        UI["Páginas por feature<br/>incidentes · activos · organizaciones<br/>usuarios · catálogos · auditoría<br/>dashboard · reportes"]
+        Q["TanStack Query<br/>(caché del servidor)"]
+        AUTH["AuthContext + tokenStorage<br/>(JWT en sessionStorage)"]
+        HTTP["apiRequest<br/>(cliente HTTP único + Zod)"]
+        UI --> Q --> HTTP
+        UI --> AUTH
+        AUTH --> HTTP
+    end
+
+    subgraph API["API ASP.NET Core /api/v1"]
+        MW["Middleware<br/>errores · cabeceras · auditoría<br/>CORS · JWT · rate limiting"]
+        EP["Endpoints (Minimal APIs)<br/>Incidente · Activo · Organización<br/>Usuario · Catálogo · Auditoría<br/>Dashboard · Reporte · IA"]
+        subgraph SVC["Servicios de negocio"]
+            S1["IIncidenteService<br/>(flujo de estados, SLA)"]
+            S2["IDashboardService<br/>(indicadores)"]
+            S3["IReporteService<br/>+ IExportador (xlsx/pdf/csv)"]
+            S4["IAsistenteIA<br/>(clasificar, resumir)"]
+            S5["AuthService<br/>(JWT, hash, acceso)"]
+        end
+        subgraph DATOS["Acceso a datos"]
+            R["Repositorios"]
+            DB["SentryGuardDbContext<br/>+ interceptor de auditoría"]
+        end
+        MW --> EP --> SVC
+        S1 --> R
+        S2 --> DB
+        S3 --> DB
+        S5 --> R
+        R --> DB
+    end
+
+    SQL[("SQL Server 2022<br/>tablas + vistas")]
+    IA["Servicio de IA externo<br/>(API de Anthropic)"]
+
+    HTTP -- "HTTPS + Bearer JWT" --> MW
+    DB --> SQL
+    S4 -- "HTTPS, timeout 15 s" --> IA

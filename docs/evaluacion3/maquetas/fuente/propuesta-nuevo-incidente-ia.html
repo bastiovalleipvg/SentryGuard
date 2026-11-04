@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Maqueta: Nuevo incidente con IA · SentryGuard</title>
+<link rel="stylesheet" href="../../../../sentryguard-web/src/styles/global.css">
+
+<style>
+  .maqueta-nota { margin: 0 0 1rem; padding: .5rem .75rem; font-size: .8125rem; color: #7c2d12; background: #ffedd5; border-radius: .5rem; }
+  .indicadores { display: grid; gap: .75rem; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 0 1.25rem; padding: 0; list-style: none; }
+  @media (min-width: 64rem) { .indicadores { grid-template-columns: repeat(3, minmax(0, 1fr)); } .graficos { grid-template-columns: 1fr 1fr; } }
+  .indicador { padding: 1rem; background: #fff; border: 1px solid var(--borde); border-radius: .75rem; box-shadow: var(--sombra); }
+  .indicador__valor { display: block; font-size: 1.75rem; font-weight: 750; letter-spacing: -.02em; }
+  .indicador__nombre { font-size: .875rem; font-weight: 600; color: var(--texto-suave); }
+  .indicador__formula { display: block; margin-top: .35rem; font-size: .75rem; color: var(--texto-suave); }
+  .sube { color: #166534; } .baja { color: #b91c1c; }
+  .graficos { display: grid; gap: 1.25rem; }
+  .grafico svg { width: 100%; height: auto; }
+  .grafico details { margin-top: .5rem; font-size: .875rem; }
+  .barra-h { display: grid; grid-template-columns: 7rem 1fr 2.5rem; gap: .5rem; align-items: center; font-size: .875rem; margin-bottom: .4rem; }
+  .barra-h span:nth-child(2) { height: .75rem; background: var(--primario); border-radius: 999px; }
+  .resumen-ia { border-left: 4px solid #7c3aed; }
+  .etiqueta-ia { display: inline-flex; gap: .35rem; align-items: center; padding: .15rem .6rem; font-size: .75rem; font-weight: 700; color: #5b21b6; background: #ede9fe; border-radius: 999px; }
+  .sugerencia { padding: 1rem; background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: .75rem; }
+  .sugerencia dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem 1rem; margin: .75rem 0; }
+  .exportar { display: flex; flex-wrap: wrap; gap: .5rem; }
+</style>
+
+</head>
+<body>
+<div class="app">
+  <header class="cabecera">
+    <div class="cabecera__barra">
+      <a href="#" class="marca"><svg class="marca__logo" viewBox="0 0 32 32" aria-hidden="true"><path fill="currentColor" d="M16 2 4 6.5v8.2c0 7.3 5.1 13.6 12 15.3 6.9-1.7 12-8 12-15.3V6.5L16 2z"/><path fill="#fff" d="m14.2 20.6-4.6-4.6 1.9-1.9 2.7 2.7 6.3-6.3 1.9 1.9z"/></svg><span>SentryGuard</span></a>
+      <button type="button" class="boton boton--menu" aria-expanded="false">Menú</button>
+    </div>
+    <div class="cabecera__menu">
+      <nav aria-label="Principal" class="nav"><ul class="nav__lista"><li><a class="nav__enlace" href="#" aria-current="page">Incidentes</a></li><li><a class="nav__enlace" href="#">Reportes</a></li><li><a class="nav__enlace" href="#">Activos</a></li></ul></nav>
+      <div class="sesion">
+        <span class="sesion__avatar" aria-hidden="true">CD</span>
+        <p class="sesion__usuario"><span class="sesion__nombre">Cliente Demo</span><span class="sesion__rol">Rol: Cliente</span></p>
+        <button type="button" class="boton boton--sesion">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+  <div class="area">
+    <main id="contenido" class="contenedor principal">
+      <p class="maqueta-nota">Maqueta de diseño (Hito 1). Datos ficticios de ejemplo.</p>
+      
+<p class="miga"><a href="#">Volver al listado</a></p>
+<h1 class="titulo-pagina">Nuevo incidente</h1>
+<form class="formulario">
+  <div class="campo"><label class="campo__etiqueta" for="t">Título <span class="campo__obligatorio">(obligatorio)</span></label><input id="t" value="Correo sospechoso pide clave del banco"></div>
+  <div class="campo"><label class="campo__etiqueta" for="d">Descripción <span class="campo__obligatorio">(obligatorio)</span></label>
+  <textarea id="d" rows="4">Tres usuarios de contabilidad recibieron un correo que imita al banco y pide ingresar la clave en un enlace externo. Uno hizo clic.</textarea></div>
+  <div><button class="boton boton--secundario" type="button">Sugerir severidad y categoría con IA</button></div>
+  <section class="sugerencia" aria-labelledby="sug" aria-live="polite">
+    <h2 id="sug" class="campo__etiqueta">Sugerencia <span class="etiqueta-ia">Generado con IA</span></h2>
+    <dl><div><dt>Severidad</dt><dd>Alta</dd></div><div><dt>Categoría</dt><dd>Phishing</dd></div></dl>
+    <p class="campo__ayuda">Suplanta a una entidad financiera para robar credenciales y al menos un usuario interactuó con el enlace.</p>
+    <div class="acciones"><button class="boton boton--primario" type="button">Usar la sugerencia</button><button class="boton boton--secundario" type="button">Descartar</button></div>
+  </section>
+  <div class="campo"><label class="campo__etiqueta" for="a">Activo afectado <span class="campo__obligatorio">(obligatorio)</span></label><select id="a"><option>Servidor de correo</option></select></div>
+  <div class="campo"><label class="campo__etiqueta" for="s">Severidad <span class="campo__obligatorio">(obligatorio)</span></label><select id="s"><option>Selecciona la severidad</option></select></div>
+  <div class="campo"><label class="campo__etiqueta" for="c">Categoría <span class="campo__obligatorio">(obligatorio)</span></label><select id="c"><option>Selecciona la categoría</option></select></div>
+  <div class="acciones"><button class="boton boton--secundario" type="button">Cancelar</button><button class="boton boton--primario" type="button">Registrar incidente</button></div>
+</form>
+    </main>
+  </div>
+</div>
+</body>
+</html>
