@@ -81,8 +81,9 @@ Cada decisión indica su contexto, la opción elegida, las alternativas descarta
 - **Consecuencias:** Requiere una migración y un índice por (`entidad`, `entidad_id`). Las exportaciones se registran con `operacion = EXPORTAR`.
 
 ## ADR-011 · Limpieza de una clave antigua del historial de git
-- **Estado:** Propuesta (antes del Hito 2).
-- **Contexto:** El commit `14d8e52` (Trabajo 1) contiene una clave JWT de desarrollo en `appsettings.json`. Ya se rotó: la clave actual es distinta, como se comprobó comparando hashes. La pauta dice que una credencial expuesta en el historial deja el criterio en Insuficiente.
-- **Decisión:** Reescribir el historial con `git filter-repo` para reemplazar esa clave, respaldar el repositorio antes y hacer un *force-push* coordinado con todo el equipo.
+- **Estado:** Aceptada (aplicada el 4 de noviembre de 2026).
+- **Contexto:** Un commit del Trabajo 1 (hoy `273f167`, «feat: endpoints CRUD, autenticacion y configuracion de la app») contenía una clave JWT de desarrollo en `appsettings.json`, hasta que se vació en `93e86aa`. Ya estaba rotada: la clave actual es distinta, como se comprobó comparando hashes. La pauta dice que una credencial expuesta en el historial deja el criterio en Insuficiente.
+- **Decisión:** Reescribir el historial con `git filter-repo --replace-text`, reemplazando la clave por un valor vacío en los 10 commits donde aparecía. Antes se respaldó el repositorio en un *bundle* de git y después se hizo un *force-push* coordinado con todo el equipo.
+- **Verificación:** ningún commit contiene la clave (`git log --all -S`), y el contenido del último commit es idéntico al anterior a la limpieza.
 - **Alternativa descartada:** Solo documentar que se rotó. Es menos riesgoso, pero queda a criterio del docente.
-- **Consecuencias:** Cambian los hashes de todos los commits, así que cada integrante debe volver a clonar el repositorio. Las referencias a commits en los documentos del Trabajo 2 dejarán de coincidir, y se actualizan.
+- **Consecuencias:** Cambiaron los hashes de todos los commits, así que cada integrante debe volver a clonar el repositorio. Las referencias a commits en `docs/CAMBIOS_API_TRABAJO1.md` se actualizaron. Es posible que GitHub conserve por un tiempo los commits antiguos sin referencia; como la clave ya estaba rotada, no da acceso a nada.

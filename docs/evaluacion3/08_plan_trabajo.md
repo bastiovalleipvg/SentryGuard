@@ -19,7 +19,7 @@ Las fechas son estimadas: la pauta indica semanas, no fechas, y el Hito 1 se ent
 | Hito | Semana (aprox.) | Entregables | Responsable principal |
 |---|---|---|---|
 | **1. Propuesta y diseño** | Sem. 11 (5 nov.) | Todo `docs/evaluacion3/`: dominio, requerimientos e historias de usuario, arquitectura, ADR, modelo ER y diccionario, contrato OpenAPI, maquetas y guía de estilos, este plan | Adriel |
-| **2. Datos y backend** | Sem. 12 (12 nov.) | Integración de SentryGuard-2; formato de error único; capa de servicios con pruebas unitarias; migraciones (categoría de incidente, transiciones, auditoría por entidad, CHECK y vistas); orden en las APIs; datos sintéticos (500 incidentes o más en 12 meses); respaldo y restauración probados; limpieza del historial | Bastián |
+| **2. Datos y backend** | Sem. 12 (12 nov.) | Integración de SentryGuard-2; formato de error único; capa de servicios con pruebas unitarias; migraciones (categoría de incidente, transiciones, auditoría por entidad, CHECK y vistas); orden en las APIs; datos sintéticos (500 incidentes o más en 12 meses); respaldo y restauración probados | Bastián |
 | **3. Front, contenedores e IA** | Sem. 13 (19 nov.) | Orden y validación inmediata en la interfaz; transiciones válidas en la interfaz; Dockerfiles, `compose.yaml` y `.env.example`; GitHub Actions; endpoints y pantallas de IA con pruebas simuladas; `/health` | Integrante 3 y Adriel |
 | **4. Análisis, reportes y despliegue** | Sem. 14 (26 nov.) | Endpoints y pantalla de dashboard; 3 reportes con exportación a Excel, PDF y CSV e impresión; 6 indicadores o más interpretados; plan de despliegue con los 10 apartados y una reversión probada; NVDA; capturas de 360 a 1440 px; ensayo cronometrado | Adriel y Bastián |
 | **5. Entrega y defensa** | Sem. 15 (3 dic.) | Informe técnico en PDF (11 secciones), informe de integración, manual de usuario por rol, presentación, archivos de ejemplo exportados | Todos |
@@ -83,7 +83,7 @@ Las variables van en `.env` (excluido del repositorio); se entrega `.env.example
 |---|---|---|---|
 | Menos de 3 integrantes | Media | Alto | Confirmarlo con el docente en el Hito 1; plan B de reparto (8.1) |
 | Aporte desigual en el historial de commits | Media | Alto | Áreas con dueño; cada uno commitea lo suyo; revisión cruzada en los *pull requests* |
-| La clave antigua en el historial de git | Alta (ya existe) | Alto | Reescribir el historial antes del Hito 2 (ADR-011) |
+| La clave antigua en el historial de git | Resuelto | Alto | Historial reescrito el 4 de noviembre de 2026 (ADR-011) |
 | El refactor a servicios rompe funciones existentes | Media | Medio | Refactor por módulo, protegido por las 24 pruebas de integración y las 33 de componentes |
 | SQL Server en contenedor (RAM, ARM) | Media | Medio | Documentar el requisito de unos 2 GB de RAM; ensayar la demostración en el equipo que se usará |
 | Costo o caída del servicio de IA | Baja | Medio | Adaptador con *timeout* y servicio simulado; la aplicación funciona sin la IA; límite de tasa por usuario |

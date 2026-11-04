@@ -74,7 +74,7 @@ Un `git merge` produciría conflictos en casi todos los archivos. En lugar de es
 
 ## Procedimiento sugerido
 
-1. **Antes de nada**, limpiar la clave antigua del historial de SentryGuard (ADR-011), para no portar trabajo nuevo sobre un historial que luego se reescribe.
+1. ~~Limpiar la clave antigua del historial de SentryGuard~~: hecho el 4 de noviembre de 2026 (ADR-011). Antes de portar nada, cada integrante vuelve a clonar el repositorio.
 2. Clonar los dos repositorios uno al lado del otro y crear una rama por bloque: `feat/seguridad-desde-sg2`, `feat/problem-details`, `feat/dashboard-base` y así.
 3. Por cada pieza, copiarla, adaptar los nombres y las rutas, y ejecutar **todas** las pruebas: `dotnet test SentryGuard.slnx`, `npm test` y `npm run test:e2e`.
 4. Abrir un *pull request* por bloque, que revisa Adriel, y fusionarlo con el CI en verde, cuando exista.
