@@ -38,21 +38,25 @@ namespace SentryGuard.Middleware
 
         private static Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
-            var (status, codigo, mensaje) = exception switch
+            var (status, title, codigo, mensaje) = exception switch
             {
                 // JSON mal formado, tipos incorrectos o parametros de ruta invalidos.
-                BadHttpRequestException bad => (bad.StatusCode, "SOLICITUD_INVALIDA", "La solicitud no tiene un formato válido."),
-                UnauthorizedAccessException => (StatusCodes.Status403Forbidden, "ACCESO_DENEGADO", "No tienes permisos para realizar esta acción."),
-                KeyNotFoundException => (StatusCodes.Status404NotFound, "RECURSO_NO_ENCONTRADO", "El recurso solicitado no existe."),
-                _ => (StatusCodes.Status500InternalServerError, "ERROR_INTERNO", "Ocurrió un error inesperado. Si persiste, contacta a soporte indicando el traceId.")
+                BadHttpRequestException bad => (bad.StatusCode, "Solicitud inválida", "SOLICITUD_INVALIDA", "La solicitud no tiene un formato válido."),
+                UnauthorizedAccessException => (StatusCodes.Status403Forbidden, "Acceso denegado", "ACCESO_DENEGADO", "No tienes permisos para realizar esta acción."),
+                KeyNotFoundException => (StatusCodes.Status404NotFound, "Recurso no encontrado", "RECURSO_NO_ENCONTRADO", "El recurso solicitado no existe."),
+                _ => (StatusCodes.Status500InternalServerError, "Error interno del servidor", "ERROR_INTERNO", "Ocurrió un error inesperado. Si persiste, contacta a soporte indicando el traceId.")
             };
 
             context.Response.Clear();
             context.Response.StatusCode = status;
-            context.Response.ContentType = "application/json";
+            context.Response.ContentType = "application/problem+json";
 
             var response = new ErrorResponse
             {
+                Type = $"https://sentryguard.local/errores/{codigo.ToLowerInvariant().Replace('_', '-')}",
+                Title = title,
+                Status = status,
+                Detail = mensaje,
                 Codigo = codigo,
                 Mensaje = mensaje,
                 TraceId = context.TraceIdentifier
@@ -64,6 +68,10 @@ namespace SentryGuard.Middleware
 
         public class ErrorResponse
         {
+            public string Type { get; set; } = string.Empty;
+            public string Title { get; set; } = string.Empty;
+            public int Status { get; set; }
+            public string Detail { get; set; } = string.Empty;
             public string Codigo { get; set; } = "ERROR";
             public string Mensaje { get; set; } = "Ocurrió un error";
             public string? TraceId { get; set; }

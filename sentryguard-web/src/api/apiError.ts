@@ -44,9 +44,12 @@ export class ApiError extends Error {
     const fieldErrors = extraerErroresDeCampo(cuerpo)
     const retryAfter = Number(response.headers.get('Retry-After'))
 
-    // Solo se usa el mensaje de la API cuando viene en el formato propio ({ codigo, mensaje }),
-    // que el backend redacta para el usuario final. Cualquier otro texto se descarta.
-    const mensajeApi = typeof cuerpo?.mensaje === 'string' ? cuerpo.mensaje : null
+    // Lee 'detail' (estándar RFC 9457 ProblemDetails) o 'mensaje' (formato propio/compatibilidad)
+    const mensajeApi = typeof cuerpo?.detail === 'string'
+      ? cuerpo.detail
+      : typeof cuerpo?.mensaje === 'string'
+        ? cuerpo.mensaje
+        : null
     const codigo = typeof cuerpo?.codigo === 'string' ? cuerpo.codigo : `HTTP_${status}`
     const mensaje = mensajeApi ?? MENSAJES_POR_ESTADO[status] ?? MENSAJES_POR_ESTADO[status >= 500 ? 500 : 400]
 

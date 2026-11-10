@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using SentryGuard.Common;
 
 namespace SentryGuard.Endpoints
 {
@@ -66,9 +67,9 @@ namespace SentryGuard.Endpoints
             return partes[1] == esperado;
         }
 
-        /// <summary>Respuesta 409 con el formato de error propio ({ codigo, mensaje }) que el frontend muestra tal cual.</summary>
+        /// <summary>Respuesta 409 con el formato estándar ProblemDetails RFC 9457.</summary>
         public static IResult Conflicto(string codigo, string mensaje) =>
-            Results.Json(new { codigo, mensaje }, statusCode: StatusCodes.Status409Conflict);
+            ApiResults.Conflicto(mensaje, codigo);
 
         [GeneratedRegex(@"^[^@\s]+@[^@\s]+\.[^@\s]+$")]
         private static partial Regex EmailRegex();
