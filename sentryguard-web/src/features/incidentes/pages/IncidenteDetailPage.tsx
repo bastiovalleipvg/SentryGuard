@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { isApiError } from '../../../api/apiError'
 import type { Incidente } from '../../../api/contracts'
@@ -20,6 +20,7 @@ import { BitacoraPanel } from '../components/BitacoraPanel'
 import { EvidenciasPanel } from '../components/EvidenciasPanel'
 import { SlaPanel } from '../components/SlaPanel'
 import { useAsignarAnalista, useCambiarEstado, useEliminarIncidente, useIncidente } from '../queries'
+import { obtenerEstadosDestinoPermitidos } from '../transiciones'
 
 export function IncidenteDetailPage() {
   const id = Number(useParams().id)
@@ -148,25 +149,58 @@ function CambiarEstadoForm({ incidente }: { incidente: Incidente }) {
   const estados = useEstados()
   const cambiar = useCambiarEstado(incidente.id)
   const { notificar } = useNotifications()
-  const [estadoId, setEstadoId] = useState(String(incidente.estadoId))
+
+  // Estados a los que está permitido transicionar según el flujo de estados (ADR-008)
+  const destinosPermitidos = useMemo(
+    () => obtenerEstadosDestinoPermitidos(incidente.estadoId, estados.data ?? []),
+    [incidente.estadoId, estados.data],
+  )
+
+  const [estadoId, setEstadoId] = useState(
+    destinosPermitidos.length > 0 ? String(destinosPermitidos[0].id) : '',
+  )
+
+  useEffect(() => {
+    if (destinosPermitidos.length > 0 && (!estadoId || !destinosPermitidos.some((d) => String(d.id) === estadoId))) {
+      setEstadoId(String(destinosPermitidos[0].id))
+    }
+  }, [destinosPermitidos, estadoId])
 
   const enviar = (evento: FormEvent) => {
     evento.preventDefault()
+    if (!estadoId) return
     cambiar.mutate(Number(estadoId), {
       onSuccess: () => notificar('Estado actualizado.'),
       onError: (error) => notificar(mensajeDeError(error), 'error'),
     })
   }
 
+  if (destinosPermitidos.length === 0) {
+    return (
+      <p className="campo__ayuda">
+        El incidente se encuentra en estado <strong>{incidente.estado}</strong> y no admite transiciones adicionales.
+      </p>
+    )
+  }
+
   return (
     <form className="formulario-linea" onSubmit={enviar}>
       <div className="campo">
         <label htmlFor="nuevo-estado" className="campo__etiqueta">Estado</label>
-        <select id="nuevo-estado" value={estadoId} onChange={(e) => setEstadoId(e.target.value)} disabled={estados.isPending}>
-          {estados.data?.map((e) => <option key={e.id} value={String(e.id)}>{e.nombre}</option>)}
+        <select
+          id="nuevo-estado"
+          value={estadoId}
+          onChange={(e) => setEstadoId(e.target.value)}
+          disabled={estados.isPending || cambiar.isPending}
+        >
+          {destinosPermitidos.map((e) => (
+            <option key={e.id} value={String(e.id)}>
+              {e.nombre}
+            </option>
+          ))}
         </select>
       </div>
-      <button type="submit" className="boton boton--primario" disabled={cambiar.isPending || estadoId === String(incidente.estadoId)}>
+      <button type="submit" className="boton boton--primario" disabled={cambiar.isPending || !estadoId}>
         {cambiar.isPending ? 'Guardando…' : 'Cambiar estado'}
       </button>
     </form>

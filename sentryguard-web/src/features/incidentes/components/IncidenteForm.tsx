@@ -2,9 +2,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router'
-import { isApiError } from '../../../api/apiError'
 import { FormField } from '../../../components/FormField'
-import { mensajeDeError } from '../../../components/ErrorState'
+import { aplicarErroresApi, ResumenErrores } from '../../../components/ResumenErrores'
 import { useActivos } from '../../activos/activosService'
 import { useSeveridades } from '../../catalogos/catalogosService'
 import { LIMITES, incidenteFormSchema, type IncidenteFormValues, type ModoFormulario } from '../schema'
@@ -17,7 +16,7 @@ interface Props {
   onEnviar: (valores: IncidenteFormValues) => Promise<void>
 }
 
-const CAMPOS: (keyof IncidenteFormValues)[] = ['titulo', 'descripcion', 'severidadId', 'activoId']
+const CAMPOS = ['titulo', 'descripcion', 'severidadId', 'activoId'] as const
 
 export function IncidenteForm({ modo, valoresIniciales, textoEnviar, urlCancelar, onEnviar }: Props) {
   const schema = useMemo(() => incidenteFormSchema(modo), [modo])
@@ -40,35 +39,13 @@ export function IncidenteForm({ modo, valoresIniciales, textoEnviar, urlCancelar
     try {
       await onEnviar(valores)
     } catch (error) {
-      // Errores de validacion de la API (400): se muestran junto a cada campo afectado.
-      if (isApiError(error) && Object.keys(error.fieldErrors).length > 0) {
-        let primero = true
-        for (const [campo, mensaje] of Object.entries(error.fieldErrors)) {
-          if ((CAMPOS as string[]).includes(campo)) {
-            setError(campo as keyof IncidenteFormValues, { type: 'server', message: mensaje }, { shouldFocus: primero })
-            primero = false
-          }
-        }
-        setErrorGeneral('El servidor rechazó algunos datos. Revisa los campos marcados.')
-        return
-      }
-      setErrorGeneral(mensajeDeError(error))
+      setErrorGeneral(aplicarErroresApi(error, setError, CAMPOS))
     }
   })
 
-  const cantidadErrores = Object.keys(errors).length
-
   return (
     <form className="formulario" onSubmit={enviar} noValidate>
-      <div role="alert" className="resumen-errores-contenedor">
-        {(errorGeneral || (submitCount > 0 && cantidadErrores > 0)) && (
-          <div className="resumen-errores">
-            <p>
-              {errorGeneral ?? `Revisa ${cantidadErrores === 1 ? 'el campo marcado' : `los ${cantidadErrores} campos marcados`} antes de continuar.`}
-            </p>
-          </div>
-        )}
-      </div>
+      <ResumenErrores errorGeneral={errorGeneral} cantidadErrores={Object.keys(errors).length} enviado={submitCount > 0} />
 
       <FormField label="Título" obligatorio error={errors.titulo?.message} ayuda={`Entre ${LIMITES.tituloMin} y ${LIMITES.tituloMax} caracteres.`}>
         <input type="text" autoComplete="off" maxLength={LIMITES.tituloMax} {...register('titulo')} />
