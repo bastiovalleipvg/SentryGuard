@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SentryGuard.Data;
@@ -109,16 +109,33 @@ namespace SentryGuard.Services
         }
 
         /// <summary>
-        /// Genera hash de refresh token criptográficamente seguro (OWASP API2).
+        /// Genera token de refresco en texto plano criptográficamente seguro (OWASP API2).
+        /// </summary>
+        public string GenerateRefreshToken()
+        {
+            var randomNumber = new byte[32];
+            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+            rng.GetBytes(randomNumber);
+            return Convert.ToBase64String(randomNumber);
+        }
+
+        /// <summary>
+        /// Calcula el hash SHA-256 del refresh token (OWASP API2).
+        /// En la base de datos solo se almacena este hash, nunca el token en texto plano.
+        /// </summary>
+        public string HashearRefreshToken(string token)
+        {
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(token));
+            return Convert.ToHexString(hashBytes).ToLowerInvariant();
+        }
+
+        /// <summary>
+        /// Genera hash de refresh token criptográficamente seguro (compatibilidad hacia atrás).
         /// </summary>
         public string GenerateRefreshTokenHash()
         {
-            var randomNumber = new byte[32];
-            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(randomNumber);
-                return Convert.ToBase64String(randomNumber);
-            }
+            return HashearRefreshToken(GenerateRefreshToken());
         }
 
         /// <summary>
@@ -168,7 +185,9 @@ namespace SentryGuard.Services
             if (!int.TryParse(usuarioId, out var id))
                 return null;
 
-            return await db.Usuarios.Include(u => u.Rol).FirstOrDefaultAsync(u => u.Id == id);
+            // Filtra u.Activo para que un usuario desactivado pierda el acceso de inmediato
+            // aun cuando su JWT siga temporalmente vigente (OWASP API2).
+            return await db.Usuarios.Include(u => u.Rol).FirstOrDefaultAsync(u => u.Id == id && u.Activo);
         }
     }
 }

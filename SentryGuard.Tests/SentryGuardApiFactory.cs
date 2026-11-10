@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SentryGuard.Data;
+using System.Security.Cryptography;
 
 namespace SentryGuard.Tests;
 
@@ -17,6 +18,9 @@ public class SentryGuardApiFactory : WebApplicationFactory<Program>, IAsyncLifet
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
+        // Mitigacion de credencial fija en tests: genera una clave JWT aleatoria y segura para cada suite
+        var jwtKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+        builder.UseSetting("Jwt:Key", jwtKey);
     }
 
     public async Task InitializeAsync()

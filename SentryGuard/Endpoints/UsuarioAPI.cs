@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using SentryGuard.Data;
 using SentryGuard.DTOs;
@@ -149,7 +149,16 @@ namespace SentryGuard.Endpoints
         // Mismo mensaje para email inexistente, contraseña incorrecta o cuenta bloqueada: un mensaje
         // distinto por caso permitiria enumerar cuentas validas (OWASP API2).
         private static IResult CredencialesInvalidas() => Results.Json(
-            new { codigo = "CREDENCIALES_INVALIDAS", mensaje = "Correo o contraseña incorrectos, o la cuenta está bloqueada temporalmente." },
+            new
+            {
+                type = "https://sentryguard.local/errores/credenciales-invalidas",
+                title = "Credenciales inválidas",
+                status = StatusCodes.Status401Unauthorized,
+                detail = "Correo o contraseña incorrectos, o la cuenta está bloqueada temporalmente.",
+                codigo = "CREDENCIALES_INVALIDAS",
+                mensaje = "Correo o contraseña incorrectos, o la cuenta está bloqueada temporalmente."
+            },
+            contentType: "application/problem+json",
             statusCode: StatusCodes.Status401Unauthorized);
 
         private static async Task<IResult> LoginUsuario(LoginRequest login, SentryGuardDbContext db, AuthService authService, IConfiguration configuration)
@@ -172,14 +181,22 @@ namespace SentryGuard.Endpoints
 
             var token = authService.GenerateJwtToken(usuario, usuario.Rol!);
 
-            var refreshTokenHash = authService.GenerateRefreshTokenHash();
-            var refreshToken = new RefreshToken { UsuarioId = usuario.Id, TokenHash = refreshTokenHash, FechaEmision = DateTime.UtcNow, FechaExpira = DateTime.UtcNow.AddDays(7) };
+            // En la base de datos solo se guarda el hash SHA-256; al cliente se le entrega el token en claro (OWASP API2).
+            var rawRefreshToken = authService.GenerateRefreshToken();
+            var refreshTokenHash = authService.HashearRefreshToken(rawRefreshToken);
+            var refreshToken = new RefreshToken
+            {
+                UsuarioId = usuario.Id,
+                TokenHash = refreshTokenHash,
+                FechaEmision = DateTime.UtcNow,
+                FechaExpira = DateTime.UtcNow.AddDays(7)
+            };
 
             await db.RefreshTokens.AddAsync(refreshToken);
             await db.SaveChangesAsync();
 
             var expiraEnSegundos = configuration.GetValue("Jwt:ExpireMinutes", 60) * 60;
-            return Results.Ok(new { token, refreshToken = refreshTokenHash, expiresIn = expiraEnSegundos });
+            return Results.Ok(new { token, refreshToken = rawRefreshToken, expiresIn = expiraEnSegundos });
         }
 
         private static async Task<IResult> ObtenerUsuarioActual(HttpContext httpContext, SentryGuardDbContext db)
@@ -189,8 +206,8 @@ namespace SentryGuard.Endpoints
                 return Results.Unauthorized();
 
             var usuario = await db.Usuarios.Include(u => u.Rol).FirstOrDefaultAsync(u => u.Id == id);
-            if (usuario == null)
-                return Results.NotFound();
+            if (usuario == null || !usuario.Activo)
+                return Results.Unauthorized();
 
             return Results.Ok(new { id = usuario.Id, nombre = usuario.Nombre, email = usuario.Email, rol = usuario.Rol?.Nombre, organizacionId = usuario.OrganizacionId, activo = usuario.Activo });
         }
@@ -226,13 +243,17 @@ namespace SentryGuard.Endpoints
             if (!int.TryParse(usuarioId, out var id))
                 return Results.Unauthorized();
 
-            var refreshToken = await db.RefreshTokens.FirstOrDefaultAsync(rt => rt.UsuarioId == id && rt.TokenHash == request.RefreshToken && !rt.Revocado);
+            if (string.IsNullOrWhiteSpace(request.RefreshToken))
+                return Results.Unauthorized();
+
+            var incomingHash = authService.HashearRefreshToken(request.RefreshToken);
+            var refreshToken = await db.RefreshTokens.FirstOrDefaultAsync(rt => rt.UsuarioId == id && rt.TokenHash == incomingHash && !rt.Revocado);
             if (refreshToken == null || refreshToken.FechaExpira < DateTime.UtcNow)
                 return Results.Unauthorized();
 
             var usuario = await db.Usuarios.Include(u => u.Rol).FirstOrDefaultAsync(u => u.Id == id);
-            if (usuario == null)
-                return Results.Problem("Error: Usuario no encontrado");
+            if (usuario == null || !usuario.Activo)
+                return Results.Unauthorized();
 
             var nuevoToken = authService.GenerateJwtToken(usuario, usuario.Rol!);
             return Results.Ok(new { token = nuevoToken });

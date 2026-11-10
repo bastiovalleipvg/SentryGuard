@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
 
 // Todas las clases de test recrean la misma BD SentryGuardDB_Test: deben correr en serie.
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
@@ -166,5 +167,75 @@ public class SeguridadApiTests : IClassFixture<SentryGuardApiFactory>
 
         Assert.Equal(1, json.GetProperty("total").GetInt32());
         Assert.StartsWith(marcador, json.GetProperty("items")[0].GetProperty("titulo").GetString());
+    }
+
+    [Fact]
+    public async Task Login_Exitoso_GuardaRefreshTokenHasheadoEnBD()
+    {
+        var client = _factory.CreateClient();
+        var response = await client.PostAsJsonAsync("/api/v1/usuarios/login", new
+        {
+            email = "admin@sentryguard.cl",
+            password = "Password123!"
+        });
+
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.True(json.TryGetProperty("token", out var tokenProp));
+        Assert.True(json.TryGetProperty("refreshToken", out var refreshProp));
+        var rawRefreshToken = refreshProp.GetString();
+        Assert.NotNull(rawRefreshToken);
+
+        // Verifica en la base de datos que el token_hash NO sea el texto plano, sino su hash SHA-256
+        using var scope = _factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<Microsoft.EntityFrameworkCore.DbContext>();
+        var authService = scope.ServiceProvider.GetRequiredService<SentryGuard.Services.AuthService>();
+
+        var expectedHash = authService.HashearRefreshToken(rawRefreshToken);
+        var guardado = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstOrDefaultAsync(
+            db.Set<SentryGuard.Models.RefreshToken>(),
+            rt => rt.TokenHash == expectedHash);
+
+        Assert.NotNull(guardado);
+        Assert.NotEqual(rawRefreshToken, guardado.TokenHash);
+        Assert.Equal(expectedHash, guardado.TokenHash);
+    }
+
+    [Fact]
+    public async Task UsuarioDesactivado_PierdeElAccesoDeInmediato_AunConTokenVigente()
+    {
+        // 1. Iniciar sesion con analista y obtener token vigente
+        var client = _factory.CreateClient();
+        var token = await client.LoginAsync("analista@sentryguard.cl");
+        client.UseBearerToken(token);
+
+        // 2. Verificar que inicialmente tiene acceso
+        var meInicial = await client.GetAsync("/api/v1/usuarios/me");
+        Assert.Equal(HttpStatusCode.OK, meInicial.StatusCode);
+
+        // 3. Desactivar el usuario en la base de datos
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SentryGuard.Data.SentryGuardDbContext>();
+            var usuario = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstAsync(
+                db.Usuarios, u => u.Email == "analista@sentryguard.cl");
+            usuario.Activo = false;
+            await db.SaveChangesAsync();
+        }
+
+        // 4. Intentar acceder con el mismo token (vigente): debe ser rechazado inmediatamente
+        var meDesactivado = await client.GetAsync("/api/v1/usuarios/me");
+        Assert.Equal(HttpStatusCode.Unauthorized, meDesactivado.StatusCode);
+
+        // 5. Restaurar estado para no alterar otros tests
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<SentryGuard.Data.SentryGuardDbContext>();
+            var usuario = await Microsoft.EntityFrameworkCore.EntityFrameworkQueryableExtensions.FirstAsync(
+                db.Usuarios, u => u.Email == "analista@sentryguard.cl");
+            usuario.Activo = true;
+            await db.SaveChangesAsync();
+        }
     }
 }
