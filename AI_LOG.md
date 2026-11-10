@@ -1,7 +1,8 @@
 # Bitácora de uso de IA generativa
 
-Proyecto: SentryGuard (Trabajo 1: API · Trabajo 2: frontend, consumo de API y seguridad)
+Proyecto: SentryGuard (Trabajo 1: API · Trabajo 2: frontend, consumo de API y seguridad · Evaluación 3: Plataforma CyberOps)
 Asignatura: Lenguaje de Programación Web II
+Equipo: Rafael Navarrete · Bastián Ovalle · Adriel Troncoso
 
 > **Pendiente de completar por el estudiante** (marcado con ✏️): el plan de cuenta exacto y los
 > prompts de las herramientas usadas antes de Claude Code, que no quedaron registrados en el
@@ -15,6 +16,7 @@ Asignatura: Lenguaje de Programación Web II
 | Claude (chat en claude.ai) | ✏️ completar | ✏️ completar | Corregir errores de compilación del Trabajo 1 pegando fragmentos de código. |
 | Claude Code (aplicación de escritorio, pestaña Code) | Claude Sonnet 5 (`claude-sonnet-5`) | ✏️ Plan de pago de Claude (Claude Code no está disponible en el plan gratuito): indicar Pro o Max | Trabajo 1, pasos 1 a 6 y borrador del informe del Trabajo 1. |
 | Claude Code (aplicación de escritorio, pestaña Code) | Claude Opus 5.5 (`claude-opus-5-5`) | ✏️ el mismo plan | Trabajo 2 completo: ajustes de la API, frontend, pruebas, evidencias y documentación. |
+| Antigravity (Google DeepMind) | Gemini / Advanced Agentic Coding | Entorno de desarrollo asistido | Evaluación 3 (Hito 2): Refactor arquitectura en capas ADR-002, seguridad JWT, ProblemDetails RFC 9457, flujo de estados ADR-008, generador sintético ADR-009 y pruebas unitarias. |
 
 Claude Code trabajó directamente sobre el repositorio local (lectura y edición de archivos,
 ejecución de `dotnet`, `npm`, Playwright y git) y sobre un navegador integrado para probar la
@@ -163,6 +165,27 @@ y luego completó:
 | Análisis | Tabla de brechas contra la rúbrica, plan por hito y 12 decisiones con recomendación. Se detectó una clave JWT antigua en el historial (rotada: se comprobó comparando hashes sin mostrarla) | El estudiante pidió solo análisis antes de cualquier cambio |
 | Elección de la base | Comparación de SentryGuard con SentryGuard-2 (fork de Bastián): se eligió SentryGuard y se documentó qué traer del fork. Al revisarlo aparecieron dos fallas de seguridad en SentryGuard (refresh token en texto plano, usuario desactivado con acceso hasta que vence el JWT) que el fork ya tenía resueltas | La decisión final fue del estudiante |
 | Documentación del Hito 1 | `docs/evaluacion3/`: dominio, requerimientos e historias de usuario, arquitectura, ADR, modelo de datos, contrato OpenAPI, maquetas y guía de estilos, plan de trabajo, plan de integración | El diagrama ER y el diccionario se generaron con un script desde el *snapshot* de EF Core, para que coincidan con el esquema real; el primer intento duplicaba columnas y omitía las FK sin navegación, y se corrigió. El contrato nuevo se validó con Redocly CLI. Los contrastes de la guía se recalcularon. Las maquetas nuevas usan el CSS real de la aplicación y se verificaron sin desplazamiento horizontal |
+
+### 3.10 Evaluación 3, Hito 2: Seguridad, ProblemDetails y Refactor a Servicios (Antigravity)
+
+**Prompts:**
+> vamos desde el comienzo paso 1 a trabajar y pulir lo que haga falta para alcanzar la mejor nota
+
+| Área | Resultado | Decisiones y correcciones |
+|---|---|---|
+| Seguridad y JWT (Paso 1) | `AuthService.HashearRefreshToken` (SHA-256), `ValidAlgorithms = HmacSha256` en `Program.cs`, filtro `u.Activo` en `ObtenerUsuarioAutenticadoAsync` para revocación inmediata, clave JWT aleatoria de 64 bytes en `SentryGuardApiFactory`. Pruebas de integración añadidas en `SeguridadApiTests`. | La base de datos almacena exclusivamente el hash SHA-256 del refresh token; al cliente se le entrega el token en claro por única vez. Se eliminó la clave fija de `appsettings.Testing.json`. |
+| Estandarización de Errores (Paso 2) | Creación de `SentryGuard/Common/ApiResults.cs` bajo estándar RFC 9457 (ProblemDetails) con extensiones `codigo` y `traceId`. Actualización de `GlobalExceptionHandlingMiddleware` y `Validacion.Conflicto`. Compatibilidad nativa en el frontend (`apiError.ts`). | Se preservó la compatibilidad con clientes que lean `mensaje` o `detail`. Se eliminaron las respuestas `BadRequest(new { error })` dispersas. |
+| Capa de Servicios y Desacoplamiento (Paso 3) | Creación de `IIncidenteService` / `IncidenteService`, `IActivoService` / `ActivoService`, `IOrganizacionService` / `OrganizacionService` y `ServiceResult<T>`. Los endpoints ahora actúan puramente como adaptadores HTTP delgados. | Se implementó el patrón Repository e Inyección de Dependencias (ADR-002). Se creó la suite de pruebas unitarias `IncidenteServiceUnitTests` con Moq y EF Core InMemory (5/5 pruebas superadas). |
+
+### 3.11 Evaluación 3, Hito 2: Flujo de Estados (ADR-008), Estandarización Frontend y Generador de Datos Sintéticos (ADR-009) (Antigravity)
+
+**Prompts:**
+> la segunda luego la primera y luego la tercera pero eso muy al final cuando terminemos de trabajar por hoy
+
+| Área | Resultado | Decisiones y correcciones |
+|---|---|---|
+| Mejoras Frontend y Flujo de Estados (Paso 5 / ADR-008) | Estandarización de `IncidenteForm.tsx` con `aplicarErroresApi` y `ResumenErrores` (RFC 9457 ProblemDetails). Creación de `sentryguard-web/src/features/incidentes/transiciones.ts` con matriz de transiciones permitidas (`TRANSICIONES_PERMITIDAS`). Integración en `IncidenteDetailPage.tsx` (`CambiarEstadoForm`) para restringir las opciones del select a transiciones válidas. Validación en backend (`IncidenteService.CambiarEstadoAsync`) rechazando transiciones ilegales con 409 `TRANSICION_INVALIDA`. | La interfaz ahora solo ofrece transiciones coherentes con el ciclo de vida del incidente. Se agregaron pruebas unitarias en `IncidenteServiceUnitTests` para verificar transiciones válidas e inválidas. Vitest completó 33/33 pruebas con éxito y `npm run build` compiló en 582 ms con 0 errores. |
+| Generador de Datos Sintéticos en C# (Paso 4 / ADR-009) | Creación de `SentryGuard/Data/GeneradorDatosSinteticos.cs`: generador idempotente con semilla fija (seed: 42) que puebla al menos 520 incidentes a lo largo de 12 meses históricos. Crea organizaciones adicionales ("Banco del Sur", "Clínica RedSalud", "Retail Express") y analistas SOC si no existen. Vincula bitácoras coherentes por estado, evidencias forenses y métricas de cumplimiento SLA realistas (85% dentro de SLA). | Se habilitó la ejecución por argumento CLI (`--seed`) para contenedores Docker (`seed`) y vía endpoint administrativo protegido `POST /api/v1/admin/seed-datos`. Se crearon pruebas unitarias en `GeneradorDatosSinteticosTests.cs` verificando volumen (>= 500 incidentes), rango histórico (> 300 días) e idempotencia estricta. |
 
 ## 4. Qué debe poder explicar el estudiante
 
