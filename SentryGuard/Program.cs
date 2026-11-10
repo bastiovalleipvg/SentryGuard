@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
 using Scalar.AspNetCore;
 using SentryGuard.Data;
 using SentryGuard.Endpoints;
@@ -39,7 +39,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = jwtIssuer,
             ValidAudience = jwtAudience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            // Mitigacion de algoritmo JWT (OWASP API2): no aceptar tokens firmados con otro algoritmo o con 'none'.
+            ValidAlgorithms = new[] { SecurityAlgorithms.HmacSha256 }
         };
     });
 
@@ -103,7 +105,7 @@ builder.Services.AddOpenApi(options =>
     options.AddDocumentTransformer((document, context, cancellationToken) =>
     {
         document.Components ??= new OpenApiComponents();
-        document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+        document.Components.SecuritySchemes ??= new Dictionary<string, OpenApiSecurityScheme>();
         document.Components.SecuritySchemes[BearerSchemeId] = new OpenApiSecurityScheme
         {
             Type = SecuritySchemeType.Http,
@@ -124,13 +126,24 @@ builder.Services.AddOpenApi(options =>
             operation.Security ??= new List<OpenApiSecurityRequirement>();
             operation.Security.Add(new OpenApiSecurityRequirement
             {
-                [new OpenApiSecuritySchemeReference(BearerSchemeId, context.Document, null)] = new List<string>()
+                [new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = BearerSchemeId
+                    }
+                }] = Array.Empty<string>()
             });
         }
         return Task.CompletedTask;
     });
 });
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<IIncidenteService, IncidenteService>();
+builder.Services.AddScoped<IActivoService, ActivoService>();
+builder.Services.AddScoped<IOrganizacionService, OrganizacionService>();
+builder.Services.AddScoped<GeneradorDatosSinteticos>();
 
 // Registrar Repositorios (Scoped)
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
@@ -147,6 +160,15 @@ builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
 var app = builder.Build();
+
+// Ejecución directa de generador de datos sintéticos vía CLI (ADR-009 / Contenedor seed)
+if (args.Contains("--seed"))
+{
+    using var scope = app.Services.CreateScope();
+    var seeder = scope.ServiceProvider.GetRequiredService<GeneradorDatosSinteticos>();
+    await seeder.GenerarAsync();
+    return;
+}
 
 // Headers de seguridad en toda respuesta, incluidas las de error (OWASP API8)
 app.UseSecurityHeaders();
@@ -201,6 +223,17 @@ app.MapOrganizacionApi();
 app.MapActivoApi();
 app.MapCatalogoApi();
 app.MapAuditoriaApi();
+
+// Endpoint administrativo para disparo manual de datos sintéticos (ADR-009)
+app.MapPost("/api/v1/admin/seed-datos", async (GeneradorDatosSinteticos seeder) =>
+{
+    var total = await seeder.GenerarAsync();
+    return Results.Ok(new { mensaje = "Generación de datos sintéticos completada con éxito.", totalIncidentes = total });
+})
+.RequireAuthorization(policy => policy.RequireRole("Administrador"))
+.WithName("SeedDatosSinteticos")
+.WithTags("Administración")
+.WithSummary("Ejecuta el generador idempotente de datos sintéticos (ADR-009)");
 
 app.Run();
 
