@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Scalar.AspNetCore;
 using SentryGuard.Data;
 using SentryGuard.Endpoints;
@@ -13,6 +13,22 @@ using SentryGuard.Repositories;
 using SentryGuard.Services;
 using System.Text;
 using System.Threading.RateLimiting;
+
+// Sonda de salud para Docker: la imagen no trae curl. Consulta /health del propio contenedor y sale con 0 o 1.
+if (args.Contains("--healthcheck"))
+{
+    var urlSalud = Environment.GetEnvironmentVariable("HEALTHCHECK_URL") ?? "http://localhost:8080/health";
+    try
+    {
+        using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(4) };
+        var respuesta = await http.GetAsync(urlSalud);
+        Environment.Exit(respuesta.IsSuccessStatusCode ? 0 : 1);
+    }
+    catch
+    {
+        Environment.Exit(1);
+    }
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -115,7 +131,7 @@ builder.Services.AddOpenApi(options =>
     options.AddDocumentTransformer((document, context, cancellationToken) =>
     {
         document.Components ??= new OpenApiComponents();
-        document.Components.SecuritySchemes ??= new Dictionary<string, OpenApiSecurityScheme>();
+        document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
         document.Components.SecuritySchemes[BearerSchemeId] = new OpenApiSecurityScheme
         {
             Type = SecuritySchemeType.Http,
@@ -136,14 +152,7 @@ builder.Services.AddOpenApi(options =>
             operation.Security ??= new List<OpenApiSecurityRequirement>();
             operation.Security.Add(new OpenApiSecurityRequirement
             {
-                [new OpenApiSecurityScheme
-                {
-                    Reference = new OpenApiReference
-                    {
-                        Type = ReferenceType.SecurityScheme,
-                        Id = BearerSchemeId
-                    }
-                }] = Array.Empty<string>()
+                [new OpenApiSecuritySchemeReference(BearerSchemeId)] = new List<string>()
             });
         }
         return Task.CompletedTask;
@@ -182,7 +191,48 @@ builder.Services.AddDbContext<SentryGuardDbContext>(options =>
 builder.Logging.AddConsole();
 builder.Logging.AddDebug();
 
+// Detras del proxy inverso (nginx del compose) la IP real del cliente llega en X-Forwarded-For. Sin esto el
+// limite de intentos de login (OWASP API4) contaria a todos los usuarios como una sola IP. Solo se activa
+// cuando la API no es accesible directamente desde fuera de la red interna.
+var confiarEnProxy = builder.Configuration.GetValue<bool>("Proxy:ConfiarEnEncabezados");
+if (confiarEnProxy)
+{
+    builder.Services.Configure<Microsoft.AspNetCore.Builder.ForwardedHeadersOptions>(opciones =>
+    {
+        opciones.ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor
+            | Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto;
+        opciones.ForwardLimit = 1;
+        opciones.KnownIPNetworks.Clear();
+        opciones.KnownProxies.Clear();
+    });
+}
+
 var app = builder.Build();
+
+if (confiarEnProxy) app.UseForwardedHeaders();
+
+// Migraciones al iniciar (compose): la API deja la base lista antes de pasar a "healthy". Reintenta porque
+// SQL Server puede tardar unos segundos en aceptar conexiones aunque el contenedor ya este arriba.
+if (app.Configuration.GetValue<bool>("Database:MigrarAlIniciar"))
+{
+    using var scopeMigracion = app.Services.CreateScope();
+    var dbMigracion = scopeMigracion.ServiceProvider.GetRequiredService<SentryGuardDbContext>();
+    var logMigracion = scopeMigracion.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    for (var intento = 1; ; intento++)
+    {
+        try
+        {
+            await dbMigracion.Database.MigrateAsync();
+            logMigracion.LogInformation("Migraciones aplicadas.");
+            break;
+        }
+        catch (Exception ex) when (intento < 10)
+        {
+            logMigracion.LogWarning("No se pudo migrar (intento {Intento}/10): {Mensaje}", intento, ex.Message);
+            await Task.Delay(TimeSpan.FromSeconds(3));
+        }
+    }
+}
 
 // Ejecución directa de generador de datos sintéticos vía CLI (ADR-009 / Contenedor seed)
 if (args.Contains("--seed"))
@@ -216,8 +266,9 @@ app.UseAuthorization();
 // Middleware de logging estructurado
 app.UseStructuredLogging();
 
-// OpenAPI/Scalar
-if (app.Environment.IsDevelopment())
+// OpenAPI/Scalar: siempre en Development; en otros entornos solo si Documentacion:Habilitada=true
+// (la demostracion en contenedores la enciende; en produccion real conviene apagarla).
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue<bool>("Documentacion:Habilitada"))
 {
     app.MapOpenApi();
     app.MapScalarApiReference(options =>
@@ -230,7 +281,11 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+// En el compose el TLS termina en el proxy: la API escucha HTTP en la red interna y no debe redirigir.
+if (app.Configuration.GetValue("Seguridad:RedirigirAHttps", true))
+{
+    app.UseHttpsRedirection();
+}
 
 // Rate limiting deshabilitado en tests de integracion: todas las requests de
 // WebApplicationFactory salen de la misma IP simulada y activarian el limite de /login.
