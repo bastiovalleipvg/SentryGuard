@@ -71,6 +71,26 @@ Verificado: `dotnet build` sin errores y 19 pruebas unitarias en verde. **No ver
 
 **Pendiente en Fase B:** si el proveedor de IA responde con un error HTTP, el adaptador usa el simulado sin avisar; solo el tiempo agotado devuelve 504. Decidir si ese comportamiento se mantiene (está en ADR-007) o si se devuelve 502.
 
+## 9.3 quater. Avance de la Fase C (13 de noviembre de 2026)
+
+| Paso | Estado |
+|---|---|
+| 12. Versión de .NET | Hecho: todo en .NET 10 (proyecto, pruebas, Dockerfile, CI y documentos). Imágenes con versión fija. El paquete vulnerable desapareció al actualizar EF Core: `dotnet list package --vulnerable` sale limpio |
+| 13. Secretos | Hecho: `compose.yaml` y `.env.example` ya no traen contraseñas ni claves. `SA_PASSWORD` y `JWT_KEY` son obligatorias y `scripts/generar-env.ps1` o `.sh` las crea aleatorias |
+| 14. Un solo comando | Hecho y probado desde cero: `docker compose up --build` deja la base migrada, 520 incidentes sembrados y la aplicación en `http://localhost:8088` |
+| 15. CI | Escrito, **no ejecutado en GitHub**: pruebas con SQL Server, lint, build, arranque del compose y publicación en GHCR solo desde `main` si todo pasa |
+| 16. Paquetes vulnerables | Hecho |
+
+**Hallazgos corregidos al probar el arranque**
+- El frontend exigía `VITE_API_URL` HTTPS y absoluta, así que en el contenedor la pantalla habría quedado en blanco. Ahora acepta `same-origin` y nginx reenvía `/api`.
+- La API no migraba la base al iniciar ni tenía `curl` para su health check. Ahora migra con reintentos y el health check es la propia aplicación (`--healthcheck`).
+- La imagen *chiseled* trae el modo invariante de globalización y SqlClient no lo soporta; se usa `chiseled-extra`.
+- Detrás del proxy, el límite de intentos de login (5 por minuto) contaba a todos los usuarios como una sola IP. Ahora la API usa `X-Forwarded-For` y nginx lo fija con la IP real del cliente, sin aceptar el que mande el cliente (probado: el 5.º intento da 429).
+- La API arrancaba por defecto en `Development` (Scalar y OpenAPI abiertos); ahora es `Production`, y la documentación se enciende con `DOCUMENTACION_HABILITADA`.
+- Los dos errores de lint de Rafael que habrían roto el CI (`setState` en un efecto y `watch`).
+
+**No verificado:** el workflow de GitHub Actions no se ejecutó (solo se escribió y se probó cada paso equivalente en local), y el contenedor `web` no se probó con un navegador, solo con `curl`.
+
 ## 9.4 Plan para cerrar los Hitos 2 y 3
 
 Orden sugerido; cada paso termina con pruebas en verde y la documentación actualizada.

@@ -13,6 +13,32 @@ Sistema de gestión de incidentes de ciberseguridad. Monorepo con:
 
 > **Evaluación 3 (proyecto integrador):** la documentación del Hito 1 (dominio, requerimientos, arquitectura, modelo de datos, contrato de la API, maquetas y plan de trabajo) está en [docs/evaluacion3/](docs/evaluacion3/README.md).
 
+## Ejecución con Docker (recomendada)
+
+Solo requiere [Docker](https://docs.docker.com/get-docker/) con Compose v2 y unos 2 GB de RAM libres para SQL Server.
+
+```
+./scripts/generar-env.ps1        # Windows (en Linux o macOS: ./scripts/generar-env.sh); crea .env con claves aleatorias
+docker compose up --build
+```
+
+Cuando termina, la aplicación está en **http://localhost:8088** (cambia el puerto con `WEB_PORT` en `.env`). La primera vez tarda
+unos minutos: construye las imágenes, la API crea la base con las migraciones y el contenedor `seed` genera 520 incidentes de 12 meses.
+
+| Servicio | Qué es | Puerto |
+|---|---|---|
+| `web` | nginx sin privilegios con la SPA; reenvía `/api` a la API | 8088 (publicado) |
+| `api` | API .NET 10 (imagen *chiseled*, sin shell, usuario sin privilegios) | 8080 (solo red interna) |
+| `db` | SQL Server 2022 con volumen `sqldata` | 1433 (solo red interna; con `compose.override.yaml` también en `127.0.0.1:14333`) |
+| `seed` | Genera los datos sintéticos y termina | — |
+
+- Usuarios de prueba (datos sintéticos): `admin@sentryguard.cl`, `supervisor@sentryguard.cl`, `analista@sentryguard.cl` y `cliente@sentryguard.cl`, contraseña `Admin123!`. **Solo para la demostración.**
+- Documentación interactiva de la API: http://localhost:8088/scalar/v1 (se apaga con `DOCUMENTACION_HABILITADA=false`).
+- Estado de la API: http://localhost:8088/health
+- `.env` no se versiona. Sin `SA_PASSWORD` y `JWT_KEY` el compose se niega a arrancar. La IA es opcional: sin `IA_API_KEY` se usa el asistente simulado.
+- Respaldo y restauración: `SA_PASSWORD=<la de .env> ./scripts/respaldo-restauracion.ps1`.
+- Para empezar de cero (borra la base): `docker compose down -v`.
+
 ## Uso de IA en el desarrollo
 
 | Herramienta | Propósito |

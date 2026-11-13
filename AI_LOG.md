@@ -226,6 +226,18 @@ y luego completó:
 | OpenAPI | `openapi-implementado.json` regenerado desde la API | |
 | Pruebas | 73 de 73 pasan | |
 
+### 3.15 Evaluación 3, Hito 3: Contenedores, CI/CD y seguridad (Claude Code)
+
+**Prompts:**
+> ahora sigue con la fase c
+
+| Área | Resultado | Decisiones y correcciones |
+|---|---|---|
+| .NET 10 | Proyecto, pruebas, Dockerfile y CI en .NET 10; paquetes fijados; OpenAPI adaptado a Microsoft.OpenApi 2.x | Se eligió .NET 10 porque coincide con la documentación y elimina el paquete vulnerable |
+| Contenedores | Dockerfiles multi-stage con imágenes de versión fija, nginx sin privilegios, compose con redes, `read_only`, `cap_drop` y health checks; arranque con un comando | Al probar desde cero aparecieron cuatro fallas (frontend, migraciones, health check y globalización) y se corrigieron |
+| Secretos | Sin valores por defecto; `generar-env` crea claves aleatorias | Una clave no se puede dejar de definir: el compose se niega a arrancar |
+| CI/CD | Pruebas con SQL Server efímero, lint, build, arranque del compose y publicación en GHCR condicionada | No se ejecutó en GitHub todavía |
+
 ## 4. Qué debe poder explicar el estudiante
 
 Aunque la IA escribió la mayor parte del código, la pauta exige entenderlo y poder modificarlo.

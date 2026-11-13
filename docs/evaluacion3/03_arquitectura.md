@@ -72,7 +72,7 @@ flowchart LR
 
 ## 3.3 Diagrama de despliegue
 
-Así arranca el sistema con `docker compose up` (Hito 3). El detalle de los puertos, volúmenes y variables está en [08_plan_trabajo.md](08_plan_trabajo.md#86-entorno-de-contenedores-previsto) y, más adelante, en el plan de despliegue.
+Así arranca el sistema con `docker compose up` (Hito 3). El detalle de los puertos, volúmenes y variables está en [08_plan_trabajo.md](08_plan_trabajo.md#86-entorno-de-contenedores) y, más adelante, en el plan de despliegue.
 
 ```mermaid
 flowchart TB

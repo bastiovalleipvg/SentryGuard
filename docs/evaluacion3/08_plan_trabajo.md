@@ -64,18 +64,20 @@ Una tarea está terminada cuando:
 4. La documentación de `docs/evaluacion3/` se actualizó si cambió el contrato, el modelo o la arquitectura.
 5. El uso de IA de apoyo quedó registrado en `AI_LOG.md`.
 
-## 8.6 Entorno de contenedores previsto
+## 8.6 Entorno de contenedores
 
-Este es el diseño para el Hito 3; el plan de despliegue lo detallará.
+Implementado en `compose.yaml` (y `compose.override.yaml`, solo para desarrollo). Se levanta con `docker compose up --build` después de crear `.env` (`scripts/generar-env.ps1` o `.sh`).
 
-| Servicio | Imagen base | Puertos | Red | Volúmenes | Health check |
+| Servicio | Imagen base (versión fija) | Puerto | Red | Volumen | Health check |
 |---|---|---|---|---|---|
-| `web` | `nginx` (alpine, versión fija) con el *build* de la SPA | 443 y 80 expuestos | frontal, interna | — | `GET /` |
-| `api` | `mcr.microsoft.com/dotnet/aspnet` (versión fija); compilada con `dotnet/sdk` en una etapa previa | 8080, solo interno | interna | — | `GET /health` |
-| `db` | `mcr.microsoft.com/mssql/server:2022` (versión fija) | 1433, solo interno | interna | `sqldata`, `backups` | `sqlcmd SELECT 1` |
-| `seed` | La misma imagen de la API, con otro comando | — | interna | — | Se ejecuta una vez y termina |
+| `web` | `nginxinc/nginx-unprivileged:1.28.0-alpine` con el *build* de la SPA (etapa previa `node:22.14.0-alpine3.21`) | 8088 publicado (`WEB_PORT`) | `app` | — | `wget /nginx-health` |
+| `api` | `mcr.microsoft.com/dotnet/aspnet:10.0.15-noble-chiseled` (sin shell, usuario sin privilegios); compilada con `dotnet/sdk:10.0.400` en una etapa previa | 8080, solo red interna | `app` y `datos` | — | `dotnet SentryGuard.dll --healthcheck` (consulta `/health`) |
+| `db` | `mcr.microsoft.com/mssql/server:2022-CU28-ubuntu-22.04` | 1433, solo red interna (con el *override* de desarrollo, también `127.0.0.1:14333`) | `datos` | `sqldata` (cubre `/var/opt/mssql`, incluida `backups/`) | `sqlcmd SELECT 1` |
+| `seed` | La misma imagen de la API, con el argumento `--seed` | — | `datos` | — | Se ejecuta una vez y termina |
 
-Las variables van en `.env` (excluido del repositorio); se entrega `.env.example` sin valores reales. La lista está en [03_arquitectura.md](03_arquitectura.md#33-diagrama-de-despliegue).
+Endurecimiento: `read_only`, `tmpfs` en `/tmp`, `cap_drop: ALL` y `no-new-privileges` en `web`, `api` y `seed`; política `unless-stopped`; la red `datos` aísla la base del proxy. La API migra la base al iniciar (`Database__MigrarAlIniciar`), confía en `X-Forwarded-For` del proxy (`Proxy__ConfiarEnEncabezados`) para que el límite de intentos de login cuente por cliente y no por proxy, y no redirige a HTTPS porque el TLS termina fuera de ella (`Seguridad__RedirigirAHttps=false`). La SPA se construye con `VITE_API_URL=same-origin`: llama a la API con rutas relativas y no incrusta URLs ni secretos.
+
+Las variables van en `.env` (excluido del repositorio); `SA_PASSWORD` y `JWT_KEY` no tienen valor por defecto. Se entrega `.env.example` sin valores.
 
 ## 8.7 Riesgos
 
