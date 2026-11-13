@@ -15,16 +15,18 @@ Todas las rutas van bajo `/api/v1/`.
 |---|---|---|
 | Usuarios y sesión | `POST /usuarios/login`, `GET /usuarios/me`, `GET`, `POST /usuarios/registro`, `PUT /usuarios/{id}`, `GET /usuarios/analistas` | ✅ |
 | Incidentes | `GET`/`POST /incidentes`, `GET`/`PUT`/`DELETE /incidentes/{id}`, `POST /incidentes/{id}/asignar`, `POST /incidentes/{id}/cambiar-estado`, `GET`/`POST /incidentes/{id}/bitacora`, `GET`/`POST /incidentes/{id}/evidencia`, `GET /incidentes/sla/cumplimiento/{id}` | ✅ |
-| Incidentes (cambios) | `orden`, `categoriaId`, `desde` y `hasta` en el listado; `GET /incidentes/{id}/transiciones`; 409 ante una transición inválida | 📋 Hito 2 |
+| Incidentes (cambios) | `orden` (`campo` o `-campo`; columnas: id, titulo, fecha, severidad, estado, activo, categoria) y `categoriaId` en el listado; 409 `TRANSICION_INVALIDA` ante una transición no permitida | ✅ |
+| Orden de otros listados | `orden` en activos (nombre, categoria, organizacion, fecha), organizaciones (razonsocial, rut, fecha) y usuarios (nombre, email, rol, organizacion). Una columna fuera de la lista da 400 con `errors.orden` | ✅ |
+| Incidentes (pendiente) | `desde` y `hasta` en el listado | 📋 Hito 4 |
 | Activos | `GET`/`POST /activos`, `GET`/`PUT`/`DELETE /activos/{id}` | ✅ |
 | Organizaciones y contratos SLA | `GET`/`POST /organizaciones`, `GET`/`PUT`/`DELETE /organizaciones/{id}`, `GET`/`POST /organizaciones/{id}/contratos-sla`, `POST …/{contratoId}/finalizar`, `DELETE …/{contratoId}` | ✅ |
 | Catálogos | `severidades`, `estados-incidente`, `categorias-activo`, `planes-servicio`, `roles` | ✅ |
-| Catálogos (nuevo) | `categorias-incidente` | 📋 Hito 2 |
+| Catálogos (nuevo) | `categorias-incidente` y `transiciones-estado` (el flujo de estados leído de la base; reemplaza a `GET /incidentes/{id}/transiciones`) | ✅ |
 | Auditoría | `GET /auditoria` | ✅ |
 | Dashboard | `GET /dashboard/indicadores`, `GET /dashboard/series` | 📋 Hito 4 |
 | Reportes | `GET /reportes/{operativo\|gerencial\|sla}`, `GET /reportes/{tipo}/exportar?formato=xlsx\|pdf\|csv` | 📋 Hito 4 |
-| IA | `POST /ia/clasificar-incidente`, `POST /ia/resumir` | 📋 Hito 3 |
-| Salud | `GET /health` | 📋 Hito 3 |
+| IA | `POST /ia/clasificar-incidente`, `POST /ia/resumir` | ✅ |
+| Salud | `GET /health` | ✅ |
 
 ## 6.2 Verbos y códigos de estado
 
