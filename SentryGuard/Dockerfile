@@ -4,7 +4,7 @@
 # ==========================================
 
 # Etapa 1: compilar y publicar (SDK completo, no llega a la imagen final)
-FROM mcr.microsoft.com/dotnet/sdk:10.0.400 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0.100 AS build
 WORKDIR /src
 
 # El csproj primero: la restauracion de paquetes queda en cache mientras no cambien las dependencias
