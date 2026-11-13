@@ -154,4 +154,38 @@ namespace SentryGuard.DTOs
         public bool CumpleSLA { get; init; }
         public double PorcentajeUtilizacion { get; init; }
     }
+
+    // ==========================================
+    // DTOs para el Módulo de IA (RF-23 y RF-24)
+    // ==========================================
+
+    /// <summary>
+    /// Entrada para sugerencia de clasificación de incidente con IA (RF-23).
+    /// </summary>
+    public record ClasificarIncidenteRequest(string Titulo, string Descripcion);
+
+    /// <summary>
+    /// Respuesta con la sugerencia estructurada de la IA (RF-23).
+    /// </summary>
+    public record ClasificacionIaDTO(
+        int SeveridadSugeridaId,
+        string SeveridadNombre,
+        string CategoriaSugerida,
+        string Justificacion,
+        List<string> AccionesRecomendadas
+    );
+
+    /// <summary>
+    /// Entrada para generación de resumen ejecutivo con IA (RF-24).
+    /// </summary>
+    public record ResumirIaRequest(string Contexto, string? Tipo = "general");
+
+    /// <summary>
+    /// Respuesta con el resumen generado en lenguaje natural (RF-24).
+    /// </summary>
+    public record ResumenIaDTO(
+        string Resumen,
+        DateTime GeneradoEn,
+        string Modelo
+    );
 }

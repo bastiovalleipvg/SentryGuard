@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -95,6 +96,15 @@ builder.Services.AddRateLimiter(options =>
             Window = TimeSpan.FromMinutes(1),
             QueueLimit = 0
         }));
+
+    options.AddPolicy("ia", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconocido",
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 15,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0
+        }));
 });
 
 // Add services to the container
@@ -144,6 +154,17 @@ builder.Services.AddScoped<IIncidenteService, IncidenteService>();
 builder.Services.AddScoped<IActivoService, ActivoService>();
 builder.Services.AddScoped<IOrganizacionService, OrganizacionService>();
 builder.Services.AddScoped<GeneradorDatosSinteticos>();
+
+// Módulo de Inteligencia Artificial (ADR-007 / RF-23 / RF-24)
+builder.Services.AddHttpClient<IAsistenteIA, AsistenteGemini>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(15);
+});
+builder.Services.AddScoped<AsistenteSimulado>();
+
+// Health Checks para orquestación y Docker Compose (RNF-04)
+builder.Services.AddHealthChecks()
+    .AddCheck<DatabaseHealthCheck>("database", tags: ["db", "ready"]);
 
 // Registrar Repositorios (Scoped)
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
@@ -223,6 +244,30 @@ app.MapOrganizacionApi();
 app.MapActivoApi();
 app.MapCatalogoApi();
 app.MapAuditoriaApi();
+app.MapIaApi();
+
+// Health Check no autenticado para Docker, Kubernetes y balanceadores (RNF-04)
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var response = new
+        {
+            status = report.Status.ToString(),
+            totalDurationMs = Math.Round(report.TotalDuration.TotalMilliseconds, 2),
+            timestamp = DateTime.UtcNow,
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description,
+                durationMs = Math.Round(e.Value.Duration.TotalMilliseconds, 2)
+            })
+        };
+        await context.Response.WriteAsJsonAsync(response);
+    }
+});
 
 // Endpoint administrativo para disparo manual de datos sintéticos (ADR-009)
 app.MapPost("/api/v1/admin/seed-datos", async (GeneradorDatosSinteticos seeder) =>

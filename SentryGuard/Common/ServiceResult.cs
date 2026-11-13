@@ -59,6 +59,12 @@ namespace SentryGuard.Common
         public static ServiceResult<T> InvalidTransition(string detail = "La transición de estado solicitada no está permitida.", string codigo = "TRANSICION_INVALIDA") =>
             new(StatusCodes.Status409Conflict, "Transición no permitida", detail, codigo);
 
+        public static ServiceResult<T> BadGateway(string detail = "El servicio externo de IA falló o no está disponible.", string codigo = "IA_ERROR_PROVEEDOR") =>
+            new(StatusCodes.Status502BadGateway, "Servicio de IA no disponible", detail, codigo);
+
+        public static ServiceResult<T> GatewayTimeout(string detail = "El servicio externo de IA excedió el tiempo límite de 15 segundos.", string codigo = "IA_TIEMPO_AGOTADO") =>
+            new(StatusCodes.Status504GatewayTimeout, "Tiempo de espera de IA agotado", detail, codigo);
+
         public IResult ToHttpResult(string? createdUri = null)
         {
             if (Success)
