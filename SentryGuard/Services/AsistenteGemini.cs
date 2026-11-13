@@ -101,27 +101,61 @@ Debes responder ÚNICAMENTE un objeto JSON válido con este formato exacto, sin 
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning("AsistenteGemini: Error HTTP {Status} desde el proveedor de IA. Aplicando fallback heurístico.", response.StatusCode);
-                    return await _simulador.ClasificarIncidenteAsync(titulo, descripcion, cancellationToken);
+                    var status = (int)response.StatusCode;
+                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    var snippet = errorBody.Length > 200 ? errorBody[..200] : errorBody;
+                    _logger.LogWarning("AsistenteGemini: Error HTTP {Status} desde el proveedor de IA: {ErrorSnippet}", status, snippet);
+
+                    return ServiceResult<ClasificacionIaDTO>.BadGateway(
+                        $"El proveedor de Inteligencia Artificial devolvió un error (HTTP {status}). Puedes ingresar los datos manualmente.",
+                        "IA_ERROR_PROVEEDOR");
                 }
 
-                var jsonResponse = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: linkedCts.Token);
-                var rawText = jsonResponse
-                    .GetProperty("candidates")[0]
+                JsonElement jsonResponse;
+                try
+                {
+                    jsonResponse = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: linkedCts.Token);
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "AsistenteGemini: Error al deserializar JSON de respuesta de la IA.");
+                    return ServiceResult<ClasificacionIaDTO>.BadGateway(
+                        "La respuesta del proveedor de Inteligencia Artificial no tiene el formato JSON esperado.",
+                        "IA_ERROR_PROVEEDOR");
+                }
+
+                if (!jsonResponse.TryGetProperty("candidates", out var candidates) || candidates.GetArrayLength() == 0)
+                {
+                    return ServiceResult<ClasificacionIaDTO>.BadGateway(
+                        "El proveedor de Inteligencia Artificial devolvió una respuesta vacía o sin candidatos válidos.",
+                        "IA_ERROR_PROVEEDOR");
+                }
+
+                var rawText = candidates[0]
                     .GetProperty("content")
                     .GetProperty("parts")[0]
                     .GetProperty("text")
                     .GetString();
 
                 if (string.IsNullOrWhiteSpace(rawText))
-                    return await _simulador.ClasificarIncidenteAsync(titulo, descripcion, cancellationToken);
+                {
+                    return ServiceResult<ClasificacionIaDTO>.BadGateway(
+                        "El proveedor de Inteligencia Artificial devolvió contenido vacío.",
+                        "IA_ERROR_PROVEEDOR");
+                }
 
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 var parsed = JsonSerializer.Deserialize<ClasificacionIaDTO>(rawText, options);
 
-                return parsed != null
-                    ? ServiceResult<ClasificacionIaDTO>.Ok(parsed)
-                    : await _simulador.ClasificarIncidenteAsync(titulo, descripcion, cancellationToken);
+                if (parsed == null)
+                {
+                    return ServiceResult<ClasificacionIaDTO>.BadGateway(
+                        "No se pudo estructurar la clasificación recibida del proveedor de IA.",
+                        "IA_ERROR_PROVEEDOR");
+                }
+
+                var conOrigen = parsed with { Origen = modelo };
+                return ServiceResult<ClasificacionIaDTO>.Ok(conOrigen);
             }
             catch (OperationCanceledException)
             {
@@ -132,7 +166,9 @@ Debes responder ÚNICAMENTE un objeto JSON válido con este formato exacto, sin 
             catch (Exception ex)
             {
                 _logger.LogError(ex, "AsistenteGemini: Excepción al comunicarse con la API de IA.");
-                return await _simulador.ClasificarIncidenteAsync(titulo, descripcion, cancellationToken);
+                return ServiceResult<ClasificacionIaDTO>.BadGateway(
+                    "Ocurrió un error inesperado al comunicarse con el proveedor de Inteligencia Artificial.",
+                    "IA_ERROR_PROVEEDOR");
             }
         }
 
@@ -182,20 +218,48 @@ Enfócate en: hallazgos clave, activos en riesgo, estado de resolución y recome
 
                 if (!response.IsSuccessStatusCode)
                 {
-                    _logger.LogWarning("AsistenteGemini: Error HTTP {Status} al resumir. Aplicando fallback heurístico.", response.StatusCode);
-                    return await _simulador.ResumirAsync(contexto, tipo, cancellationToken);
+                    var status = (int)response.StatusCode;
+                    var errorBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    var snippet = errorBody.Length > 200 ? errorBody[..200] : errorBody;
+                    _logger.LogWarning("AsistenteGemini: Error HTTP {Status} al resumir con la IA: {ErrorSnippet}", status, snippet);
+
+                    return ServiceResult<ResumenIaDTO>.BadGateway(
+                        $"El proveedor de Inteligencia Artificial devolvió un error (HTTP {status}) al generar el resumen.",
+                        "IA_ERROR_PROVEEDOR");
                 }
 
-                var jsonResponse = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: linkedCts.Token);
-                var rawText = jsonResponse
-                    .GetProperty("candidates")[0]
+                JsonElement jsonResponse;
+                try
+                {
+                    jsonResponse = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: linkedCts.Token);
+                }
+                catch (JsonException ex)
+                {
+                    _logger.LogWarning(ex, "AsistenteGemini: Error al deserializar JSON al resumir.");
+                    return ServiceResult<ResumenIaDTO>.BadGateway(
+                        "La respuesta del proveedor de Inteligencia Artificial no tiene el formato esperado.",
+                        "IA_ERROR_PROVEEDOR");
+                }
+
+                if (!jsonResponse.TryGetProperty("candidates", out var candidates) || candidates.GetArrayLength() == 0)
+                {
+                    return ServiceResult<ResumenIaDTO>.BadGateway(
+                        "El proveedor de Inteligencia Artificial no devolvió candidatos para el resumen.",
+                        "IA_ERROR_PROVEEDOR");
+                }
+
+                var rawText = candidates[0]
                     .GetProperty("content")
                     .GetProperty("parts")[0]
                     .GetProperty("text")
                     .GetString();
 
                 if (string.IsNullOrWhiteSpace(rawText))
-                    return await _simulador.ResumirAsync(contexto, tipo, cancellationToken);
+                {
+                    return ServiceResult<ResumenIaDTO>.BadGateway(
+                        "El proveedor de Inteligencia Artificial devolvió un resumen vacío.",
+                        "IA_ERROR_PROVEEDOR");
+                }
 
                 var resultado = new ResumenIaDTO(
                     Resumen: rawText.Trim(),
@@ -214,7 +278,9 @@ Enfócate en: hallazgos clave, activos en riesgo, estado de resolución y recome
             catch (Exception ex)
             {
                 _logger.LogError(ex, "AsistenteGemini: Error al comunicarse con la IA para resumir.");
-                return await _simulador.ResumirAsync(contexto, tipo, cancellationToken);
+                return ServiceResult<ResumenIaDTO>.BadGateway(
+                    "Ocurrió un error inesperado al comunicarse con el proveedor de Inteligencia Artificial.",
+                    "IA_ERROR_PROVEEDOR");
             }
         }
     }
