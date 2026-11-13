@@ -13,7 +13,7 @@ namespace SentryGuard.Services
     /// </summary>
     public interface IOrganizacionService
     {
-        Task<ServiceResult<PagedResult<OrganizacionDTO>>> ListarAsync(int page, int pageSize, string? q, int? planId);
+        Task<ServiceResult<PagedResult<OrganizacionDTO>>> ListarAsync(int page, int pageSize, string? q, int? planId, string? orden = null);
         Task<ServiceResult<OrganizacionDTO>> ObtenerAsync(int id, Usuario usuario);
         Task<ServiceResult<OrganizacionDTO>> CrearAsync(OrganizacionDto dto);
         Task<ServiceResult<bool>> ActualizarAsync(int id, OrganizacionDto dto);

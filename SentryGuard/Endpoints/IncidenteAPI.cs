@@ -61,7 +61,7 @@ namespace SentryGuard.Endpoints
             var usuario = await authService.ObtenerUsuarioAutenticadoAsync(httpContext, db);
             if (usuario == null) return Results.Unauthorized();
 
-            var dto = new CrearIncidenteDto(request.Titulo, request.Descripcion, request.ActivoId, request.SeveridadId);
+            var dto = new CrearIncidenteDto(request.Titulo, request.Descripcion, request.ActivoId, request.SeveridadId, request.CategoriaId);
             var result = await service.CrearIncidenteAsync(dto, usuario);
             return result.ToHttpResult(result.Success ? $"/api/v1/incidentes/{result.Data!.Id}" : null);
         }
@@ -76,12 +76,14 @@ namespace SentryGuard.Endpoints
             string? q = null,
             int? estadoId = null,
             int? severidadId = null,
-            int? activoId = null)
+            int? activoId = null,
+            int? categoriaId = null,
+            string? orden = null)
         {
             var usuario = await authService.ObtenerUsuarioAutenticadoAsync(httpContext, db);
             if (usuario == null) return Results.Unauthorized();
 
-            var result = await service.ListarIncidentesAsync(usuario, page, pageSize, q, estadoId, severidadId, activoId);
+            var result = await service.ListarIncidentesAsync(usuario, page, pageSize, q, estadoId, severidadId, activoId, categoriaId, orden);
             return result.ToHttpResult();
         }
 
@@ -110,7 +112,7 @@ namespace SentryGuard.Endpoints
             var usuario = await authService.ObtenerUsuarioAutenticadoAsync(httpContext, db);
             if (usuario == null) return Results.Unauthorized();
 
-            var dto = new ActualizarIncidenteDto(request.Titulo, request.Descripcion, request.SeveridadId);
+            var dto = new ActualizarIncidenteDto(request.Titulo, request.Descripcion, request.SeveridadId, request.CategoriaId);
             var result = await service.ActualizarIncidenteAsync(id, dto, usuario);
             return result.Success ? Results.Ok(new { mensaje = "Actualizado" }) : result.ToHttpResult();
         }
@@ -185,7 +187,8 @@ namespace SentryGuard.Endpoints
             if (usuario == null) return Results.Unauthorized();
 
             var result = await service.ObtenerBitacoraAsync(id, usuario);
-            return result.ToHttpResult();
+            // Un incidente sin entradas devuelve lista vacia (200), no 404. Formato { total, items }.
+            return result.Success ? Results.Ok(new { total = result.Data!.Count(), items = result.Data }) : result.ToHttpResult();
         }
 
         private static async Task<IResult> AgregarEvidencia(
@@ -214,7 +217,7 @@ namespace SentryGuard.Endpoints
             if (usuario == null) return Results.Unauthorized();
 
             var result = await service.ObtenerEvidenciasAsync(id, usuario);
-            return result.ToHttpResult();
+            return result.Success ? Results.Ok(new { total = result.Data!.Count(), items = result.Data }) : result.ToHttpResult();
         }
 
         private static async Task<IResult> ConsultarCumplimientoSla(
@@ -231,8 +234,8 @@ namespace SentryGuard.Endpoints
             return result.ToHttpResult();
         }
 
-        record CrearIncidenteRequest(string? Titulo, string? Descripcion, int ActivoId, int SeveridadId);
-        record ActualizarIncidenteRequest(string? Titulo, string? Descripcion, int? SeveridadId);
+        record CrearIncidenteRequest(string? Titulo, string? Descripcion, int ActivoId, int SeveridadId, int? CategoriaId = null);
+        record ActualizarIncidenteRequest(string? Titulo, string? Descripcion, int? SeveridadId, int? CategoriaId = null);
         record AsignarAnalistaRequest(int AnalistaId);
         record CambiarEstadoRequest(int EstadoId);
         record AgregarBitacoraRequest(string Accion, string? Comentario);

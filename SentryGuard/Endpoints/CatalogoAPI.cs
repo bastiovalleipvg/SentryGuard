@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SentryGuard.Data;
+using SentryGuard.Services;
 
 namespace SentryGuard.Endpoints
 {
@@ -27,6 +28,23 @@ namespace SentryGuard.Endpoints
             catalogo.MapPost("/estados-incidente", CrearEstadoIncidente)
                 .WithName("Crear estado")
                 .RequireAuthorization(policy => policy.RequireRole("Administrador"));
+
+            // Flujo de estados como datos (ADR-008): la interfaz solo ofrece estos destinos
+            catalogo.MapGet("/transiciones-estado", async (IIncidenteService incidentes) =>
+                    Results.Ok(await incidentes.ListarTransicionesAsync()))
+                .WithName("Listar transiciones de estado")
+                .WithDescription("Pares (origen, destino) permitidos del flujo de estados del incidente")
+                .RequireAuthorization();
+
+            // Categorías de incidente (Phishing, Malware, ...)
+            catalogo.MapGet("/categorias-incidente", async (SentryGuardDbContext db) =>
+                    Results.Ok(new
+                    {
+                        items = await db.CategoriasIncidente.AsNoTracking().OrderBy(c => c.Id)
+                            .Select(c => new { c.Id, c.Nombre }).ToListAsync()
+                    }))
+                .WithName("Listar categorías de incidente")
+                .RequireAuthorization();
 
             // Categorías de activo
             catalogo.MapGet("/categorias-activo", ListarCategoriasActivo)

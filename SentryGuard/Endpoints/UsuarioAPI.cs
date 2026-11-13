@@ -1,3 +1,4 @@
+using SentryGuard.Common;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.EntityFrameworkCore;
 using SentryGuard.Data;
@@ -83,9 +84,21 @@ namespace SentryGuard.Endpoints
             return Results.Created($"/api/v1/usuarios/{usuario.Id}", new { id = usuario.Id, nombre = usuario.Nombre, email = usuario.Email, rol = rol.Nombre });
         }
 
-        private static async Task<IResult> ListarUsuarios(SentryGuardDbContext db, int page = 1, int pageSize = 10, string? q = null, int? rolId = null, int? organizacionId = null)
+        private static readonly IReadOnlyDictionary<string, System.Linq.Expressions.Expression<Func<Models.Usuario, object>>> ColumnasOrden =
+            new Dictionary<string, System.Linq.Expressions.Expression<Func<Models.Usuario, object>>>
+            {
+                ["nombre"] = u => u.Nombre,
+                ["email"] = u => u.Email,
+                ["rol"] = u => u.Rol!.Nombre,
+                ["organizacion"] = u => u.Organizacion!.RazonSocial
+            };
+
+        private static async Task<IResult> ListarUsuarios(SentryGuardDbContext db, int page = 1, int pageSize = 10, string? q = null, int? rolId = null, int? organizacionId = null, string? orden = null)
         {
             (page, pageSize) = Paginacion.Normalizar(page, pageSize);
+
+            var erroresOrden = SentryGuard.Common.Ordenamiento.Validar(orden, ColumnasOrden);
+            if (erroresOrden is not null) return SentryGuard.Common.ApiResults.Validacion(erroresOrden);
 
             IQueryable<Usuario> query = db.Usuarios;
             if (!string.IsNullOrWhiteSpace(q))
@@ -100,8 +113,7 @@ namespace SentryGuard.Endpoints
             var total = await query.CountAsync();
             // Proyeccion a DTO: el password_hash nunca sale del servidor (OWASP API3).
             var items = await query
-                .OrderBy(u => u.Nombre)
-                .ThenBy(u => u.Id)
+                .Ordenar(orden, ColumnasOrden, q => q.OrderBy(u => u.Nombre).ThenBy(u => u.Id), u => u.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(u => new UsuarioListDTO

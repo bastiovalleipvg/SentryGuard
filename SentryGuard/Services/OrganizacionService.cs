@@ -39,10 +39,23 @@ namespace SentryGuard.Services
             _db = db;
         }
 
-        public async Task<ServiceResult<PagedResult<OrganizacionDTO>>> ListarAsync(int page, int pageSize, string? q, int? planId)
+        /// <summary>Columnas por las que se puede ordenar el listado (orden=campo o orden=-campo).</summary>
+        public static readonly IReadOnlyDictionary<string, Expression<Func<Organizacion, object>>> ColumnasOrden =
+            new Dictionary<string, Expression<Func<Organizacion, object>>>
+            {
+                ["razonsocial"] = o => o.RazonSocial,
+                ["rut"] = o => o.Rut,
+                ["fecha"] = o => o.FechaAlta
+            };
+
+        public async Task<ServiceResult<PagedResult<OrganizacionDTO>>> ListarAsync(int page, int pageSize, string? q, int? planId, string? orden = null)
         {
             page = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 1, 50);
+
+            var erroresOrden = Ordenamiento.Validar(orden, ColumnasOrden);
+            if (erroresOrden is not null)
+                return ServiceResult<PagedResult<OrganizacionDTO>>.Validation(erroresOrden);
 
             IQueryable<Organizacion> query = _db.Organizaciones;
             if (!string.IsNullOrWhiteSpace(q))
@@ -55,8 +68,7 @@ namespace SentryGuard.Services
 
             var total = await query.CountAsync();
             var items = await query
-                .OrderBy(o => o.RazonSocial)
-                .ThenBy(o => o.Id)
+                .Ordenar(orden, ColumnasOrden, q => q.OrderBy(o => o.RazonSocial).ThenBy(o => o.Id), o => o.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(ADto)

@@ -35,12 +35,13 @@ namespace SentryGuard.Endpoints
             int pageSize = 10,
             string? q = null,
             int? categoriaId = null,
-            int? organizacionId = null)
+            int? organizacionId = null,
+            string? orden = null)
         {
             var usuario = await authService.ObtenerUsuarioAutenticadoAsync(httpContext, db);
             if (usuario == null) return Results.Unauthorized();
 
-            var result = await service.ListarAsync(usuario, page, pageSize, q, categoriaId, organizacionId);
+            var result = await service.ListarAsync(usuario, page, pageSize, q, categoriaId, organizacionId, orden);
             return result.ToHttpResult();
         }
 

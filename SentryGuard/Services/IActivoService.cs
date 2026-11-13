@@ -12,7 +12,7 @@ namespace SentryGuard.Services
     /// </summary>
     public interface IActivoService
     {
-        Task<ServiceResult<PagedResult<ActivoDTO>>> ListarAsync(Usuario usuario, int page, int pageSize, string? q, int? categoriaId, int? organizacionId);
+        Task<ServiceResult<PagedResult<ActivoDTO>>> ListarAsync(Usuario usuario, int page, int pageSize, string? q, int? categoriaId, int? organizacionId, string? orden = null);
         Task<ServiceResult<ActivoDTO>> ObtenerAsync(int id, Usuario usuario);
         Task<ServiceResult<ActivoDTO>> CrearAsync(CrearActivoDto dto);
         Task<ServiceResult<bool>> ActualizarAsync(int id, ActualizarActivoDto dto);

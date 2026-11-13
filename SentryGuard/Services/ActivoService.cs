@@ -38,11 +38,25 @@ namespace SentryGuard.Services
             _db = db;
         }
 
+        /// <summary>Columnas por las que se puede ordenar el listado (orden=campo o orden=-campo).</summary>
+        public static readonly IReadOnlyDictionary<string, Expression<Func<Activo, object>>> ColumnasOrden =
+            new Dictionary<string, Expression<Func<Activo, object>>>
+            {
+                ["nombre"] = a => a.Nombre,
+                ["categoria"] = a => a.Categoria!.Nombre,
+                ["organizacion"] = a => a.Organizacion!.RazonSocial,
+                ["fecha"] = a => a.FechaCreacion
+            };
+
         public async Task<ServiceResult<PagedResult<ActivoDTO>>> ListarAsync(
-            Usuario usuario, int page, int pageSize, string? q, int? categoriaId, int? organizacionId)
+            Usuario usuario, int page, int pageSize, string? q, int? categoriaId, int? organizacionId, string? orden = null)
         {
             page = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 1, 50);
+
+            var erroresOrden = Ordenamiento.Validar(orden, ColumnasOrden);
+            if (erroresOrden is not null)
+                return ServiceResult<PagedResult<ActivoDTO>>.Validation(erroresOrden);
 
             IQueryable<Activo> query = _db.Activos;
             if (usuario.Rol?.Nombre == "Cliente")
@@ -62,8 +76,7 @@ namespace SentryGuard.Services
 
             var total = await query.CountAsync();
             var items = await query
-                .OrderBy(a => a.Nombre)
-                .ThenBy(a => a.Id)
+                .Ordenar(orden, ColumnasOrden, q => q.OrderBy(a => a.Nombre).ThenBy(a => a.Id), a => a.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(ADto)

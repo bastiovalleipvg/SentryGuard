@@ -27,6 +27,19 @@ namespace SentryGuard.Services
         private const int BusquedaMax = 100;
         private const int ComentarioMax = 2000;
 
+        /// <summary>Columnas por las que se puede ordenar el listado (orden=campo o orden=-campo).</summary>
+        public static readonly IReadOnlyDictionary<string, Expression<Func<Incidente, object>>> ColumnasOrden =
+            new Dictionary<string, Expression<Func<Incidente, object>>>
+            {
+                ["id"] = i => i.Id,
+                ["titulo"] = i => i.Titulo,
+                ["fecha"] = i => i.FechaCreacion,
+                ["severidad"] = i => i.SeveridadId,
+                ["estado"] = i => i.EstadoId,
+                ["activo"] = i => i.Activo!.Nombre,
+                ["categoria"] = i => i.Categoria!.Nombre
+            };
+
         public static readonly Expression<Func<Incidente, IncidenteDTO>> ADto = i => new IncidenteDTO
         {
             Id = i.Id,
@@ -41,8 +54,11 @@ namespace SentryGuard.Services
             OrganizacionId = i.OrganizacionId,
             AnalistaAsignadoId = i.AnalistaAsignadoId,
             AnalistaAsignado = i.AnalistaAsignado != null ? i.AnalistaAsignado.Nombre : null,
+            CategoriaId = i.CategoriaId,
+            Categoria = i.Categoria != null ? i.Categoria.Nombre : null,
             FechaCreacion = i.FechaCreacion,
-            FechaCierre = i.FechaCierre
+            FechaCierre = i.FechaCierre,
+            FechaModificacion = i.FechaModificacion
         };
 
         public IncidenteService(
@@ -68,6 +84,9 @@ namespace SentryGuard.Services
             if (!await _db.Severidades.AnyAsync(s => s.Id == dto.SeveridadId))
                 errores["severidadId"] = ["La severidad seleccionada no existe."];
 
+            if (dto.CategoriaId.HasValue && !await _db.CategoriasIncidente.AnyAsync(c => c.Id == dto.CategoriaId.Value))
+                errores["categoriaId"] = ["La categoría seleccionada no existe."];
+
             var activo = await _activoRepo.GetByIdAsync(dto.ActivoId);
             if (activo == null)
                 errores["activoId"] = ["El activo seleccionado no existe."];
@@ -87,6 +106,7 @@ namespace SentryGuard.Services
                 Titulo = dto.Titulo!.Trim(),
                 Descripcion = dto.Descripcion!.Trim(),
                 SeveridadId = dto.SeveridadId,
+                CategoriaId = dto.CategoriaId,
                 EstadoId = estadoAbierto?.Id ?? 1,
                 FechaCreacion = DateTime.UtcNow
             };
@@ -113,10 +133,14 @@ namespace SentryGuard.Services
         }
 
         public async Task<ServiceResult<PagedResult<IncidenteDTO>>> ListarIncidentesAsync(
-            Usuario usuario, int page, int pageSize, string? q, int? estadoId, int? severidadId, int? activoId)
+            Usuario usuario, int page, int pageSize, string? q, int? estadoId, int? severidadId, int? activoId, int? categoriaId = null, string? orden = null)
         {
             page = Math.Max(1, page);
             pageSize = Math.Clamp(pageSize, 1, 50);
+
+            var erroresOrden = Ordenamiento.Validar(orden, ColumnasOrden);
+            if (erroresOrden is not null)
+                return ServiceResult<PagedResult<IncidenteDTO>>.Validation(erroresOrden);
 
             IQueryable<Incidente> query = _db.Incidentes;
 
@@ -135,11 +159,11 @@ namespace SentryGuard.Services
             if (estadoId.HasValue) query = query.Where(i => i.EstadoId == estadoId.Value);
             if (severidadId.HasValue) query = query.Where(i => i.SeveridadId == severidadId.Value);
             if (activoId.HasValue) query = query.Where(i => i.ActivoId == activoId.Value);
+            if (categoriaId.HasValue) query = query.Where(i => i.CategoriaId == categoriaId.Value);
 
             var total = await query.CountAsync();
             var items = await query
-                .OrderByDescending(i => i.FechaCreacion)
-                .ThenByDescending(i => i.Id)
+                .Ordenar(orden, ColumnasOrden, q => q.OrderByDescending(i => i.FechaCreacion).ThenByDescending(i => i.Id), i => i.Id)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
                 .Select(ADto)
@@ -165,12 +189,16 @@ namespace SentryGuard.Services
             if (dto.SeveridadId.HasValue && !await _db.Severidades.AnyAsync(s => s.Id == dto.SeveridadId.Value))
                 errores["severidadId"] = ["La severidad seleccionada no existe."];
 
+            if (dto.CategoriaId.HasValue && !await _db.CategoriasIncidente.AnyAsync(c => c.Id == dto.CategoriaId.Value))
+                errores["categoriaId"] = ["La categoría seleccionada no existe."];
+
             if (errores.Count > 0)
                 return ServiceResult<bool>.Validation(errores);
 
             if (dto.Titulo is not null) incidente.Titulo = dto.Titulo.Trim();
             if (dto.Descripcion is not null) incidente.Descripcion = dto.Descripcion.Trim();
             if (dto.SeveridadId.HasValue) incidente.SeveridadId = dto.SeveridadId.Value;
+            if (dto.CategoriaId.HasValue) incidente.CategoriaId = dto.CategoriaId.Value;
 
             RegistrarEnBitacora(incidente.Id, usuario.Id, "Datos del incidente actualizados");
             await _incidenteRepo.UpdateAsync(incidente);
@@ -206,15 +234,13 @@ namespace SentryGuard.Services
             return ServiceResult<bool>.Ok(true);
         }
 
-        // Matriz de transiciones permitidas según el flujo de estados (ADR-008)
-        private static readonly Dictionary<int, int[]> TransicionesValidas = new()
-        {
-            [1] = [2, 3, 4, 5], // Abierto -> En progreso, Escalado, Resuelto, Cerrado
-            [2] = [3, 4, 5],    // En progreso -> Escalado, Resuelto, Cerrado
-            [3] = [2, 4, 5],    // Escalado -> En progreso, Resuelto, Cerrado
-            [4] = [2, 5],       // Resuelto -> En progreso (reapertura), Cerrado
-            [5] = [1, 2]        // Cerrado -> Abierto o En progreso (reapertura)
-        };
+        /// <summary>Pares (origen, destino) permitidos, leídos de tb_TransicionEstado (ADR-008).</summary>
+        public async Task<IReadOnlyList<TransicionDTO>> ListarTransicionesAsync() =>
+            await _db.TransicionesEstado
+                .AsNoTracking()
+                .OrderBy(t => t.EstadoOrigenId).ThenBy(t => t.EstadoDestinoId)
+                .Select(t => new TransicionDTO { EstadoOrigenId = t.EstadoOrigenId, EstadoDestinoId = t.EstadoDestinoId })
+                .ToListAsync();
 
         public async Task<ServiceResult<bool>> CambiarEstadoAsync(int id, int nuevoEstadoId, Usuario usuario)
         {
@@ -232,7 +258,9 @@ namespace SentryGuard.Services
             if (incidente.EstadoId == nuevoEstadoId)
                 return ServiceResult<bool>.Conflict("El incidente ya se encuentra en ese estado.", "ESTADO_IDENTICO");
 
-            if (TransicionesValidas.TryGetValue(incidente.EstadoId, out var permitidos) && !permitidos.Contains(nuevoEstadoId))
+            var transicionPermitida = await _db.TransicionesEstado
+                .AnyAsync(t => t.EstadoOrigenId == incidente.EstadoId && t.EstadoDestinoId == nuevoEstadoId);
+            if (!transicionPermitida)
             {
                 var estadoOrigen = await _db.EstadosIncidente.Where(e => e.Id == incidente.EstadoId).Select(e => e.Nombre).FirstOrDefaultAsync() ?? $"Estado #{incidente.EstadoId}";
                 return ServiceResult<bool>.InvalidTransition($"No se permite la transición desde '{estadoOrigen}' hacia '{nuevoEstado.Nombre}'.");
@@ -301,7 +329,7 @@ namespace SentryGuard.Services
 
             var bitacoras = await _db.BitacorasIncidente
                 .Where(b => b.IncidenteId == id)
-                .OrderBy(b => b.Timestamp)
+                .OrderByDescending(b => b.Timestamp).ThenByDescending(b => b.Id)
                 .Select(b => new BitacoraDTO
                 {
                     Id = b.Id,
@@ -411,12 +439,12 @@ namespace SentryGuard.Services
 
             var dto = new CumplimientoSLADTO
             {
-                IncidenteId = incidente.Id,
-                Titulo = incidente.Titulo,
-                Estado = incidente.Estado?.Nombre ?? "Desconocido",
                 HorasTranscurridas = Math.Round(horasTranscurridas, 2),
-                HorasSLAEstablecidas = horasLimiteDbl,
-                CumpleSLA = cumpleSla,
+                HorasSLA = horasLimiteDbl,
+                Cumple = cumpleSla,
+                Fuente = contratoDetalle.HasValue ? "Contrato SLA" : "Severidad",
+                FechaLimite = incidente.FechaCreacion.AddHours(horasLimiteDbl),
+                Cerrado = incidente.FechaCierre.HasValue,
                 PorcentajeUtilizacion = Math.Round(porcentaje, 2)
             };
             return ServiceResult<CumplimientoSLADTO>.Ok(dto);

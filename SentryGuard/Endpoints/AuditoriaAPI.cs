@@ -15,7 +15,7 @@ namespace SentryGuard.Endpoints
                 .MapGet("", Listar).WithName("Listar auditoria");
         }
 
-        private static async Task<IResult> Listar(SentryGuardDbContext db, int page = 1, int pageSize = 20, string? q = null, int? usuarioId = null)
+        private static async Task<IResult> Listar(SentryGuardDbContext db, int page = 1, int pageSize = 20, string? q = null, int? usuarioId = null, string? entidad = null)
         {
             (page, pageSize) = Paginacion.Normalizar(page, pageSize);
 
@@ -26,6 +26,7 @@ namespace SentryGuard.Endpoints
                 if (termino.Length > 100) termino = termino[..100];
                 query = query.Where(l => l.Accion.Contains(termino));
             }
+            if (!string.IsNullOrWhiteSpace(entidad)) query = query.Where(l => l.Entidad == entidad);
             if (usuarioId.HasValue) query = query.Where(l => l.UsuarioId == usuarioId.Value);
 
             var total = await query.CountAsync();
@@ -40,6 +41,10 @@ namespace SentryGuard.Endpoints
                     Usuario = db.Usuarios.Where(u => u.Id == l.UsuarioId).Select(u => u.Nombre).FirstOrDefault(),
                     Accion = l.Accion,
                     IpOrigen = l.IpOrigen,
+                    Entidad = l.Entidad,
+                    EntidadId = l.EntidadId,
+                    ValoresAnteriores = l.ValoresAnteriores,
+                    ValoresNuevos = l.ValoresNuevos,
                     Timestamp = l.Timestamp
                 })
                 .ToListAsync();

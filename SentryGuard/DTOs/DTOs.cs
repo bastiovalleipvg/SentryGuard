@@ -56,8 +56,18 @@ namespace SentryGuard.DTOs
         public int OrganizacionId { get; init; }
         public int? AnalistaAsignadoId { get; init; }
         public string? AnalistaAsignado { get; init; }
+        public int? CategoriaId { get; init; }
+        public string? Categoria { get; init; }
         public DateTime FechaCreacion { get; init; }
         public DateTime? FechaCierre { get; init; }
+        public DateTime FechaModificacion { get; init; }
+    }
+
+    /// <summary>Par de estados permitido en el flujo (tb_TransicionEstado).</summary>
+    public record TransicionDTO
+    {
+        public int EstadoOrigenId { get; init; }
+        public int EstadoDestinoId { get; init; }
     }
 
     /// <summary>
@@ -114,6 +124,10 @@ namespace SentryGuard.DTOs
         public string? Usuario { get; init; }
         public string Accion { get; init; } = null!;
         public string? IpOrigen { get; init; }
+        public string? Entidad { get; init; }
+        public int? EntidadId { get; init; }
+        public string? ValoresAnteriores { get; init; }
+        public string? ValoresNuevos { get; init; }
         public DateTime Timestamp { get; init; }
     }
 
@@ -146,12 +160,13 @@ namespace SentryGuard.DTOs
     /// </summary>
     public record CumplimientoSLADTO
     {
-        public int IncidenteId { get; init; }
-        public string Titulo { get; init; } = null!;
-        public string Estado { get; init; } = null!;
+        // Contrato que consume el frontend (CumplimientoSlaSchema): no cambiar los nombres.
         public double HorasTranscurridas { get; init; }
-        public double HorasSLAEstablecidas { get; init; }
-        public bool CumpleSLA { get; init; }
+        public double HorasSLA { get; init; }
+        public bool Cumple { get; init; }
+        public string Fuente { get; init; } = "Severidad";
+        public DateTime FechaLimite { get; init; }
+        public bool Cerrado { get; init; }
         public double PorcentajeUtilizacion { get; init; }
     }
 

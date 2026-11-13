@@ -40,9 +40,10 @@ namespace SentryGuard.Endpoints
             int page = 1,
             int pageSize = 10,
             string? q = null,
-            int? planId = null)
+            int? planId = null,
+            string? orden = null)
         {
-            var result = await service.ListarAsync(page, pageSize, q, planId);
+            var result = await service.ListarAsync(page, pageSize, q, planId, orden);
             return result.ToHttpResult();
         }
 
