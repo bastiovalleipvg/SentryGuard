@@ -33,6 +33,18 @@ namespace SentryGuard.Services
             _httpClient.Timeout = TimeSpan.FromSeconds(15);
         }
 
+        /// <summary>
+        /// La clave viaja en el encabezado x-goog-api-key y no en la URL: asi no queda en los logs del
+        /// HttpClient ni en los mensajes de las excepciones.
+        /// </summary>
+        private Task<HttpResponseMessage> EnviarAsync(string modelo, string apiKey, object cuerpo, CancellationToken cancellationToken)
+        {
+            var url = $"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent";
+            var peticion = new HttpRequestMessage(HttpMethod.Post, url) { Content = JsonContent.Create(cuerpo) };
+            peticion.Headers.Add("x-goog-api-key", apiKey);
+            return _httpClient.SendAsync(peticion, cancellationToken);
+        }
+
         public async Task<ServiceResult<ClasificacionIaDTO>> ClasificarIncidenteAsync(
             string titulo,
             string descripcion,
@@ -54,8 +66,7 @@ namespace SentryGuard.Services
             try
             {
                 var modelo = _config["IA:Modelo"] ?? "gemini-2.5-flash";
-                var url = $"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent?key={apiKey}";
-
+                
                 var prompt = $@"Eres un experto senior en ciberseguridad para un SOC (Centro de Operaciones de Seguridad) CyberOps.
 Analiza el siguiente incidente de seguridad y clasifícalo.
 Título: {titulo}
@@ -65,7 +76,7 @@ Debes responder ÚNICAMENTE un objeto JSON válido con este formato exacto, sin 
 {{
   ""severidadSugeridaId"": 1_para_baja_2_para_media_3_para_alta_o_4_para_critica,
   ""severidadNombre"": ""Baja|Media|Alta|Crítica"",
-  ""categoriaSugerida"": ""Nombre corto de categoría (ej: Phishing, Malware, Acceso no autorizado, DDoS, Fuga de datos)"",
+  ""categoriaSugerida"": ""Una categoría del catálogo (usa exactamente una de: Phishing, Malware, Acceso no autorizado, Denegación de servicio, Fuga de datos, Otro)"",
   ""justificacion"": ""Explicación técnica concisa de 1 a 2 oraciones del por qué de la severidad asignada"",
   ""accionesRecomendadas"": [""Acción inmediata 1"", ""Acción 2"", ""Acción 3""]
 }}";
@@ -86,7 +97,7 @@ Debes responder ÚNICAMENTE un objeto JSON válido con este formato exacto, sin 
                 using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
-                var response = await _httpClient.PostAsJsonAsync(url, requestBody, linkedCts.Token);
+                var response = await EnviarAsync(modelo, apiKey, requestBody, linkedCts.Token);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -145,8 +156,7 @@ Debes responder ÚNICAMENTE un objeto JSON válido con este formato exacto, sin 
             try
             {
                 var modelo = _config["IA:Modelo"] ?? "gemini-2.5-flash";
-                var url = $"https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent?key={apiKey}";
-
+                
                 var prompt = $@"Eres un analista de ciberseguridad senior de CyberOps.
 Genera un resumen ejecutivo formal y conciso en español de los siguientes datos o métricas de incidentes:
 {contexto}
@@ -168,7 +178,7 @@ Enfócate en: hallazgos clave, activos en riesgo, estado de resolución y recome
                 using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
                 using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
-                var response = await _httpClient.PostAsJsonAsync(url, requestBody, linkedCts.Token);
+                var response = await EnviarAsync(modelo, apiKey, requestBody, linkedCts.Token);
 
                 if (!response.IsSuccessStatusCode)
                 {

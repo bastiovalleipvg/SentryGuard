@@ -37,7 +37,7 @@ namespace SentryGuard.Services
             {
                 severidadId = 4; // Crítica (1h SLA)
                 severidadNombre = "Crítica";
-                categoria = "Malware / Amenaza Crítica";
+                categoria = "Malware";
                 justificacion = "Se detectaron indicadores de compromiso críticos (amenaza de ransomware, comando y control o impacto directo a la infraestructura núcleo). Requiere aislamiento inmediato.";
                 acciones = new List<string>
                 {
@@ -50,7 +50,7 @@ namespace SentryGuard.Services
             {
                 severidadId = 3; // Alta (4h SLA)
                 severidadNombre = "Alta";
-                categoria = "Acceso no autorizado / Intrusión";
+                categoria = "Acceso no autorizado";
                 justificacion = "Evidencia de explotación de vulnerabilidades de aplicación o intento de escalamiento de privilegios en el perímetro.";
                 acciones = new List<string>
                 {
@@ -63,7 +63,7 @@ namespace SentryGuard.Services
             {
                 severidadId = 2; // Media (12h SLA)
                 severidadNombre = "Media";
-                categoria = "Phishing / Ingeniería Social";
+                categoria = "Phishing";
                 justificacion = "Intento de recolección de credenciales o ataque distribuido de autenticación que no ha comprometido infraestructura central.";
                 acciones = new List<string>
                 {
@@ -76,7 +76,7 @@ namespace SentryGuard.Services
             {
                 severidadId = 1; // Baja (24h SLA)
                 severidadNombre = "Baja";
-                categoria = "Anomalía de Red / Política";
+                categoria = "Otro";
                 justificacion = "Evento de telemetría de bajo riesgo o escaneo rutinario sin afectación de servicios ni compromiso confirmado.";
                 acciones = new List<string>
                 {
