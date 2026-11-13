@@ -5,9 +5,13 @@ services:
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: "${SA_PASSWORD:-SentryGuard2026!}"
+    # El volumen cubre todo /var/opt/mssql (datos, logs y la carpeta backups/): montarlo solo sobre
+    # .../data lo deja con dueño root y SQL Server, que corre sin root, no puede escribir.
     volumes:
-      - sqldata:/var/opt/mssql/data
-      - sqlbackups:/var/opt/mssql/backups
+      - sqldata:/var/opt/mssql
+    # Solo en localhost, para migrar, probar y respaldar desde el equipo del desarrollador.
+    ports:
+      - "127.0.0.1:${DB_HOST_PORT:-14333}:1433"
     healthcheck:
       test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q 'SELECT 1' || exit 1"]
       interval: 10s
@@ -71,4 +75,3 @@ services:
 
 volumes:
   sqldata:
-  sqlbackups:
