@@ -2,7 +2,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using SentryGuard.Models;
 using SentryGuard.Services;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace SentryGuard.Data;
 
@@ -19,6 +24,7 @@ public class SentryGuardDbContext : DbContext
     public DbSet<Rol> Roles => Set<Rol>();
     public DbSet<PlanServicio> PlanesServicio => Set<PlanServicio>();
     public DbSet<CategoriaActivo> CategoriasActivo => Set<CategoriaActivo>();
+    public DbSet<CategoriaIncidente> CategoriasIncidente => Set<CategoriaIncidente>();
     public DbSet<Severidad> Severidades => Set<Severidad>();
     public DbSet<EstadoIncidente> EstadosIncidente => Set<EstadoIncidente>();
     public DbSet<Organizacion> Organizaciones => Set<Organizacion>();
@@ -126,6 +132,9 @@ public class SentryGuardDbContext : DbContext
 
         modelBuilder.Entity<PlanServicio>(entity =>
         {
+            entity.ToTable("tb_PlanServicio", t =>
+                t.HasCheckConstraint("CK_tb_PlanServicio_TiempoRespuesta", "[tiempo_respuesta_base_h] > 0"));
+
             entity.HasIndex(e => e.Nombre).IsUnique();
             entity.Property(e => e.TiempoRespuestaBaseH).HasPrecision(10, 2);
 
@@ -149,8 +158,27 @@ public class SentryGuardDbContext : DbContext
             );
         });
 
+        modelBuilder.Entity<CategoriaIncidente>(entity =>
+        {
+            entity.ToTable("tb_CategoriaIncidente");
+            entity.HasIndex(e => e.Nombre).IsUnique();
+
+            entity.HasData(
+                new CategoriaIncidente { Id = 1, Nombre = "Ransomware / Malware", Descripcion = "Infección o propagación de software malicioso o ransomware" },
+                new CategoriaIncidente { Id = 2, Nombre = "Phishing / Ingeniería Social", Descripcion = "Campañas de suplantación de identidad dirigidas a usuarios" },
+                new CategoriaIncidente { Id = 3, Nombre = "Inyección SQL / Vulnerabilidad Web", Descripcion = "Explotación de fallas en portales y aplicaciones web" },
+                new CategoriaIncidente { Id = 4, Nombre = "Acceso No Autorizado / C2", Descripcion = "Compromiso de credenciales o balizaje a servidores de control" },
+                new CategoriaIncidente { Id = 5, Nombre = "DDoS / Indisponibilidad", Descripcion = "Ataques volumétricos de denegación de servicio" },
+                new CategoriaIncidente { Id = 6, Nombre = "Fuga de Información", Descripcion = "Exfiltración no autorizada de datos confidenciales" },
+                new CategoriaIncidente { Id = 7, Nombre = "Escaneo / Reconocimiento", Descripcion = "Sondeo masivo de puertos y servicios expuestos" }
+            );
+        });
+
         modelBuilder.Entity<Severidad>(entity =>
         {
+            entity.ToTable("tb_Severidad", t =>
+                t.HasCheckConstraint("CK_tb_Severidad_HorasSla", "[horas_sla] > 0 AND [horas_sla] <= 720"));
+
             entity.HasIndex(e => e.Nombre).IsUnique();
             entity.Property(e => e.HorasSla).HasPrecision(10, 2);
 
@@ -177,6 +205,9 @@ public class SentryGuardDbContext : DbContext
 
         modelBuilder.Entity<Organizacion>(entity =>
         {
+            entity.ToTable("tb_Organizacion", t =>
+                t.HasCheckConstraint("CK_tb_Organizacion_RutFormato", "LEN([rut]) >= 9 AND LEN([rut]) <= 10 AND [rut] LIKE '%-%'"));
+
             entity.HasIndex(e => e.Rut).IsUnique();
             entity.Property(e => e.FechaAlta)
                 .HasPrecision(0)
@@ -202,6 +233,9 @@ public class SentryGuardDbContext : DbContext
 
         modelBuilder.Entity<ContratoSLA>(entity =>
         {
+            entity.ToTable("tb_ContratoSLA", t =>
+                t.HasCheckConstraint("CK_tb_ContratoSLA_Vigencia", "[vigente_hasta] IS NULL OR [vigente_hasta] > [vigente_desde]"));
+
             entity.Property(e => e.VigenteDesde).HasPrecision(0);
             entity.Property(e => e.VigenteHasta).HasPrecision(0);
             entity.HasIndex(e => e.OrganizacionId).IsUnique().HasFilter("[vigente_hasta] IS NULL");
@@ -215,6 +249,9 @@ public class SentryGuardDbContext : DbContext
 
         modelBuilder.Entity<ContratoSLADetalle>(entity =>
         {
+            entity.ToTable("tb_ContratoSLA_Detalle", t =>
+                t.HasCheckConstraint("CK_tb_ContratoSLA_Detalle_HorasSla", "[horas_sla] > 0 AND [horas_sla] <= 720"));
+
             entity.HasIndex(e => new { e.ContratoId, e.SeveridadId }).IsUnique();
             entity.Property(e => e.HorasSla).HasPrecision(10, 2);
 
@@ -232,6 +269,9 @@ public class SentryGuardDbContext : DbContext
 
         modelBuilder.Entity<Usuario>(entity =>
         {
+            entity.ToTable("tb_Usuario", t =>
+                t.HasCheckConstraint("CK_tb_Usuario_IntentosFallidos", "[intentos_fallidos] >= 0"));
+
             entity.HasIndex(e => e.Email).IsUnique();
             entity.Property(e => e.Activo).HasDefaultValue(true);
             entity.Property(e => e.IntentosFallidos).HasDefaultValue(0);
@@ -348,6 +388,12 @@ public class SentryGuardDbContext : DbContext
 
         modelBuilder.Entity<Incidente>(entity =>
         {
+            entity.ToTable("tb_Incidente", t =>
+            {
+                t.HasCheckConstraint("CK_tb_Incidente_TituloMinimo", "LEN(LTRIM(RTRIM([titulo]))) >= 5");
+                t.HasCheckConstraint("CK_tb_Incidente_FechaCierre", "[fecha_cierre] IS NULL OR [fecha_cierre] >= [fecha_creacion]");
+            });
+
             entity.Property(e => e.FechaCreacion)
                 .HasPrecision(0)
                 .HasDefaultValueSql("SYSUTCDATETIME()");
@@ -362,6 +408,7 @@ public class SentryGuardDbContext : DbContext
             entity.HasIndex(e => e.OrganizacionId);
             entity.HasIndex(e => e.ActivoId);
             entity.HasIndex(e => e.SeveridadId);
+            entity.HasIndex(e => e.CategoriaId);
             entity.HasIndex(e => e.EstadoId);
             entity.HasIndex(e => e.AnalistaAsignadoId);
             entity.HasIndex(e => e.FechaCreacion);
@@ -382,6 +429,11 @@ public class SentryGuardDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.SeveridadId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Categoria)
+                .WithMany()
+                .HasForeignKey(e => e.CategoriaId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             entity.HasOne(e => e.Estado)
                 .WithMany()
@@ -445,7 +497,6 @@ public class SentryGuardDbContext : DbContext
             entity.HasIndex(e => e.Timestamp);
             entity.HasIndex(e => new { e.Entidad, e.EntidadId });
 
-            
             entity.HasOne<Usuario>()
                 .WithMany()
                 .HasForeignKey(e => e.UsuarioId)
@@ -489,5 +540,114 @@ public class SentryGuardDbContext : DbContext
         modelBuilder.Entity<IncidenteDetalleVista>(e => { e.HasNoKey(); e.ToView("vw_IncidenteDetalle"); e.Property(v => v.HorasResolucion).HasPrecision(12, 2); });
         modelBuilder.Entity<CumplimientoSlaVista>(e => { e.HasNoKey(); e.ToView("vw_CumplimientoSla"); e.Property(v => v.HorasSla).HasPrecision(12, 2); e.Property(v => v.HorasTranscurridas).HasPrecision(12, 2); });
         modelBuilder.Entity<IndicadorMensualVista>(e => { e.HasNoKey(); e.ToView("vw_IndicadoresMensuales"); e.Property(v => v.PromedioHorasResolucion).HasPrecision(12, 2); });
+    }
+
+    private static readonly HashSet<string> CamposSinAuditar = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "PasswordHash",
+        "RowVersion"
+    };
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        var entries = ChangeTracker.Entries()
+            .Where(e => e.Entity is not LogAuditoria &&
+                       (e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted))
+            .ToList();
+
+        if (entries.Count == 0)
+        {
+            return await base.SaveChangesAsync(cancellationToken);
+        }
+
+        var auditorias = new List<LogAuditoria>();
+        var usuarioId = _usuarioActual?.UsuarioId;
+        var ipOrigen = _usuarioActual?.IpOrigen ?? "SISTEMA";
+
+        foreach (var entry in entries)
+        {
+            var nombreEntidad = entry.Entity.GetType().Name;
+            var accion = entry.State switch
+            {
+                EntityState.Added => "CREAR",
+                EntityState.Modified => "MODIFICAR",
+                EntityState.Deleted => "ELIMINAR",
+                _ => entry.State.ToString()
+            };
+
+            string? valoresAnteriores = null;
+            string? valoresNuevos = null;
+
+            if (entry.State == EntityState.Modified || entry.State == EntityState.Deleted)
+            {
+                var dicAnterior = new Dictionary<string, object?>();
+                foreach (var prop in entry.OriginalValues.Properties)
+                {
+                    if (!CamposSinAuditar.Contains(prop.Name))
+                        dicAnterior[prop.Name] = entry.OriginalValues[prop];
+                }
+                valoresAnteriores = JsonSerializer.Serialize(dicAnterior);
+            }
+
+            if (entry.State == EntityState.Added || entry.State == EntityState.Modified)
+            {
+                var dicNuevo = new Dictionary<string, object?>();
+                foreach (var prop in entry.CurrentValues.Properties)
+                {
+                    if (!CamposSinAuditar.Contains(prop.Name))
+                        dicNuevo[prop.Name] = entry.CurrentValues[prop];
+                }
+                valoresNuevos = JsonSerializer.Serialize(dicNuevo);
+            }
+
+            var idProp = entry.Properties.FirstOrDefault(p => p.Metadata.IsPrimaryKey());
+            long? entidadId = null;
+            if (idProp?.CurrentValue != null && long.TryParse(idProp.CurrentValue.ToString(), out var parsedId))
+            {
+                entidadId = parsedId;
+            }
+
+            auditorias.Add(new LogAuditoria
+            {
+                UsuarioId = usuarioId,
+                Accion = $"{accion} {nombreEntidad}",
+                Entidad = nombreEntidad,
+                EntidadId = entidadId,
+                ValoresAnteriores = valoresAnteriores,
+                ValoresNuevos = valoresNuevos,
+                IpOrigen = ipOrigen,
+                Timestamp = DateTime.UtcNow
+            });
+        }
+
+        var result = await base.SaveChangesAsync(cancellationToken);
+
+        if (auditorias.Count > 0)
+        {
+            foreach (var log in auditorias)
+            {
+                LogsAuditoria.Add(log);
+            }
+            await base.SaveChangesAsync(cancellationToken);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Punto de extensión para registrar acciones explícitas como exportación de reportes (RNF-11 / Hito 4).
+    /// </summary>
+    public async Task RegistrarAccionAsync(string entidad, string accion, long? entidadId = null, CancellationToken cancellationToken = default)
+    {
+        LogsAuditoria.Add(new LogAuditoria
+        {
+            UsuarioId = _usuarioActual?.UsuarioId,
+            Accion = accion,
+            Entidad = entidad,
+            EntidadId = entidadId,
+            IpOrigen = _usuarioActual?.IpOrigen ?? "SISTEMA",
+            Timestamp = DateTime.UtcNow
+        });
+        await base.SaveChangesAsync(cancellationToken);
     }
 }

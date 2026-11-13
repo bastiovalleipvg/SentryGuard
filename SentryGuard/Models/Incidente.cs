@@ -29,6 +29,9 @@ public class Incidente : IAuditable
     [Column("severidad_id")]
     public int SeveridadId { get; set; }
 
+    [Column("categoria_id")]
+    public int? CategoriaId { get; set; }
+
     [Column("estado_id")]
     public int EstadoId { get; set; }
 
@@ -76,4 +79,7 @@ public class Incidente : IAuditable
 
     [ForeignKey("AnalistaAsignadoId")]
     public virtual Usuario? AnalistaAsignado { get; set; }
+
+    [ForeignKey("CategoriaId")]
+    public virtual CategoriaIncidente? Categoria { get; set; }
 }

@@ -28,6 +28,11 @@ namespace SentryGuard.Endpoints
             }
             if (!string.IsNullOrWhiteSpace(entidad)) query = query.Where(l => l.Entidad == entidad);
             if (usuarioId.HasValue) query = query.Where(l => l.UsuarioId == usuarioId.Value);
+            if (!string.IsNullOrWhiteSpace(entidad))
+            {
+                var entidadTermino = entidad.Trim();
+                query = query.Where(l => l.Entidad == entidadTermino);
+            }
 
             var total = await query.CountAsync();
             var items = await query
@@ -40,6 +45,10 @@ namespace SentryGuard.Endpoints
                     Id = l.Id,
                     Usuario = db.Usuarios.Where(u => u.Id == l.UsuarioId).Select(u => u.Nombre).FirstOrDefault(),
                     Accion = l.Accion,
+                    Entidad = l.Entidad,
+                    EntidadId = l.EntidadId,
+                    ValoresAnteriores = l.ValoresAnteriores,
+                    ValoresNuevos = l.ValoresNuevos,
                     IpOrigen = l.IpOrigen,
                     Entidad = l.Entidad,
                     EntidadId = l.EntidadId,

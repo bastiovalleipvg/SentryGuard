@@ -4,6 +4,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SentryGuard.Models;
 
+/// <summary>
+/// Registro inmutable de auditoría para trazabilidad de cambios y acciones del sistema (RNF-11 / RF-16).
+/// </summary>
 [Table("tb_LogAuditoria")]
 public class LogAuditoria
 {
@@ -18,6 +21,19 @@ public class LogAuditoria
     [StringLength(150)]
     [Column("accion")]
     public string Accion { get; set; } = null!;
+
+    [StringLength(100)]
+    [Column("entidad")]
+    public string? Entidad { get; set; }
+
+    [Column("entidad_id")]
+    public long? EntidadId { get; set; }
+
+    [Column("valores_anteriores")]
+    public string? ValoresAnteriores { get; set; }
+
+    [Column("valores_nuevos")]
+    public string? ValoresNuevos { get; set; }
 
     [StringLength(45)]
     [Column("ip_origen")]

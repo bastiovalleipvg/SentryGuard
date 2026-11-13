@@ -55,6 +55,23 @@ namespace SentryGuard.Endpoints
                 .WithName("Crear categoría")
                 .RequireAuthorization(policy => policy.RequireRole("Administrador"));
 
+            // Categorías de incidente (RF-15)
+            catalogo.MapGet("/categorias-incidente", ListarCategoriasIncidente)
+                .WithName("Listar categorías de incidente")
+                .WithDescription("Lista todas las categorías de incidente");
+
+            catalogo.MapPost("/categorias-incidente", CrearCategoriaIncidente)
+                .WithName("Crear categoría de incidente")
+                .RequireAuthorization(policy => policy.RequireRole("Administrador"));
+
+            catalogo.MapPut("/categorias-incidente/{id}", ActualizarCategoriaIncidente)
+                .WithName("Actualizar categoría de incidente")
+                .RequireAuthorization(policy => policy.RequireRole("Administrador"));
+
+            catalogo.MapDelete("/categorias-incidente/{id}", EliminarCategoriaIncidente)
+                .WithName("Eliminar categoría de incidente")
+                .RequireAuthorization(policy => policy.RequireRole("Administrador"));
+
             // Planes de servicio
             catalogo.MapGet("/planes-servicio", ListarPlanesServicio)
                 .WithName("Listar planes")
@@ -363,6 +380,84 @@ namespace SentryGuard.Endpoints
                 return Validacion.Conflicto("EN_USO", "No se puede eliminar: hay organizaciones con este plan contratado.");
 
             db.PlanesServicio.Remove(plan);
+            await db.SaveChangesAsync();
+            return Results.NoContent();
+        }
+
+        private static async Task<IResult> ListarCategoriasIncidente(
+            SentryGuardDbContext db,
+            int page = 1,
+            int pageSize = 50)
+        {
+            (page, pageSize) = Paginacion.Normalizar(page, pageSize);
+
+            var total = await db.CategoriasIncidente.CountAsync();
+            var items = await db.CategoriasIncidente
+                .OrderBy(c => c.Nombre)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(c => new
+                {
+                    id = c.Id,
+                    nombre = c.Nombre,
+                    descripcion = c.Descripcion
+                })
+                .ToListAsync();
+
+            return Results.Ok(new
+            {
+                total,
+                page,
+                pageSize,
+                totalPages = (int)Math.Ceiling((double)total / pageSize),
+                items
+            });
+        }
+
+        private static async Task<IResult> CrearCategoriaIncidente(
+            CrearCategoriaRequest request,
+            SentryGuardDbContext db)
+        {
+            var errores = await ValidarNombreAsync(request.Nombre, n => db.CategoriasIncidente.AnyAsync(c => c.Nombre == n));
+            if (errores.Count > 0) return Results.ValidationProblem(errores);
+
+            var categoria = new Models.CategoriaIncidente
+            {
+                Nombre = request.Nombre!.Trim()
+            };
+
+            db.CategoriasIncidente.Add(categoria);
+            await db.SaveChangesAsync();
+
+            return Results.Created($"/api/v1/catalogos/categorias-incidente/{categoria.Id}", new
+            {
+                id = categoria.Id,
+                nombre = categoria.Nombre
+            });
+        }
+
+        private static async Task<IResult> ActualizarCategoriaIncidente(int id, CrearCategoriaRequest request, SentryGuardDbContext db)
+        {
+            var categoria = await db.CategoriasIncidente.FindAsync(id);
+            if (categoria == null) return Results.NotFound();
+
+            var errores = await ValidarNombreAsync(request.Nombre, n => db.CategoriasIncidente.AnyAsync(c => c.Nombre == n && c.Id != id));
+            if (errores.Count > 0) return Results.ValidationProblem(errores);
+
+            categoria.Nombre = request.Nombre!.Trim();
+            await db.SaveChangesAsync();
+            return Results.Ok(new { mensaje = "Actualizado" });
+        }
+
+        private static async Task<IResult> EliminarCategoriaIncidente(int id, SentryGuardDbContext db)
+        {
+            var categoria = await db.CategoriasIncidente.FindAsync(id);
+            if (categoria == null) return Results.NotFound();
+
+            if (await db.Incidentes.AnyAsync(i => i.CategoriaId == id))
+                return Validacion.Conflicto("EN_USO", "No se puede eliminar: hay incidentes asociados a esta categoría.");
+
+            db.CategoriasIncidente.Remove(categoria);
             await db.SaveChangesAsync();
             return Results.NoContent();
         }
