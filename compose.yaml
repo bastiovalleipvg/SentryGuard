@@ -1,0 +1,74 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sentryguard-db
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${SA_PASSWORD:-SentryGuard2026!}"
+    volumes:
+      - sqldata:/var/opt/mssql/data
+      - sqlbackups:/var/opt/mssql/backups
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: SentryGuard/Dockerfile
+    container_name: sentryguard-api
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: "${ASPNETCORE_ENVIRONMENT:-Development}"
+      ConnectionStrings__DefaultConnection: "${ConnectionStrings__DefaultConnection:-Server=db,1433;Database=SentryGuard;User Id=sa;Password=SentryGuard2026!;TrustServerCertificate=True;MultipleActiveResultSets=true;}"
+      Jwt__Key: "${Jwt__Key:-ClaveSecretaDeDesarrolloSentryGuardDeAlMenos64BytesDeLargoSegura!}"
+      Jwt__Issuer: "${Jwt__Issuer:-https://api.sentryguard.cl}"
+      Jwt__Audience: "${Jwt__Audience:-https://sentryguard.cl}"
+      IA__ApiKey: "${IA__ApiKey:-}"
+      IA__Modelo: "${IA__Modelo:-gemini-2.5-flash}"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  seed:
+    build:
+      context: .
+      dockerfile: SentryGuard/Dockerfile
+    container_name: sentryguard-seed
+    command: ["dotnet", "SentryGuard.dll", "--seed"]
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: "${ASPNETCORE_ENVIRONMENT:-Development}"
+      ConnectionStrings__DefaultConnection: "${ConnectionStrings__DefaultConnection:-Server=db,1433;Database=SentryGuard;User Id=sa;Password=SentryGuard2026!;TrustServerCertificate=True;MultipleActiveResultSets=true;}"
+      Jwt__Key: "${Jwt__Key:-ClaveSecretaDeDesarrolloSentryGuardDeAlMenos64BytesDeLargoSegura!}"
+      Jwt__Issuer: "${Jwt__Issuer:-https://api.sentryguard.cl}"
+      Jwt__Audience: "${Jwt__Audience:-https://sentryguard.cl}"
+    restart: "no"
+
+  web:
+    build:
+      context: ./sentryguard-web
+      dockerfile: Dockerfile
+    container_name: sentryguard-web
+    ports:
+      - "80:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  sqldata:
+  sqlbackups:
