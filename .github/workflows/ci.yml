@@ -1,0 +1,55 @@
+name: SentryGuard CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend:
+    name: Backend Build & Tests (.NET 9)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar .NET 9 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restaurar dependencias NuGet
+        run: dotnet restore SentryGuard/SentryGuard.csproj
+
+      - name: Compilar Backend
+        run: dotnet build SentryGuard/SentryGuard.csproj --no-restore -c Release
+
+      - name: Ejecutar pruebas unitarias de servicios e IA
+        run: dotnet test SentryGuard.Tests/SentryGuard.Tests.csproj --filter "FullyQualifiedName~UnitTests|FullyQualifiedName~Generador" --verbosity normal
+
+  frontend:
+    name: Frontend Lint, Test & Build (React SPA)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./sentryguard-web
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: sentryguard-web/package-lock.json
+
+      - name: Instalar dependencias npm
+        run: npm ci
+
+      - name: Ejecutar suite de pruebas Vitest
+        run: npm test -- --run
+
+      - name: Compilar bundle de producción
+        run: npm run build

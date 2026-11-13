@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # Dependencias NuGet del Backend
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # Dependencias npm del Frontend
+  - package-ecosystem: "npm"
+    directory: "/sentryguard-web"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # Acciones de GitHub Workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
