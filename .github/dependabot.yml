@@ -14,6 +14,16 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 5
 
+  # Imagenes base de los Dockerfile (version fija: Dependabot propone las actualizaciones)
+  - package-ecosystem: "docker"
+    directory: "/SentryGuard"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "docker"
+    directory: "/sentryguard-web"
+    schedule:
+      interval: "weekly"
+
   # Acciones de GitHub Workflows
   - package-ecosystem: "github-actions"
     directory: "/"

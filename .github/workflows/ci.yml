@@ -1,55 +1,173 @@
-name: SentryGuard CI Pipeline
+name: CI/CD de SentryGuard
+
+# Construye, prueba y, solo si todo pasa y estamos en main, publica las imagenes en GitHub Container Registry.
+# No usa secretos propios: las claves de las pruebas se generan al vuelo, se enmascaran en los logs y viven
+# solo en el runner. La publicacion usa el GITHUB_TOKEN efimero del propio workflow.
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   backend:
-    name: Backend Build & Tests (.NET 9)
+    name: Backend (.NET 10, pruebas con SQL Server)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - name: Checkout del código
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Configurar .NET 9 SDK
-        uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: '10.0.x'
 
-      - name: Restaurar dependencias NuGet
-        run: dotnet restore SentryGuard/SentryGuard.csproj
+      # SQL Server efimero para las pruebas de integracion. La contrasena es aleatoria y se enmascara.
+      - name: Levantar SQL Server de pruebas
+        run: |
+          SA="Ci$(openssl rand -hex 12)Aa1"
+          echo "::add-mask::$SA"
+          echo "SA_PASSWORD=$SA" >> "$GITHUB_ENV"
+          docker run -d --name sql-pruebas -p 1433:1433 \
+            -e ACCEPT_EULA=Y -e "MSSQL_SA_PASSWORD=$SA" \
+            mcr.microsoft.com/mssql/server:2022-CU28-ubuntu-22.04
+          for i in $(seq 1 40); do
+            if docker exec sql-pruebas /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "$SA" -C -Q "SELECT 1" > /dev/null 2>&1; then
+              echo "SQL Server listo"; exit 0
+            fi
+            sleep 3
+          done
+          echo "SQL Server no arranco"; docker logs sql-pruebas | tail -20; exit 1
 
-      - name: Compilar Backend
-        run: dotnet build SentryGuard/SentryGuard.csproj --no-restore -c Release
+      - name: Restaurar y compilar
+        run: |
+          dotnet restore SentryGuard.slnx
+          dotnet build SentryGuard.slnx -c Release --no-restore -warnaserror:NU1902,NU1903
 
-      - name: Ejecutar pruebas unitarias de servicios e IA
-        run: dotnet test SentryGuard.Tests/SentryGuard.Tests.csproj --filter "FullyQualifiedName~UnitTests|FullyQualifiedName~Generador" --verbosity normal
+      - name: Pruebas unitarias y de integracion
+        env:
+          ConnectionStrings__DefaultConnection: Server=localhost,1433;Database=SentryGuardDB_Test;User Id=sa;Password=${{ env.SA_PASSWORD }};TrustServerCertificate=True;
+        run: dotnet test SentryGuard.slnx -c Release --no-build --logger "trx;LogFileName=resultados.trx" --results-directory TestResults
+
+      - name: Paquetes NuGet con vulnerabilidades
+        run: |
+          dotnet list SentryGuard.slnx package --vulnerable --include-transitive 2>&1 | tee vulnerables.txt
+          ! grep -q "tiene las siguientes vulnerabilidades\|has the following vulnerable" vulnerables.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: resultados-backend
+          path: |
+            TestResults/
+            vulnerables.txt
 
   frontend:
-    name: Frontend Lint, Test & Build (React SPA)
+    name: Frontend (lint, pruebas y build)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
-        working-directory: ./sentryguard-web
+        working-directory: sentryguard-web
     steps:
-      - name: Checkout del código
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Configurar Node.js 22
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'npm'
+          cache: npm
           cache-dependency-path: sentryguard-web/package-lock.json
 
-      - name: Instalar dependencias npm
-        run: npm ci
-
-      - name: Ejecutar suite de pruebas Vitest
+      - run: npm ci
+      - name: Lint (incluye reglas de accesibilidad)
+        run: npm run lint
+      - name: Pruebas de componentes
         run: npm test -- --run
-
-      - name: Compilar bundle de producción
+      - name: Build de produccion
         run: npm run build
+        env:
+          VITE_API_URL: same-origin
+      - name: Auditoria de dependencias
+        run: npm audit --audit-level=high
+
+  contenedores:
+    name: Contenedores (build y arranque con docker compose)
+    needs: [backend, frontend]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generar .env con claves aleatorias
+        run: |
+          ./scripts/generar-env.sh
+          # Enmascarar en los logs antes de que algo pueda imprimirlas
+          while IFS='=' read -r clave valor; do
+            case "$clave" in SA_PASSWORD|JWT_KEY) echo "::add-mask::$valor" ;; esac
+          done < .env
+
+      - name: Construir imagenes y levantar el sistema
+        run: docker compose -f compose.yaml up --build -d --wait --wait-timeout 300
+
+      - name: Comprobar que el sistema responde
+        run: |
+          curl -fsS http://localhost:8088/health
+          curl -fsS http://localhost:8088/ | grep -qi "<div id=\"root\""
+          curl -fsS http://localhost:8088/api/v1/catalogos/severidades | grep -q "Alta"
+          test "$(docker inspect -f '{{.State.ExitCode}}' sentryguard-seed)" = "0"
+
+      - name: Registros si algo fallo
+        if: failure()
+        run: docker compose -f compose.yaml logs --tail 80
+
+      - name: Apagar
+        if: always()
+        run: docker compose -f compose.yaml down -v
+
+  publicar:
+    name: Publicar imagenes (solo si todo paso, solo en main)
+    needs: [backend, frontend, contenedores]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Nombre del repositorio en minusculas
+        run: echo "REPO=${GITHUB_REPOSITORY,,}" >> "$GITHUB_ENV"
+
+      - name: Publicar la API
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: SentryGuard/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ env.REPO }}/api:${{ github.sha }}
+            ghcr.io/${{ env.REPO }}/api:latest
+
+      - name: Publicar el frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: sentryguard-web
+          push: true
+          tags: |
+            ghcr.io/${{ env.REPO }}/web:${{ github.sha }}
+            ghcr.io/${{ env.REPO }}/web:latest
