@@ -373,7 +373,9 @@ Registro de cada escritura exitosa en la API (quién, qué ruta, desde qué IP, 
 | `tb_ContratoSLA_Detalle (contrato_id, severidad_id)` único | Una sola cantidad de horas por severidad en cada contrato |
 | `tb_LogAuditoria (timestamp)` y `(usuario_id)` | Consulta de la auditoría por fecha y por usuario |
 
-## 5.4 Cambios planificados (Hito 2)
+## 5.4 Cambios del Hito 2
+
+**Estado (13 de noviembre de 2026):** la migración `AuditoriaCategoriaTransicionesVistas` implementa los cambios de la tabla siguiente, salvo los CHECK que se indican como pendientes. Hay pruebas de integración en `AuditoriaCategoriaVistasApiTests.cs`. Dos diferencias con lo planificado: la auditoría por entidad guarda `valores_anteriores` y `valores_nuevos` (JSON) en lugar de `operacion` y `detalle`, y además `tb_Incidente` y `tb_Activo` llevan `fecha_creacion`, `fecha_modificacion`, `creado_por_id` y `modificado_por_id`, sellados por `SentryGuardDbContext.SaveChangesAsync`.
 
 | Cambio | Tipo | Para qué |
 |---|---|---|
@@ -383,7 +385,9 @@ Registro de cada escritura exitosa en la API (quién, qué ruta, desde qué IP, 
 | **Restricciones CHECK** | Restricciones | Que ningún dato se salte la validación de la base. Ver la tabla siguiente |
 | **Vistas para reportes y dashboard:** `vw_IncidenteDetalle`, `vw_IndicadoresMensuales` y `vw_CumplimientoSla` | Vistas | Consultas preparadas para los reportes y las agregaciones, sin lógica duplicada en C# |
 
-### Restricciones CHECK previstas
+### Restricciones CHECK
+
+Implementadas: `tb_TransicionEstado` (`origen <> destino`), `tb_Incidente` (`fecha_cierre IS NULL OR fecha_cierre >= fecha_creacion`) y la clave foránea compuesta `tb_Incidente (activo_id, organizacion_id)` hacia `tb_Activo (id, organizacion_id)`, que impide que un incidente declare una organización distinta a la de su activo. **Pendientes:** el resto de la tabla.
 
 | Tabla | Restricción |
 |---|---|
@@ -395,7 +399,7 @@ Registro de cada escritura exitosa en la API (quién, qué ruta, desde qué IP, 
 | `tb_Organizacion` | RUT con formato `########-X` (`rut LIKE '%-%'` y largo entre 9 y 10) |
 | `tb_Usuario` | `intentos_fallidos >= 0` |
 
-Con esto cada regla importante queda en **tres niveles**: el formulario (Zod), la API (`Validacion.cs`) y la base (CHECK, NOT NULL, únicos y FK).
+Con los CHECK pendientes, cada regla importante quedará en **tres niveles**: el formulario (Zod), la API (`Validacion.cs`) y la base (CHECK, NOT NULL, únicos y FK).
 
 ### Diagrama de los cambios
 
@@ -437,12 +441,15 @@ El esquema se crea y versiona solo con migraciones de EF Core (`SentryGuard/Migr
 | `20260908051535_StaffInternoSinOrganizacion` | El staff de CyberOps (Administrador, Supervisor, Analista) deja de pertenecer a una organización |
 | `20261020082813_SeedActivosDemo` | Tres activos de demostración |
 
-Las del Hito 2 se crearán con `dotnet ef migrations add` y se revisarán antes de aplicarlas: primero la estructura y después las restricciones y vistas. Las vistas y los CHECK se escriben con `migrationBuilder.Sql` cuando EF no los genera solo.
+| `20261113131922_AuditoriaCategoriaTransicionesVistas` | Hito 2: `tb_CategoriaIncidente` (6 categorías) y `tb_Incidente.categoria_id`; `tb_TransicionEstado` (14 pares del flujo); campos de auditoría en `tb_Incidente` y `tb_Activo`; `entidad`, `entidad_id`, `valores_anteriores` y `valores_nuevos` en `tb_LogAuditoria`; CHECK y FK compuesta; vistas `vw_IncidenteDetalle`, `vw_CumplimientoSla` y `vw_IndicadoresMensuales` |
 
-## 5.6 Estrategia de respaldo y restauración (se prueba en el Hito 2)
+Las vistas y los CHECK se escriben con `migrationBuilder.Sql` porque EF no los genera solo. EF lee las vistas como entidades sin clave (`HasNoKey().ToView(...)`).
+
+## 5.6 Estrategia de respaldo y restauración (probada el 13 de noviembre de 2026)
 
 - **Respaldo completo diario** con `BACKUP DATABASE … TO DISK = '/var/opt/mssql/backups/…bak' WITH COMPRESSION, CHECKSUM`, ejecutado por un script dentro del contenedor `db`. Se guarda en el volumen `backups`, separado del volumen de datos.
 - **Retención:** 7 respaldos diarios y 4 semanales.
 - **Restauración:** `RESTORE DATABASE … FROM DISK = … WITH REPLACE` sobre una base vacía, y luego un conteo de filas por tabla para comparar con el original.
 - **Objetivos:** RTO de 30 minutos y RPO de 24 horas (RNF-05).
-- **Prueba:** se hace una vez y se deja la evidencia (comandos, salida y conteos) en `docs/evaluacion3/evidencias/respaldo.md`.
+- **Prueba:** `scripts/respaldo-restauracion.ps1` respalda la base, ejecuta `RESTORE VERIFYONLY`, la restaura como `SentryGuard_Restaurada`, compara el número de filas de 13 tablas y vistas con la original y deja el archivo en `backups/SentryGuard.bak` (0,75 MB comprimido). La salida de la última ejecución, con todos los conteos iguales, está en `docs/evidencias/respaldo-restauracion.txt`.
+- **Alcance:** la prueba se hizo en SQL Server 2022 dentro del contenedor del `compose.yaml`. La retención de 7 diarios y 4 semanales y la programación diaria quedan descritas, pero **no automatizadas**.
