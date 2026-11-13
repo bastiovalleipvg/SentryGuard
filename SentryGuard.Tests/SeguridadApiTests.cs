@@ -176,7 +176,7 @@ public class SeguridadApiTests : IClassFixture<SentryGuardApiFactory>
         var response = await client.PostAsJsonAsync("/api/v1/usuarios/login", new
         {
             email = "admin@sentryguard.cl",
-            password = "Password123!"
+            password = "Admin123!"
         });
 
         response.EnsureSuccessStatusCode();
@@ -189,7 +189,7 @@ public class SeguridadApiTests : IClassFixture<SentryGuardApiFactory>
 
         // Verifica en la base de datos que el token_hash NO sea el texto plano, sino su hash SHA-256
         using var scope = _factory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<Microsoft.EntityFrameworkCore.DbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<SentryGuard.Data.SentryGuardDbContext>();
         var authService = scope.ServiceProvider.GetRequiredService<SentryGuard.Services.AuthService>();
 
         var expectedHash = authService.HashearRefreshToken(rawRefreshToken);

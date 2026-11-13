@@ -282,6 +282,7 @@ namespace SentryGuard.Tests
                 new EstadoIncidente { Id = 2, Nombre = "En progreso" },
                 new EstadoIncidente { Id = 4, Nombre = "Resuelto" }
             );
+            db.TransicionesEstado.Add(new TransicionEstado { EstadoOrigenId = 2, EstadoDestinoId = 4 });
             await db.SaveChangesAsync();
 
             var incidente = new Incidente { Id = 1, Titulo = "Incidente", EstadoId = 2, OrganizacionId = 1 };
