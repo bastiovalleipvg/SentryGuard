@@ -5,7 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace SentryGuard.Models;
 
 [Table("tb_Incidente")]
-public class Incidente
+public class Incidente : IAuditable
 {
     [Key]
     [Column("id")]
@@ -41,6 +41,19 @@ public class Incidente
     [Column("fecha_cierre")]
     public DateTime? FechaCierre { get; set; }
 
+    [Column("categoria_id")]
+    public int? CategoriaId { get; set; }
+
+    // Auditoría (RF-16)
+    [Column("fecha_modificacion")]
+    public DateTime FechaModificacion { get; set; }
+
+    [Column("creado_por_id")]
+    public int? CreadoPorId { get; set; }
+
+    [Column("modificado_por_id")]
+    public int? ModificadoPorId { get; set; }
+
     [Timestamp]
     [Column("row_version")]
     public byte[]? RowVersion { get; set; }
@@ -54,6 +67,9 @@ public class Incidente
 
     [ForeignKey("SeveridadId")]
     public virtual Severidad? Severidad { get; set; }
+
+    [ForeignKey("CategoriaId")]
+    public virtual CategoriaIncidente? Categoria { get; set; }
 
     [ForeignKey("EstadoId")]
     public virtual EstadoIncidente? Estado { get; set; }

@@ -149,6 +149,8 @@ builder.Services.AddOpenApi(options =>
         return Task.CompletedTask;
     });
 });
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUsuarioActual, HttpUsuarioActual>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IIncidenteService, IncidenteService>();
 builder.Services.AddScoped<IActivoService, ActivoService>();

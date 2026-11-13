@@ -17,7 +17,7 @@ namespace SentryGuard.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.11")
+                .HasAnnotation("ProductVersion", "9.0.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -35,10 +35,32 @@ namespace SentryGuard.Migrations
                         .HasColumnType("int")
                         .HasColumnName("categoria_id");
 
+                    b.Property<int?>("CreadoPorId")
+                        .HasColumnType("int")
+                        .HasColumnName("creado_por_id");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(0)
+                        .HasColumnType("datetime2(0)")
+                        .HasColumnName("fecha_creacion")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<DateTime>("FechaModificacion")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(0)
+                        .HasColumnType("datetime2(0)")
+                        .HasColumnName("fecha_modificacion")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
                     b.Property<string>("HostnameIp")
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)")
                         .HasColumnName("hostname_ip");
+
+                    b.Property<int?>("ModificadoPorId")
+                        .HasColumnType("int")
+                        .HasColumnName("modificado_por_id");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
@@ -54,6 +76,10 @@ namespace SentryGuard.Migrations
 
                     b.HasIndex("CategoriaId");
 
+                    b.HasIndex("CreadoPorId");
+
+                    b.HasIndex("ModificadoPorId");
+
                     b.HasIndex("OrganizacionId");
 
                     b.ToTable("tb_Activo");
@@ -63,6 +89,8 @@ namespace SentryGuard.Migrations
                         {
                             Id = 1,
                             CategoriaId = 1,
+                            FechaCreacion = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            FechaModificacion = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             HostnameIp = "10.10.0.10",
                             Nombre = "Servidor web de producción",
                             OrganizacionId = 1
@@ -71,6 +99,8 @@ namespace SentryGuard.Migrations
                         {
                             Id = 2,
                             CategoriaId = 3,
+                            FechaCreacion = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            FechaModificacion = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             HostnameIp = "10.10.0.1",
                             Nombre = "Firewall perimetral",
                             OrganizacionId = 1
@@ -79,6 +109,8 @@ namespace SentryGuard.Migrations
                         {
                             Id = 3,
                             CategoriaId = 4,
+                            FechaCreacion = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            FechaModificacion = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             HostnameIp = "portal.demo.cl",
                             Nombre = "Portal de clientes",
                             OrganizacionId = 1
@@ -180,6 +212,61 @@ namespace SentryGuard.Migrations
                         });
                 });
 
+            modelBuilder.Entity("SentryGuard.Models.CategoriaIncidente", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)")
+                        .HasColumnName("nombre");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Nombre")
+                        .IsUnique();
+
+                    b.ToTable("tb_CategoriaIncidente");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Nombre = "Phishing"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Nombre = "Malware"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Nombre = "Acceso no autorizado"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Nombre = "Denegación de servicio"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Nombre = "Fuga de datos"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Nombre = "Otro"
+                        });
+                });
+
             modelBuilder.Entity("SentryGuard.Models.ContratoSLA", b =>
                 {
                     b.Property<int>("Id")
@@ -242,6 +329,39 @@ namespace SentryGuard.Migrations
                         .IsUnique();
 
                     b.ToTable("tb_ContratoSLA_Detalle");
+                });
+
+            modelBuilder.Entity("SentryGuard.Models.CumplimientoSlaVista", b =>
+                {
+                    b.Property<bool>("CumpleSla")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("EstadoId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("HorasSla")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<decimal>("HorasTranscurridas")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<int>("IncidenteId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OrganizacionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SeveridadId")
+                        .HasColumnType("int");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("vw_CumplimientoSla", (string)null);
                 });
 
             modelBuilder.Entity("SentryGuard.Models.EstadoIncidente", b =>
@@ -356,6 +476,14 @@ namespace SentryGuard.Migrations
                         .HasColumnType("int")
                         .HasColumnName("analista_asignado_id");
 
+                    b.Property<int?>("CategoriaId")
+                        .HasColumnType("int")
+                        .HasColumnName("categoria_id");
+
+                    b.Property<int?>("CreadoPorId")
+                        .HasColumnType("int")
+                        .HasColumnName("creado_por_id");
+
                     b.Property<string>("Descripcion")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
@@ -376,6 +504,17 @@ namespace SentryGuard.Migrations
                         .HasColumnType("datetime2(0)")
                         .HasColumnName("fecha_creacion")
                         .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<DateTime>("FechaModificacion")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(0)
+                        .HasColumnType("datetime2(0)")
+                        .HasColumnName("fecha_modificacion")
+                        .HasDefaultValueSql("SYSUTCDATETIME()");
+
+                    b.Property<int?>("ModificadoPorId")
+                        .HasColumnType("int")
+                        .HasColumnName("modificado_por_id");
 
                     b.Property<int>("OrganizacionId")
                         .HasColumnType("int")
@@ -403,15 +542,122 @@ namespace SentryGuard.Migrations
 
                     b.HasIndex("AnalistaAsignadoId");
 
+                    b.HasIndex("CategoriaId");
+
+                    b.HasIndex("CreadoPorId");
+
                     b.HasIndex("EstadoId");
 
                     b.HasIndex("FechaCreacion");
+
+                    b.HasIndex("ModificadoPorId");
 
                     b.HasIndex("OrganizacionId");
 
                     b.HasIndex("SeveridadId");
 
                     b.ToTable("tb_Incidente");
+                });
+
+            modelBuilder.Entity("SentryGuard.Models.IncidenteDetalleVista", b =>
+                {
+                    b.Property<string>("Activo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("ActivoId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Analista")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("AnalistaAsignadoId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CategoriaActivo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("CategoriaIncidente")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("CategoriaIncidenteId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("EstadoId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("FechaCierre")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal?>("HorasResolucion")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Organizacion")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("OrganizacionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Severidad")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SeveridadId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Titulo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("vw_IncidenteDetalle", (string)null);
+                });
+
+            modelBuilder.Entity("SentryGuard.Models.IndicadorMensualVista", b =>
+                {
+                    b.Property<int>("Anio")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CumplenSla")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Mes")
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("PromedioHorasResolucion")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<int>("Resueltos")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Severidad")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SeveridadId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TotalIncidentes")
+                        .HasColumnType("int");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("vw_IndicadoresMensuales", (string)null);
                 });
 
             modelBuilder.Entity("SentryGuard.Models.LogAuditoria", b =>
@@ -429,6 +675,15 @@ namespace SentryGuard.Migrations
                         .HasColumnType("nvarchar(150)")
                         .HasColumnName("accion");
 
+                    b.Property<string>("Entidad")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasColumnName("entidad");
+
+                    b.Property<int?>("EntidadId")
+                        .HasColumnType("int")
+                        .HasColumnName("entidad_id");
+
                     b.Property<string>("IpOrigen")
                         .HasMaxLength(45)
                         .HasColumnType("nvarchar(45)")
@@ -445,11 +700,21 @@ namespace SentryGuard.Migrations
                         .HasColumnType("int")
                         .HasColumnName("usuario_id");
 
+                    b.Property<string>("ValoresAnteriores")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("valores_anteriores");
+
+                    b.Property<string>("ValoresNuevos")
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("valores_nuevos");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Timestamp");
 
                     b.HasIndex("UsuarioId");
+
+                    b.HasIndex("Entidad", "EntidadId");
 
                     b.ToTable("tb_LogAuditoria");
                 });
@@ -707,6 +972,122 @@ namespace SentryGuard.Migrations
                         });
                 });
 
+            modelBuilder.Entity("SentryGuard.Models.TransicionEstado", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("EstadoDestinoId")
+                        .HasColumnType("int")
+                        .HasColumnName("estado_destino_id");
+
+                    b.Property<int>("EstadoOrigenId")
+                        .HasColumnType("int")
+                        .HasColumnName("estado_origen_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EstadoDestinoId");
+
+                    b.HasIndex("EstadoOrigenId", "EstadoDestinoId")
+                        .IsUnique();
+
+                    b.ToTable("tb_TransicionEstado", t =>
+                        {
+                            t.HasCheckConstraint("CK_tb_TransicionEstado_OrigenDistintoDestino", "[estado_origen_id] <> [estado_destino_id]");
+                        });
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            EstadoDestinoId = 2,
+                            EstadoOrigenId = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            EstadoDestinoId = 3,
+                            EstadoOrigenId = 1
+                        },
+                        new
+                        {
+                            Id = 3,
+                            EstadoDestinoId = 4,
+                            EstadoOrigenId = 1
+                        },
+                        new
+                        {
+                            Id = 4,
+                            EstadoDestinoId = 5,
+                            EstadoOrigenId = 1
+                        },
+                        new
+                        {
+                            Id = 5,
+                            EstadoDestinoId = 3,
+                            EstadoOrigenId = 2
+                        },
+                        new
+                        {
+                            Id = 6,
+                            EstadoDestinoId = 4,
+                            EstadoOrigenId = 2
+                        },
+                        new
+                        {
+                            Id = 7,
+                            EstadoDestinoId = 5,
+                            EstadoOrigenId = 2
+                        },
+                        new
+                        {
+                            Id = 8,
+                            EstadoDestinoId = 2,
+                            EstadoOrigenId = 3
+                        },
+                        new
+                        {
+                            Id = 9,
+                            EstadoDestinoId = 4,
+                            EstadoOrigenId = 3
+                        },
+                        new
+                        {
+                            Id = 10,
+                            EstadoDestinoId = 5,
+                            EstadoOrigenId = 3
+                        },
+                        new
+                        {
+                            Id = 11,
+                            EstadoDestinoId = 2,
+                            EstadoOrigenId = 4
+                        },
+                        new
+                        {
+                            Id = 12,
+                            EstadoDestinoId = 5,
+                            EstadoOrigenId = 4
+                        },
+                        new
+                        {
+                            Id = 13,
+                            EstadoDestinoId = 1,
+                            EstadoOrigenId = 5
+                        },
+                        new
+                        {
+                            Id = 14,
+                            EstadoDestinoId = 2,
+                            EstadoOrigenId = 5
+                        });
+                });
+
             modelBuilder.Entity("SentryGuard.Models.Usuario", b =>
                 {
                     b.Property<int>("Id")
@@ -822,6 +1203,16 @@ namespace SentryGuard.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("SentryGuard.Models.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("CreadoPorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SentryGuard.Models.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("ModificadoPorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("SentryGuard.Models.Organizacion", "Organizacion")
                         .WithMany("Activos")
                         .HasForeignKey("OrganizacionId")
@@ -910,11 +1301,26 @@ namespace SentryGuard.Migrations
                         .HasForeignKey("AnalistaAsignadoId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("SentryGuard.Models.CategoriaIncidente", "Categoria")
+                        .WithMany()
+                        .HasForeignKey("CategoriaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SentryGuard.Models.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("CreadoPorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("SentryGuard.Models.EstadoIncidente", "Estado")
                         .WithMany()
                         .HasForeignKey("EstadoId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("SentryGuard.Models.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("ModificadoPorId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("SentryGuard.Models.Organizacion", "Organizacion")
                         .WithMany("Incidentes")
@@ -931,6 +1337,8 @@ namespace SentryGuard.Migrations
                     b.Navigation("Activo");
 
                     b.Navigation("AnalistaAsignado");
+
+                    b.Navigation("Categoria");
 
                     b.Navigation("Estado");
 
@@ -964,6 +1372,21 @@ namespace SentryGuard.Migrations
                         .WithMany()
                         .HasForeignKey("UsuarioId")
                         .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("SentryGuard.Models.TransicionEstado", b =>
+                {
+                    b.HasOne("SentryGuard.Models.EstadoIncidente", null)
+                        .WithMany()
+                        .HasForeignKey("EstadoDestinoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SentryGuard.Models.EstadoIncidente", null)
+                        .WithMany()
+                        .HasForeignKey("EstadoOrigenId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 

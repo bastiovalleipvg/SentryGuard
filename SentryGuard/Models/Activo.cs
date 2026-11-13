@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace SentryGuard.Models;
 
 [Table("tb_Activo")]
-public class Activo
+public class Activo : IAuditable
 {
     [Key]
     [Column("id")]
@@ -24,6 +24,19 @@ public class Activo
 
     [Column("categoria_id")]
     public int CategoriaId { get; set; }
+
+    // Auditoría (RF-16)
+    [Column("fecha_creacion")]
+    public DateTime FechaCreacion { get; set; }
+
+    [Column("fecha_modificacion")]
+    public DateTime FechaModificacion { get; set; }
+
+    [Column("creado_por_id")]
+    public int? CreadoPorId { get; set; }
+
+    [Column("modificado_por_id")]
+    public int? ModificadoPorId { get; set; }
 
     // Navigation properties
     [ForeignKey("OrganizacionId")]

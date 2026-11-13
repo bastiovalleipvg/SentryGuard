@@ -87,6 +87,10 @@ namespace SentryGuard.Data
                 ("Modificación no autorizada de configuración en Active Directory", "Adición de cuenta de servicio al grupo Domain Admins sin ticket de cambio aprobado.")
             };
 
+            // Categoría de incidente (tb_CategoriaIncidente) de cada plantilla, en el mismo orden que bancoTitulos:
+            // 1 Phishing, 2 Malware, 3 Acceso no autorizado, 4 Denegación de servicio, 5 Fuga de datos, 6 Otro
+            var categoriaPorPlantilla = new[] { 1, 3, 3, 3, 1, 2, 2, 2, 3, 2, 4, 3, 5, 3, 2, 3, 5, 3, 3, 3 };
+
             var incidentesParaInsertar = new List<Incidente>();
             var bitacorasParaInsertar = new List<BitacoraIncidente>();
             var evidenciasParaInsertar = new List<EvidenciaIncidente>();
@@ -112,7 +116,8 @@ namespace SentryGuard.Data
                 var activo = activosOrg.Count > 0 ? activosOrg[rnd.Next(activosOrg.Count)] : (await _db.Activos.FirstAsync());
 
                 // Plantilla de título y descripción
-                var (tituloBase, descBase) = bancoTitulos[rnd.Next(bancoTitulos.Length)];
+                var indicePlantilla = rnd.Next(bancoTitulos.Length);
+                var (tituloBase, descBase) = bancoTitulos[indicePlantilla];
                 var titulo = $"{tituloBase} #{totalActual + i + 1}";
                 var descripcion = $"{descBase} Afecta a {activo.Nombre} ({activo.HostnameIp ?? "Sin IP"}). Registro generado en auditoría CyberOps.";
 
@@ -182,6 +187,7 @@ namespace SentryGuard.Data
 
                     fechaCierre = fechaCreacion.AddHours(duracionHoras);
                     if (fechaCierre > fechaBaseFin) fechaCierre = fechaBaseFin.AddMinutes(-5);
+                    if (fechaCierre < fechaCreacion) fechaCierre = fechaCreacion.AddMinutes(1); // CK_tb_Incidente_FechaCierre
                 }
 
                 var incidente = new Incidente
@@ -194,7 +200,8 @@ namespace SentryGuard.Data
                     EstadoId = estadoId,
                     AnalistaAsignadoId = analistaAsignadoId,
                     FechaCreacion = fechaCreacion,
-                    FechaCierre = fechaCierre
+                    FechaCierre = fechaCierre,
+                    CategoriaId = categoriaPorPlantilla[indicePlantilla]
                 };
 
                 incidentesParaInsertar.Add(incidente);
