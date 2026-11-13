@@ -6,6 +6,10 @@ function leerApiUrl(): string {
     throw new Error('Falta VITE_API_URL. Copia .env.example a .env y define la URL de la API.')
   }
 
+  // Con el proxy del compose (nginx) la SPA y la API comparten origen: la API se llama con rutas relativas
+  // y el TLS lo termina el proxy, asi que no hay una URL absoluta que validar aqui.
+  if (valor === 'same-origin') return window.location.origin
+
   const url = new URL(valor)
   const esLocal = url.hostname === 'localhost' || url.hostname === '127.0.0.1'
   if (url.protocol !== 'https:' && !(import.meta.env.DEV && esLocal)) {

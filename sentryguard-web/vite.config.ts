@@ -11,14 +11,15 @@ const https = existsSync(CERT) && existsSync(KEY)
   : undefined
 
 function politicaDeContenido(apiUrl: string): string {
-  const apiOrigin = new URL(apiUrl).origin
+  // 'same-origin': la API se sirve desde el mismo origen (proxy inverso), 'self' ya la cubre.
+  const apiOrigin = apiUrl === 'same-origin' ? '' : new URL(apiUrl).origin
   return [
     "default-src 'self'",
     "script-src 'self'",
     "style-src 'self'",
     "img-src 'self' data:",
     "font-src 'self'",
-    `connect-src 'self' ${apiOrigin}`,
+    `connect-src 'self' ${apiOrigin}`.trim(),
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
