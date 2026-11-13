@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { isApiError } from '../../../api/apiError'
 import type { Incidente } from '../../../api/contracts'
@@ -157,15 +157,12 @@ function CambiarEstadoForm({ incidente }: { incidente: Incidente }) {
     [incidente.estadoId, estados.data, transiciones.data],
   )
 
-  const [estadoId, setEstadoId] = useState(
-    destinosPermitidos.length > 0 ? String(destinosPermitidos[0].id) : '',
-  )
-
-  useEffect(() => {
-    if (destinosPermitidos.length > 0 && (!estadoId || !destinosPermitidos.some((d) => String(d.id) === estadoId))) {
-      setEstadoId(String(destinosPermitidos[0].id))
-    }
-  }, [destinosPermitidos, estadoId])
+  // Lo elegido por la persona; si ya no es un destino valido (cambio el estado del incidente) se usa el primero.
+  // Se deriva al renderizar en vez de sincronizar con un efecto.
+  const [elegido, setElegido] = useState('')
+  const estadoId = destinosPermitidos.some((d) => String(d.id) === elegido)
+    ? elegido
+    : destinosPermitidos.length > 0 ? String(destinosPermitidos[0].id) : ''
 
   const enviar = (evento: FormEvent) => {
     evento.preventDefault()
@@ -193,7 +190,7 @@ function CambiarEstadoForm({ incidente }: { incidente: Incidente }) {
         <select
           id="nuevo-estado"
           value={estadoId}
-          onChange={(e) => setEstadoId(e.target.value)}
+          onChange={(e) => setElegido(e.target.value)}
           disabled={estados.isPending || cambiar.isPending}
         >
           {destinosPermitidos.map((e) => (

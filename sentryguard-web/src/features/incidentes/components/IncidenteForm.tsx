@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMemo, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { Link } from 'react-router'
 import type { ClasificacionIa } from '../../../api/contracts'
 import { FormField } from '../../../components/FormField'
@@ -37,15 +37,15 @@ export function IncidenteForm({ modo, valoresIniciales, textoEnviar, urlCancelar
     handleSubmit,
     setError,
     setValue,
-    watch,
+    control,
     formState: { errors, isSubmitting, submitCount },
   } = useForm<IncidenteFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { titulo: '', descripcion: '', severidadId: '', activoId: '', categoriaId: '', ...valoresIniciales },
   })
 
-  const tituloVal = watch('titulo') || ''
-  const descripcionVal = watch('descripcion') || ''
+  const tituloVal = useWatch({ control, name: 'titulo' }) || ''
+  const descripcionVal = useWatch({ control, name: 'descripcion' }) || ''
   const puedePedirIa = modo === 'crear' && tituloVal.trim().length >= 5 && descripcionVal.trim().length >= 10 && !clasificarIa.isPending
 
   const handleSugerirIa = async () => {
