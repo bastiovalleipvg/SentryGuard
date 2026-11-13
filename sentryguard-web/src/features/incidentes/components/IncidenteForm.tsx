@@ -2,11 +2,14 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { Link } from 'react-router'
+import type { ClasificacionIa } from '../../../api/contracts'
 import { FormField } from '../../../components/FormField'
 import { aplicarErroresApi, ResumenErrores } from '../../../components/ResumenErrores'
 import { useActivos } from '../../activos/activosService'
 import { useSeveridades } from '../../catalogos/catalogosService'
+import { useClasificarIncidente } from '../../ia/iaService'
 import { LIMITES, incidenteFormSchema, type IncidenteFormValues, type ModoFormulario } from '../schema'
+import { SeveridadBadge } from './Badges'
 
 interface Props {
   modo: ModoFormulario
@@ -24,15 +27,43 @@ export function IncidenteForm({ modo, valoresIniciales, textoEnviar, urlCancelar
   const activos = useActivos(modo === 'crear')
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null)
 
+  const clasificarIa = useClasificarIncidente()
+  const [sugerenciaIa, setSugerenciaIa] = useState<ClasificacionIa | null>(null)
+  const [errorIa, setErrorIa] = useState<string | null>(null)
+
   const {
     register,
     handleSubmit,
     setError,
+    setValue,
+    watch,
     formState: { errors, isSubmitting, submitCount },
   } = useForm<IncidenteFormValues>({
     resolver: zodResolver(schema),
     defaultValues: { titulo: '', descripcion: '', severidadId: '', activoId: '', ...valoresIniciales },
   })
+
+  const tituloVal = watch('titulo') || ''
+  const descripcionVal = watch('descripcion') || ''
+  const puedePedirIa = modo === 'crear' && tituloVal.trim().length >= 5 && descripcionVal.trim().length >= 10 && !clasificarIa.isPending
+
+  const handleSugerirIa = async () => {
+    setErrorIa(null)
+    try {
+      const res = await clasificarIa.mutateAsync({
+        titulo: tituloVal.trim(),
+        descripcion: descripcionVal.trim(),
+      })
+      setSugerenciaIa(res)
+    } catch {
+      setErrorIa('El servicio de IA no respondió a tiempo. Puedes seleccionar la severidad de forma manual.')
+    }
+  }
+
+  const handleAplicarSugerencia = () => {
+    if (!sugerenciaIa) return
+    setValue('severidadId', String(sugerenciaIa.severidadSugeridaId), { shouldValidate: true })
+  }
 
   const enviar = handleSubmit(async (valores) => {
     setErrorGeneral(null)
@@ -54,6 +85,72 @@ export function IncidenteForm({ modo, valoresIniciales, textoEnviar, urlCancelar
       <FormField label="Descripción" obligatorio error={errors.descripcion?.message} ayuda="Qué ocurrió, cuándo se detectó y qué impacto tiene.">
         <textarea rows={6} maxLength={LIMITES.descripcionMax} {...register('descripcion')} />
       </FormField>
+
+      {modo === 'crear' && (
+        <section className="panel-ia" aria-label="Asistente de clasificación con IA" aria-live="polite">
+          <div className="panel-ia__cabecera">
+            <div>
+              <h3 className="panel-ia__titulo">✨ Asistente de Clasificación IA</h3>
+              <p className="panel-ia__descripcion">
+                Analiza el título y la descripción del incidente para sugerir severidad, categoría y acciones de contención inmediatas.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="boton boton--secundario"
+              onClick={handleSugerirIa}
+              disabled={!puedePedirIa}
+              title={
+                tituloVal.trim().length < 5 || descripcionVal.trim().length < 10
+                  ? 'Ingresa al menos 5 caracteres en el título y 10 en la descripción para analizar'
+                  : 'Solicitar sugerencia de clasificación a la IA'
+              }
+            >
+              {clasificarIa.isPending ? 'Analizando incidente con IA…' : '✨ Sugerir clasificación con IA'}
+            </button>
+          </div>
+
+          {errorIa && (
+            <div className="aviso" style={{ marginTop: '0.75rem' }} role="status">
+              {errorIa}
+            </div>
+          )}
+
+          {sugerenciaIa && (
+            <div className="panel-ia__resultado" style={{ marginTop: '0.75rem' }}>
+              <div className="panel-ia__meta">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span>Severidad sugerida:</span>
+                  <SeveridadBadge severidad={sugerenciaIa.severidadNombre} />
+                  <span style={{ color: 'var(--texto-suave)' }}>•</span>
+                  <span><strong>Categoría:</strong> {sugerenciaIa.categoriaSugerida}</span>
+                </div>
+                <button
+                  type="button"
+                  className="boton boton--primario"
+                  style={{ minHeight: '2.25rem', padding: '0.25rem 0.75rem', fontSize: '0.875rem' }}
+                  onClick={handleAplicarSugerencia}
+                >
+                  Aplicar sugerencia a severidad
+                </button>
+              </div>
+              <p style={{ margin: '0.5rem 0', fontSize: '0.9rem' }}>
+                <em>{sugerenciaIa.justificacion}</em>
+              </p>
+              {sugerenciaIa.accionesRecomendadas?.length > 0 && (
+                <div style={{ marginTop: '0.5rem' }}>
+                  <strong style={{ fontSize: '0.85rem' }}>Acciones recomendadas:</strong>
+                  <ul style={{ margin: '0.25rem 0 0 1.25rem', padding: 0, fontSize: '0.85rem' }}>
+                    {sugerenciaIa.accionesRecomendadas.map((accion, i) => (
+                      <li key={i}>{accion}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+      )}
 
       {modo === 'crear' && (
         <FormField label="Activo afectado" obligatorio error={errors.activoId?.message}>
@@ -95,3 +192,4 @@ export function IncidenteForm({ modo, valoresIniciales, textoEnviar, urlCancelar
     </form>
   )
 }
+

@@ -195,3 +195,24 @@ export interface ActualizarIncidenteInput {
   descripcion: string
   severidadId: number
 }
+
+// ==========================================
+// Contratos para el Módulo de IA (RF-23 y RF-24)
+// ==========================================
+
+export const ClasificacionIaSchema = z.object({
+  severidadSugeridaId: z.number().int(),
+  severidadNombre: z.string(),
+  categoriaSugerida: z.string(),
+  justificacion: z.string(),
+  accionesRecomendadas: z.array(z.string()),
+})
+export type ClasificacionIa = z.infer<typeof ClasificacionIaSchema>
+
+export const ResumenIaSchema = z.object({
+  resumen: z.string(),
+  generadoEn: z.string(),
+  modelo: z.string(),
+})
+export type ResumenIa = z.infer<typeof ResumenIaSchema>
+

@@ -1464,3 +1464,48 @@ dd {
     box-shadow: none;
   }
 }
+
+/* Panel de Asistente IA (RF-23, RNF-10) */
+.panel-ia {
+  padding: 1rem 1.25rem;
+  background: var(--fondo-suave);
+  border: 1px solid var(--borde-fuerte);
+  border-radius: var(--radio-grande);
+  margin-bottom: 1rem;
+}
+
+.panel-ia__cabecera {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.panel-ia__titulo {
+  font-size: 1rem;
+  margin: 0 0 0.25rem;
+  color: var(--primario-oscuro);
+}
+
+.panel-ia__descripcion {
+  font-size: 0.875rem;
+  color: var(--texto-suave);
+  margin: 0;
+}
+
+.panel-ia__resultado {
+  padding: 0.75rem 1rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+}
+
+.panel-ia__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+

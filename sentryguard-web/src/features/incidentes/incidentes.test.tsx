@@ -121,4 +121,42 @@ describe('CRUD de incidentes', () => {
     expect(container.querySelector('img, script')).toBeNull()
     expect((window as unknown as { xssEjecutado?: number }).xssEjecutado).toBeUndefined()
   })
+
+  it('sugiere clasificación con IA y permite aplicar la severidad sugerida (RF-23)', async () => {
+    const { user } = renderApp('/incidentes/nuevo', { sesion: 'cliente' })
+
+    const botonIa = await screen.findByRole('button', { name: /sugerir clasificación con ia/i })
+    expect(botonIa).toBeDisabled()
+
+    await user.type(screen.getByLabelText(/título/i), 'Ataque de Ransomware detectado')
+    await user.type(screen.getByLabelText(/descripción/i), 'Archivos cifrados con extensión .locked en storage central.')
+
+    expect(botonIa).toBeEnabled()
+    await user.click(botonIa)
+
+    expect(await screen.findByText('Ransomware / Malware')).toBeInTheDocument()
+    expect(screen.getByText('Severidad sugerida:')).toBeInTheDocument()
+
+    const botonAplicar = screen.getByRole('button', { name: /aplicar sugerencia a severidad/i })
+    await user.click(botonAplicar)
+
+    const selectSeveridad = screen.getByLabelText(/severidad/i) as HTMLSelectElement
+    expect(selectSeveridad.value).toBe('4')
+  })
+
+  it('maneja de forma resiliente la caída del servicio de IA sin bloquear el formulario (RNF-10)', async () => {
+    server.use(
+      http.post(`${API}/api/v1/ia/clasificar-incidente`, () => new HttpResponse(null, { status: 504 }))
+    )
+    const { user } = renderApp('/incidentes/nuevo', { sesion: 'cliente' })
+
+    await user.type(await screen.findByLabelText(/título/i), 'Falla de red masiva')
+    await user.type(screen.getByLabelText(/descripción/i), 'Pérdida de conectividad en enlaces redundantes.')
+
+    const botonIa = screen.getByRole('button', { name: /sugerir clasificación con ia/i })
+    await user.click(botonIa)
+
+    expect(await screen.findByText(/el servicio de ia no respondió a tiempo/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Registrar incidente' })).toBeEnabled()
+  })
 })

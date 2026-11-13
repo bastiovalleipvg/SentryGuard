@@ -71,6 +71,22 @@ export const handlers = [
     return HttpResponse.json({ id: 1, titulo: cuerpo.titulo }, { status: 201 })
   }),
 
+  http.post(`${API}/api/v1/ia/clasificar-incidente`, async ({ request }) => {
+    if (!usuarioDeLaPeticion(request)) return noAutorizado()
+    const { titulo } = (await request.json()) as { titulo: string }
+    const esCritico = (titulo || '').toLowerCase().includes('ransomware')
+    return HttpResponse.json({
+      severidadSugeridaId: esCritico ? 4 : 2,
+      severidadNombre: esCritico ? 'Crítica' : 'Media',
+      categoriaSugerida: esCritico ? 'Ransomware / Malware' : 'Incidente Operativo',
+      justificacion: 'Clasificación sugerida basada en los indicadores del título y descripción.',
+      accionesRecomendadas: [
+        'Aislar los equipos afectados de la red corporativa.',
+        'Preservar logs y memoria para análisis forense.',
+      ],
+    })
+  }),
+
   http.delete(`${API}/api/v1/incidentes/:id`, ({ request }) => {
     const usuario = usuarioDeLaPeticion(request)
     if (!usuario) return noAutorizado()
