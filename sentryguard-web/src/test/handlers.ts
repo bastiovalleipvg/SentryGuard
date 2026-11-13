@@ -108,6 +108,19 @@ export const handlers = [
     HttpResponse.json({ items: [{ id: 1, nombre: 'Abierto' }, { id: 2, nombre: 'En progreso' }, { id: 4, nombre: 'Resuelto' }] }),
   ),
 
+  http.get(`${API}/api/v1/catalogos/categorias-incidente`, () =>
+    HttpResponse.json({ items: [{ id: 1, nombre: 'Phishing' }, { id: 2, nombre: 'Malware' }, { id: 6, nombre: 'Otro' }] }),
+  ),
+
+  http.get(`${API}/api/v1/catalogos/transiciones-estado`, () =>
+    HttpResponse.json([
+      { estadoOrigenId: 1, estadoDestinoId: 2 },
+      { estadoOrigenId: 1, estadoDestinoId: 4 },
+      { estadoOrigenId: 2, estadoDestinoId: 4 },
+      { estadoOrigenId: 4, estadoDestinoId: 2 },
+    ]),
+  ),
+
   http.get(`${API}/api/v1/activos`, ({ request }) => {
     const usuario = usuarioDeLaPeticion(request)
     if (!usuario) return noAutorizado()

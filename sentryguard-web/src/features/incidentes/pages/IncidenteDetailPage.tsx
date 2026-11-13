@@ -13,7 +13,7 @@ import { NotFoundContent } from '../../../pages/NotFoundPage'
 import { formatearFecha } from '../../../utils/formato'
 import { puede, puedeSobreIncidente } from '../../auth/permisos'
 import { useAuth } from '../../auth/useAuth'
-import { useEstados } from '../../catalogos/catalogosService'
+import { useEstados, useTransiciones } from '../../catalogos/catalogosService'
 import { useAnalistas } from '../../usuarios/usuariosService'
 import { EstadoBadge, SeveridadBadge } from '../components/Badges'
 import { BitacoraPanel } from '../components/BitacoraPanel'
@@ -147,13 +147,14 @@ function DetalleIncidente({ incidente }: { incidente: Incidente }) {
 
 function CambiarEstadoForm({ incidente }: { incidente: Incidente }) {
   const estados = useEstados()
+  const transiciones = useTransiciones()
   const cambiar = useCambiarEstado(incidente.id)
   const { notificar } = useNotifications()
 
   // Estados a los que está permitido transicionar según el flujo de estados (ADR-008)
   const destinosPermitidos = useMemo(
-    () => obtenerEstadosDestinoPermitidos(incidente.estadoId, estados.data ?? []),
-    [incidente.estadoId, estados.data],
+    () => obtenerEstadosDestinoPermitidos(incidente.estadoId, estados.data ?? [], transiciones.data ?? []),
+    [incidente.estadoId, estados.data, transiciones.data],
   )
 
   const [estadoId, setEstadoId] = useState(
@@ -174,6 +175,8 @@ function CambiarEstadoForm({ incidente }: { incidente: Incidente }) {
       onError: (error) => notificar(mensajeDeError(error), 'error'),
     })
   }
+
+  if (estados.isPending || transiciones.isPending) return null
 
   if (destinosPermitidos.length === 0) {
     return (

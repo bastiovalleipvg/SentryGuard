@@ -4,9 +4,11 @@ import {
   CatalogoSchema,
   CatalogoSeveridadesSchema,
   CreadoSchema,
+  ListaTransicionesSchema,
   type ItemCatalogo,
   type PlanServicio,
   type Severidad,
+  type Transicion,
 } from '../../api/contracts'
 import { apiRequest } from '../../api/httpClient'
 
@@ -27,6 +29,16 @@ export const catalogosService = {
   async categorias(signal?: AbortSignal): Promise<ItemCatalogo[]> {
     const r = await apiRequest(`${BASE}/categorias-activo`, { query: { pageSize: 50 }, schema: CatalogoSchema, signal })
     return r.items
+  },
+
+  async categoriasIncidente(signal?: AbortSignal): Promise<ItemCatalogo[]> {
+    const r = await apiRequest(`${BASE}/categorias-incidente`, { schema: CatalogoSchema, signal })
+    return r.items
+  },
+
+  /** Flujo de estados como datos: la interfaz solo ofrece estos destinos (la API vuelve a validarlos). */
+  transiciones(signal?: AbortSignal): Promise<Transicion[]> {
+    return apiRequest(`${BASE}/transiciones-estado`, { schema: ListaTransicionesSchema, signal })
   },
 
   async planes(signal?: AbortSignal): Promise<PlanServicio[]> {
@@ -65,6 +77,8 @@ export const catalogosKeys = {
   severidades: ['catalogos', 'severidades'] as const,
   estados: ['catalogos', 'estados'] as const,
   categorias: ['catalogos', 'categorias'] as const,
+  categoriasIncidente: ['catalogos', 'categorias-incidente'] as const,
+  transiciones: ['catalogos', 'transiciones'] as const,
   planes: ['catalogos', 'planes'] as const,
   roles: ['catalogos', 'roles'] as const,
 }
@@ -79,6 +93,14 @@ export function useEstados() {
 
 export function useCategorias() {
   return useQuery({ queryKey: catalogosKeys.categorias, queryFn: ({ signal }) => catalogosService.categorias(signal), staleTime: UNA_HORA })
+}
+
+export function useCategoriasIncidente() {
+  return useQuery({ queryKey: catalogosKeys.categoriasIncidente, queryFn: ({ signal }) => catalogosService.categoriasIncidente(signal), staleTime: UNA_HORA })
+}
+
+export function useTransiciones() {
+  return useQuery({ queryKey: catalogosKeys.transiciones, queryFn: ({ signal }) => catalogosService.transiciones(signal), staleTime: UNA_HORA })
 }
 
 export function usePlanes() {

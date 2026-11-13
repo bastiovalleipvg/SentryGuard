@@ -29,6 +29,7 @@ export const incidentesService = {
         estadoId: filtros.estadoId,
         severidadId: filtros.severidadId,
         activoId: filtros.activoId,
+        categoriaId: filtros.categoriaId,
       },
       schema: PaginaIncidentesSchema,
       signal,

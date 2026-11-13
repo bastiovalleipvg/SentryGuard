@@ -27,6 +27,7 @@ export function IncidenteCreatePage() {
             descripcion: v.descripcion,
             activoId: Number(v.activoId),
             severidadId: Number(v.severidadId),
+            categoriaId: v.categoriaId ? Number(v.categoriaId) : undefined,
           })
           notificar('Incidente registrado correctamente.')
           navigate(`/incidentes/${id}`)

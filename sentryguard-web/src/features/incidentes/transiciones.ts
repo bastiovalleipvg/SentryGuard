@@ -1,20 +1,10 @@
-/**
- * Matriz de transiciones permitidas según el flujo de estados (ADR-008).
- * Estados:
- * 1: Abierto
- * 2: En progreso
- * 3: Escalado
- * 4: Resuelto
- * 5: Cerrado
- */
-export const TRANSICIONES_PERMITIDAS: Record<number, readonly number[]> = {
-  1: [2, 3, 4, 5], // Abierto -> En progreso, Escalado, Resuelto, Cerrado
-  2: [3, 4, 5],    // En progreso -> Escalado, Resuelto, Cerrado
-  3: [2, 4, 5],    // Escalado -> En progreso, Resuelto, Cerrado
-  4: [2, 5],       // Resuelto -> En progreso (reapertura), Cerrado
-  5: [1, 2],       // Cerrado -> Abierto o En progreso (reapertura por Administrador/Supervisor)
-}
+import type { Transicion } from '../../api/contracts'
 
+/**
+ * El flujo de estados (ADR-008) vive en la base de datos (tb_TransicionEstado) y la API lo expone en
+ * GET /api/v1/catalogos/transiciones-estado. La interfaz solo lo usa para ofrecer destinos validos;
+ * la API vuelve a validarlo y responde 409 TRANSICION_INVALIDA ante un par no permitido.
+ */
 export interface ItemEstado {
   id: number
   nombre: string
@@ -23,8 +13,8 @@ export interface ItemEstado {
 export function obtenerEstadosDestinoPermitidos(
   estadoActualId: number,
   todosLosEstados: readonly ItemEstado[],
+  transiciones: readonly Transicion[],
 ): ItemEstado[] {
-  const permitidos = TRANSICIONES_PERMITIDAS[estadoActualId] ?? []
-  return todosLosEstados.filter((e) => permitidos.includes(e.id))
+  const permitidos = new Set(transiciones.filter((t) => t.estadoOrigenId === estadoActualId).map((t) => t.estadoDestinoId))
+  return todosLosEstados.filter((e) => permitidos.has(e.id))
 }
-

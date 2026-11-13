@@ -6,7 +6,7 @@ import type { ClasificacionIa } from '../../../api/contracts'
 import { FormField } from '../../../components/FormField'
 import { aplicarErroresApi, ResumenErrores } from '../../../components/ResumenErrores'
 import { useActivos } from '../../activos/activosService'
-import { useSeveridades } from '../../catalogos/catalogosService'
+import { useCategoriasIncidente, useSeveridades } from '../../catalogos/catalogosService'
 import { useClasificarIncidente } from '../../ia/iaService'
 import { LIMITES, incidenteFormSchema, type IncidenteFormValues, type ModoFormulario } from '../schema'
 import { SeveridadBadge } from './Badges'
@@ -19,11 +19,12 @@ interface Props {
   onEnviar: (valores: IncidenteFormValues) => Promise<void>
 }
 
-const CAMPOS = ['titulo', 'descripcion', 'severidadId', 'activoId'] as const
+const CAMPOS = ['titulo', 'descripcion', 'severidadId', 'activoId', 'categoriaId'] as const
 
 export function IncidenteForm({ modo, valoresIniciales, textoEnviar, urlCancelar, onEnviar }: Props) {
   const schema = useMemo(() => incidenteFormSchema(modo), [modo])
   const severidades = useSeveridades()
+  const categorias = useCategoriasIncidente()
   const activos = useActivos(modo === 'crear')
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null)
 
@@ -40,7 +41,7 @@ export function IncidenteForm({ modo, valoresIniciales, textoEnviar, urlCancelar
     formState: { errors, isSubmitting, submitCount },
   } = useForm<IncidenteFormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { titulo: '', descripcion: '', severidadId: '', activoId: '', ...valoresIniciales },
+    defaultValues: { titulo: '', descripcion: '', severidadId: '', activoId: '', categoriaId: '', ...valoresIniciales },
   })
 
   const tituloVal = watch('titulo') || ''
@@ -63,6 +64,9 @@ export function IncidenteForm({ modo, valoresIniciales, textoEnviar, urlCancelar
   const handleAplicarSugerencia = () => {
     if (!sugerenciaIa) return
     setValue('severidadId', String(sugerenciaIa.severidadSugeridaId), { shouldValidate: true })
+    // Si la categoria sugerida existe en el catalogo, tambien se completa
+    const categoria = categorias.data?.find((c) => c.nombre.toLowerCase() === sugerenciaIa.categoriaSugerida.trim().toLowerCase())
+    if (categoria) setValue('categoriaId', String(categoria.id), { shouldValidate: true })
   }
 
   const enviar = handleSubmit(async (valores) => {
@@ -172,6 +176,17 @@ export function IncidenteForm({ modo, valoresIniciales, textoEnviar, urlCancelar
           {severidades.data?.map((s) => (
             <option key={s.id} value={String(s.id)}>
               {s.nombre} (SLA {s.horasSLA} h)
+            </option>
+          ))}
+        </select>
+      </FormField>
+
+      <FormField label="Categoría" error={errors.categoriaId?.message} ayuda="Opcional. Clasifica el incidente para los reportes.">
+        <select key={categorias.isPending ? 'cargando' : 'listo'} disabled={categorias.isPending} {...register('categoriaId')}>
+          <option value="">{categorias.isPending ? 'Cargando categorías…' : 'Sin categoría'}</option>
+          {categorias.data?.map((c) => (
+            <option key={c.id} value={String(c.id)}>
+              {c.nombre}
             </option>
           ))}
         </select>

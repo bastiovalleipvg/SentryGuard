@@ -36,10 +36,18 @@ export const IncidenteSchema = z.object({
   organizacionId: z.number().int(),
   analistaAsignadoId: z.number().int().nullable(),
   analistaAsignado: z.string().nullable(),
+  categoriaId: z.number().int().nullish(),
+  categoria: z.string().nullish(),
   fechaCreacion: z.string(),
   fechaCierre: z.string().nullable(),
+  fechaModificacion: z.string().nullish(),
 })
 export type Incidente = z.infer<typeof IncidenteSchema>
+
+/** Par (origen, destino) permitido del flujo de estados; viene de tb_TransicionEstado. */
+export const TransicionSchema = z.object({ estadoOrigenId: z.number().int(), estadoDestinoId: z.number().int() })
+export const ListaTransicionesSchema = z.array(TransicionSchema)
+export type Transicion = z.infer<typeof TransicionSchema>
 
 /** Respuesta paginada comun de la API: { total, page, pageSize, totalPages, items }. */
 export function paginaDe<T extends z.ZodType>(item: T) {
@@ -175,6 +183,7 @@ export interface FiltrosIncidentes {
   estadoId?: number
   severidadId?: number
   activoId?: number
+  categoriaId?: number
 }
 
 /** Filtros de los listados simples: pagina mas parametros opcionales que van tal cual a la query. */
@@ -188,12 +197,14 @@ export interface CrearIncidenteInput {
   descripcion: string
   activoId: number
   severidadId: number
+  categoriaId?: number
 }
 
 export interface ActualizarIncidenteInput {
   titulo: string
   descripcion: string
   severidadId: number
+  categoriaId?: number
 }
 
 // ==========================================

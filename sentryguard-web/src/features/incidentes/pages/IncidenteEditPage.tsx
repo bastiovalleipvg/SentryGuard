@@ -47,9 +47,10 @@ export function IncidenteEditPage() {
           titulo: incidente.titulo,
           descripcion: incidente.descripcion,
           severidadId: String(incidente.severidadId),
+          categoriaId: incidente.categoriaId ? String(incidente.categoriaId) : '',
         }}
         onEnviar={async (v) => {
-          await actualizar.mutateAsync({ titulo: v.titulo, descripcion: v.descripcion, severidadId: Number(v.severidadId) })
+          await actualizar.mutateAsync({ titulo: v.titulo, descripcion: v.descripcion, severidadId: Number(v.severidadId), categoriaId: v.categoriaId ? Number(v.categoriaId) : undefined })
           notificar('Cambios guardados.')
           navigate(`/incidentes/${incidente.id}`)
         }}

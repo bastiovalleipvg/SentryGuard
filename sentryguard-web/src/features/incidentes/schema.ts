@@ -26,6 +26,8 @@ export function incidenteFormSchema(modo: ModoFormulario) {
       .min(LIMITES.descripcionMin, `La descripción debe tener al menos ${LIMITES.descripcionMin} caracteres.`)
       .max(LIMITES.descripcionMax, `La descripción no puede superar ${LIMITES.descripcionMax} caracteres.`),
     severidadId: idSeleccionado('Selecciona la severidad.'),
+    // Opcional: la categoria clasifica el incidente (Phishing, Malware, ...) y alimenta el dashboard.
+    categoriaId: z.string(),
     // El activo solo se elige al crear: un incidente no cambia de activo (ni de organizacion).
     activoId: modo === 'crear' ? idSeleccionado('Selecciona el activo afectado.') : z.string(),
   })
