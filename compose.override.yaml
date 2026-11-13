@@ -1,0 +1,7 @@
+# Se aplica solo con `docker compose up` (Docker Compose lo carga solo). Comodidad para desarrollo:
+# publica SQL Server unicamente en localhost para migrar, probar y respaldar desde el equipo.
+# Para ejecutar sin este archivo (CI, produccion):  docker compose -f compose.yaml up
+services:
+  db:
+    ports:
+      - "127.0.0.1:${DB_HOST_PORT:-14333}:1433"

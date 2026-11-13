@@ -1,23 +1,30 @@
+# SentryGuard: web (nginx + SPA), api (.NET 10), db (SQL Server 2022) y seed (datos sinteticos, una vez).
+#
+#   cp .env.example .env     (o ./scripts/generar-env.ps1, que ademas genera claves aleatorias)
+#   docker compose up --build
+#
+# Las claves NO tienen valor por defecto: sin SA_PASSWORD y JWT_KEY en .env el comando falla con un mensaje claro.
+
+name: sentryguard
+
 services:
   db:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    image: mcr.microsoft.com/mssql/server:2022-CU28-ubuntu-22.04
     container_name: sentryguard-db
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: "${SA_PASSWORD:-SentryGuard2026!}"
+      MSSQL_SA_PASSWORD: "${SA_PASSWORD:?Define SA_PASSWORD en .env (usa scripts/generar-env.ps1)}"
     # El volumen cubre todo /var/opt/mssql (datos, logs y la carpeta backups/): montarlo solo sobre
     # .../data lo deja con dueño root y SQL Server, que corre sin root, no puede escribir.
     volumes:
       - sqldata:/var/opt/mssql
-    # Solo en localhost, para migrar, probar y respaldar desde el equipo del desarrollador.
-    ports:
-      - "127.0.0.1:${DB_HOST_PORT:-14333}:1433"
+    networks: [datos]
     healthcheck:
       test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q 'SELECT 1' || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 5
-      start_period: 15s
+      retries: 10
+      start_period: 20s
     restart: unless-stopped
 
   api:
@@ -28,37 +35,50 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    environment:
-      ASPNETCORE_ENVIRONMENT: "${ASPNETCORE_ENVIRONMENT:-Development}"
-      ConnectionStrings__DefaultConnection: "${ConnectionStrings__DefaultConnection:-Server=db,1433;Database=SentryGuard;User Id=sa;Password=SentryGuard2026!;TrustServerCertificate=True;MultipleActiveResultSets=true;}"
-      Jwt__Key: "${Jwt__Key:-ClaveSecretaDeDesarrolloSentryGuardDeAlMenos64BytesDeLargoSegura!}"
-      Jwt__Issuer: "${Jwt__Issuer:-https://api.sentryguard.cl}"
-      Jwt__Audience: "${Jwt__Audience:-https://sentryguard.cl}"
-      IA__ApiKey: "${IA__ApiKey:-}"
-      IA__Modelo: "${IA__Modelo:-gemini-2.5-flash}"
+    environment: &entorno-api
+      ASPNETCORE_ENVIRONMENT: "${ASPNETCORE_ENVIRONMENT:-Production}"
+      ConnectionStrings__DefaultConnection: "Server=db,1433;Database=SentryGuard;User Id=sa;Password=${SA_PASSWORD:?Define SA_PASSWORD en .env};TrustServerCertificate=True;MultipleActiveResultSets=true;"
+      Jwt__Key: "${JWT_KEY:?Define JWT_KEY en .env (usa scripts/generar-env.ps1)}"
+      Jwt__Issuer: "${JWT_ISSUER:-SentryGuardAPI}"
+      Jwt__Audience: "${JWT_AUDIENCE:-SentryGuardClients}"
+      IA__ApiKey: "${IA_API_KEY:-}"
+      IA__Modelo: "${IA_MODELO:-gemini-2.5-flash}"
+      # Detras de nginx: migra la base al iniciar, confia en X-Forwarded-For y no redirige a HTTPS (TLS en el proxy)
+      Database__MigrarAlIniciar: "true"
+      Proxy__ConfiarEnEncabezados: "true"
+      Seguridad__RedirigirAHttps: "false"
+      Documentacion__Habilitada: "${DOCUMENTACION_HABILITADA:-true}"
+    networks: [app, datos]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      test: ["CMD", "dotnet", "SentryGuard.dll", "--healthcheck"]
       interval: 10s
       timeout: 5s
-      retries: 3
-      start_period: 10s
+      retries: 5
+      start_period: 40s
     restart: unless-stopped
 
+  # Genera los datos sinteticos (520 incidentes, 12 meses) una sola vez y termina. Es idempotente.
   seed:
     build:
       context: .
       dockerfile: SentryGuard/Dockerfile
     container_name: sentryguard-seed
-    command: ["dotnet", "SentryGuard.dll", "--seed"]
+    command: ["--seed"]
     depends_on:
       api:
         condition: service_healthy
     environment:
-      ASPNETCORE_ENVIRONMENT: "${ASPNETCORE_ENVIRONMENT:-Development}"
-      ConnectionStrings__DefaultConnection: "${ConnectionStrings__DefaultConnection:-Server=db,1433;Database=SentryGuard;User Id=sa;Password=SentryGuard2026!;TrustServerCertificate=True;MultipleActiveResultSets=true;}"
-      Jwt__Key: "${Jwt__Key:-ClaveSecretaDeDesarrolloSentryGuardDeAlMenos64BytesDeLargoSegura!}"
-      Jwt__Issuer: "${Jwt__Issuer:-https://api.sentryguard.cl}"
-      Jwt__Audience: "${Jwt__Audience:-https://sentryguard.cl}"
+      <<: *entorno-api
+      Database__MigrarAlIniciar: "false"
+    networks: [datos]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     restart: "no"
 
   web:
@@ -66,12 +86,23 @@ services:
       context: ./sentryguard-web
       dockerfile: Dockerfile
     container_name: sentryguard-web
-    ports:
-      - "80:80"
     depends_on:
       api:
         condition: service_healthy
+    ports:
+      - "${WEB_PORT:-8088}:8080"
+    networks: [app]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     restart: unless-stopped
+
+networks:
+  # web <-> api. La base no esta aqui: el navegador nunca llega a SQL Server.
+  app:
+  # api <-> db (y seed). Solo el backend la ve.
+  datos:
 
 volumes:
   sqldata:
