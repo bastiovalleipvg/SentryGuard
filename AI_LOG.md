@@ -201,6 +201,31 @@ y luego completó:
 | Asistente IA en Frontend (RF-23, RNF-10) | Contratos Zod en `contracts.ts`, servicio `iaService.ts` con React Query y componente integrado en `IncidenteForm.tsx` para sugerencia automática de severidad, categoría y acciones recomendadas con botón de autocompletado accesible. | Se implementó manejo no bloqueante ante fallas o timeouts (RNF-10): si el servicio de IA no responde, se notifica al usuario con un aviso informativo y el formulario permite continuar y guardar el incidente manualmente sin fricción. Pruebas automatizadas en Vitest (35 pruebas superadas). |
 
 
+### 3.13 Evaluación 3, Hito 2: Fase A de base de datos (Claude Code)
+
+**Prompts:**
+> si tengo docker y se está ejecutando. comienza con la fase a
+
+| Área | Resultado | Decisiones y correcciones |
+|---|---|---|
+| Migración | `AuditoriaCategoriaTransicionesVistas`: `tb_CategoriaIncidente`, `tb_TransicionEstado` (14 pares), campos de auditoría, CHECK de cierre, FK compuesta activo-organización y tres vistas SQL | Las vistas y restricciones van con `migrationBuilder.Sql`; se aplicó y se sembraron 520 incidentes contra SQL Server 2022 en Docker |
+| Auditoría (RF-16) | `SentryGuardDbContext.SaveChangesAsync` sella fechas y usuario y escribe valores anteriores y nuevos en `tb_LogAuditoria` | La matriz de transiciones deja de estar duplicada en C# y TypeScript: ambos leen la tabla |
+| Respaldo | `scripts/respaldo-restauracion.ps1`, con evidencia en `docs/evidencias/respaldo-restauracion.txt` | Al probar se encontró que el volumen del compose impedía arrancar SQL Server; se corrigió |
+| Pruebas | 6 pruebas de integración nuevas; 3 fallas anteriores se confirmaron contra el commit previo y quedan para la Fase B | No se corrigieron para no mezclarlas con este cambio |
+
+### 3.14 Evaluación 3, Hito 2: Fase B de backend y API (Claude Code)
+
+**Prompts:**
+> sigue con la fase b
+
+| Área | Resultado | Decisiones y correcciones |
+|---|---|---|
+| Contrato de la API | Se restauró el formato de bitácora, evidencias y SLA que usa el frontend y que la refactor a servicios había cambiado | Se detectó al revisar las 3 pruebas que fallaban; se verificó contra la API en ejecución |
+| Orden de listados (RF-06) | `Common/Ordenamiento.cs`: orden por columna con lista blanca en incidentes, activos, organizaciones y usuarios | Una columna no permitida da 400 y nunca llega al ORDER BY |
+| IA | Clave de API en un encabezado y no en la URL; categorías alineadas con el catálogo; pruebas de endpoints, roles, errores y adaptador | Se mantiene el fallback al simulado ante errores HTTP del proveedor; queda como decisión pendiente |
+| OpenAPI | `openapi-implementado.json` regenerado desde la API | |
+| Pruebas | 73 de 73 pasan | |
+
 ## 4. Qué debe poder explicar el estudiante
 
 Aunque la IA escribió la mayor parte del código, la pauta exige entenderlo y poder modificarlo.
