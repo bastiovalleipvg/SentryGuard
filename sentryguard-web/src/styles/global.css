@@ -1509,3 +1509,49 @@ dd {
   flex-wrap: wrap;
 }
 
+/* ---------- Botones de ordenamiento en tablas ---------- */
+.boton-orden {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: transparent;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-transform: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.boton-orden:hover {
+  color: var(--primario);
+}
+
+.boton-orden:focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: 2px;
+  border-radius: var(--radio-pequeno);
+}
+
+.icono-orden {
+  font-size: 0.85em;
+  opacity: 0.6;
+}
+
+.boton-orden:hover .icono-orden {
+  opacity: 1;
+}
+
+/* ---------- Expansor de auditoría ---------- */
+.auditoria-cambios summary {
+  user-select: none;
+}
+
+.auditoria-cambios summary:focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: 2px;
+}
+
+

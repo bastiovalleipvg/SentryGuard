@@ -130,10 +130,6 @@ namespace SentryGuard.DTOs
         public string? ValoresAnteriores { get; init; }
         public string? ValoresNuevos { get; init; }
         public string? IpOrigen { get; init; }
-        public string? Entidad { get; init; }
-        public int? EntidadId { get; init; }
-        public string? ValoresAnteriores { get; init; }
-        public string? ValoresNuevos { get; init; }
         public DateTime Timestamp { get; init; }
     }
 

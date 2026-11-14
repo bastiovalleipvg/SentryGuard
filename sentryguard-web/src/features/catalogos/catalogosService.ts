@@ -53,7 +53,7 @@ export const catalogosService = {
 }
 
 /** Ruta de cada catalogo administrable en la API. */
-export type TipoCatalogo = 'severidades' | 'estados-incidente' | 'categorias-activo' | 'planes-servicio'
+export type TipoCatalogo = 'severidades' | 'estados-incidente' | 'categorias-activo' | 'planes-servicio' | 'categorias-incidente'
 
 export const catalogosAdminService = {
   async crear(tipo: TipoCatalogo, datos: Record<string, unknown>): Promise<number> {

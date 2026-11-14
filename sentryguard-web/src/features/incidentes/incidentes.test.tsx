@@ -1,9 +1,12 @@
-import { screen, within } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
+import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
-import { API, crearIncidente } from '../../test/fixtures'
+import { API, INCIDENTES, crearIncidente } from '../../test/fixtures'
 import { renderApp } from '../../test/renderApp'
 import { server } from '../../test/server'
+import { IncidentesTable } from './components/IncidentesTable'
 
 describe('CRUD de incidentes', () => {
   it('lista los incidentes devueltos por la API', async () => {
@@ -158,5 +161,73 @@ describe('CRUD de incidentes', () => {
 
     expect(await screen.findByText(/el servicio de ia no respondió a tiempo/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Registrar incidente' })).toBeEnabled()
+  })
+
+  it('permite ordenar el listado de incidentes en la vista móvil y escritorio (RF-06)', async () => {
+    const { user } = renderApp('/incidentes', { sesion: 'cliente' })
+
+    const selectOrden = (await screen.findByLabelText(/ordenar por/i)) as HTMLSelectElement
+    expect(selectOrden.value).toBe('')
+
+    await user.selectOptions(selectOrden, 'titulo')
+    expect(selectOrden.value).toBe('titulo')
+  })
+
+  it('la tabla de incidentes alterna aria-sort al hacer clic en los encabezados (RF-06)', async () => {
+    let ordenActual = ''
+    const user = userEvent.setup()
+    const { rerender } = render(
+      <MemoryRouter>
+        <IncidentesTable
+          incidentes={INCIDENTES}
+          orden={ordenActual}
+          onCambiarOrden={(nuevo) => {
+            ordenActual = nuevo
+          }}
+        />
+      </MemoryRouter>,
+    )
+
+    const botonTitulo = screen.getByRole('button', { name: /título/i })
+    expect(botonTitulo.closest('th')).toHaveAttribute('aria-sort', 'none')
+
+    await user.click(botonTitulo)
+    expect(ordenActual).toBe('titulo')
+
+    rerender(
+      <MemoryRouter>
+        <IncidentesTable
+          incidentes={INCIDENTES}
+          orden="titulo"
+          onCambiarOrden={(nuevo) => {
+            ordenActual = nuevo
+          }}
+        />
+      </MemoryRouter>,
+    )
+    expect(botonTitulo.closest('th')).toHaveAttribute('aria-sort', 'ascending')
+  })
+
+  it('filtra los incidentes por categoría y muestra la categoría (RF-06 / RF-15)', async () => {
+    const { user } = renderApp('/incidentes', { sesion: 'cliente' })
+
+    expect(await screen.findByText('Malware')).toBeInTheDocument()
+
+    const selectCategoria = screen.getByLabelText(/categoría/i) as HTMLSelectElement
+    await user.selectOptions(selectCategoria, '2')
+    await user.click(screen.getByRole('button', { name: /aplicar filtros/i }))
+
+    expect(await screen.findByText('1 incidente encontrado.')).toBeInTheDocument()
+  })
+
+  it('ofrece únicamente las transiciones de estado permitidas según la matriz (ADR-008)', async () => {
+    renderApp('/incidentes/1', { sesion: 'admin' })
+
+    const selectEstado = (await screen.findByLabelText(/^estado$/i)) as HTMLSelectElement
+    const opciones = Array.from(selectEstado.options).map((o) => o.text)
+    expect(opciones).toContain('En progreso')
+    expect(opciones).toContain('Escalado')
+    expect(opciones).toContain('Resuelto')
+    expect(opciones).toContain('Cerrado')
   })
 })

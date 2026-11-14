@@ -212,4 +212,30 @@ describe('Organizaciones y catálogos', () => {
     expect(await screen.findByText('“IoT” se agregó al catálogo.')).toBeInTheDocument()
     expect(cuerpo).toEqual({ nombre: 'IoT' })
   })
+
+  it('el Administrador agrega una categoría de incidente (RF-15)', async () => {
+    let cuerpo: unknown = null
+    server.use(
+      http.post(`${API}/api/v1/catalogos/categorias-incidente`, async ({ request }) => {
+        cuerpo = await request.json()
+        return HttpResponse.json({ id: 10 }, { status: 201 })
+      }),
+    )
+    const { user } = renderApp('/catalogos', { sesion: 'admin' })
+
+    const seccion = await screen.findByRole('region', { name: 'Categorías de incidente' })
+    await user.type(within(seccion).getByLabelText(/^nombre/i), 'Ransomware')
+    await user.click(within(seccion).getByRole('button', { name: 'Agregar' }))
+
+    expect(await screen.findByText('“Ransomware” se agregó al catálogo.')).toBeInTheDocument()
+    expect(cuerpo).toEqual({ nombre: 'Ransomware' })
+  })
+
+  it('el Administrador visualiza el registro de auditoría con detalle de cambios (RF-16)', async () => {
+    renderApp('/auditoria', { sesion: 'admin' })
+
+    expect(await screen.findByText('PUT /api/v1/incidentes/1')).toBeInTheDocument()
+    expect(screen.getByText('Incidente #1')).toBeInTheDocument()
+    expect(screen.getAllByText(/ver cambios/i).length).toBeGreaterThan(0)
+  })
 })

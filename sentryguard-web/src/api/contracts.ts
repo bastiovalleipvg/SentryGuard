@@ -171,6 +171,10 @@ export const AuditoriaSchema = z.object({
   id: z.number().int(),
   usuario: z.string().nullable(),
   accion: z.string(),
+  entidad: z.string().nullish(),
+  entidadId: z.number().int().nullish(),
+  valoresAnteriores: z.string().nullish(),
+  valoresNuevos: z.string().nullish(),
   ipOrigen: z.string().nullable(),
   timestamp: z.string(),
 })
@@ -184,6 +188,7 @@ export interface FiltrosIncidentes {
   severidadId?: number
   activoId?: number
   categoriaId?: number
+  orden?: string
 }
 
 /** Filtros de los listados simples: pagina mas parametros opcionales que van tal cual a la query. */
@@ -217,6 +222,7 @@ export const ClasificacionIaSchema = z.object({
   categoriaSugerida: z.string(),
   justificacion: z.string(),
   accionesRecomendadas: z.array(z.string()),
+  origen: z.string().optional(),
 })
 export type ClasificacionIa = z.infer<typeof ClasificacionIaSchema>
 

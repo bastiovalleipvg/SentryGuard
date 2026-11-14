@@ -30,6 +30,7 @@ export const incidentesService = {
         severidadId: filtros.severidadId,
         activoId: filtros.activoId,
         categoriaId: filtros.categoriaId,
+        orden: filtros.orden,
       },
       schema: PaginaIncidentesSchema,
       signal,

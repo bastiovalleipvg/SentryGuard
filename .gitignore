@@ -34,10 +34,14 @@ playwright-report/
 playwright/.cache/
 *.tsbuildinfo
 
-# Variables de entorno locales (solo se versiona la plantilla .env.example)
+# Variables de entorno locales (solo se versiona la plantilla .env
+*.zip.example)
 .env
-.env.*
-!.env.example
+*.zip
+.env
+*.zip.*
+!.env
+*.zip.example
 
 # Certificados de desarrollo exportados localmente
 certs/

@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import { ACTIVOS, API, INCIDENTES, ORGANIZACIONES, USUARIOS, USUARIOS_ADMIN, pagina } from './fixtures'
+import { ACTIVOS, API, AUDITORIA, CATEGORIAS_INCIDENTE, INCIDENTES, ORGANIZACIONES, USUARIOS, USUARIOS_ADMIN, pagina } from './fixtures'
 
 function usuarioDeLaPeticion(request: Request) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '')
@@ -48,8 +48,13 @@ export const handlers = [
 
   http.get(`${API}/api/v1/incidentes`, ({ request }) => {
     if (!usuarioDeLaPeticion(request)) return noAutorizado()
-    const q = new URL(request.url).searchParams.get('q')?.toLowerCase()
-    const items = q ? INCIDENTES.filter((i) => i.titulo.toLowerCase().includes(q)) : INCIDENTES
+    const url = new URL(request.url)
+    const q = url.searchParams.get('q')?.toLowerCase()
+    const categoriaId = url.searchParams.get('categoriaId')
+    let items = q ? INCIDENTES.filter((i) => i.titulo.toLowerCase().includes(q)) : [...INCIDENTES]
+    if (categoriaId) {
+      items = items.filter((i) => String(i.categoriaId) === categoriaId)
+    }
     return HttpResponse.json({ total: items.length, page: 1, pageSize: 10, totalPages: 1, items })
   }),
 
@@ -105,21 +110,73 @@ export const handlers = [
   ),
 
   http.get(`${API}/api/v1/catalogos/estados-incidente`, () =>
-    HttpResponse.json({ items: [{ id: 1, nombre: 'Abierto' }, { id: 2, nombre: 'En progreso' }, { id: 4, nombre: 'Resuelto' }] }),
+    HttpResponse.json({
+      items: [
+        { id: 1, nombre: 'Abierto' },
+        { id: 2, nombre: 'En progreso' },
+        { id: 3, nombre: 'Escalado' },
+        { id: 4, nombre: 'Resuelto' },
+        { id: 5, nombre: 'Cerrado' },
+      ],
+    }),
   ),
 
   http.get(`${API}/api/v1/catalogos/categorias-incidente`, () =>
-    HttpResponse.json({ items: [{ id: 1, nombre: 'Phishing' }, { id: 2, nombre: 'Malware' }, { id: 6, nombre: 'Otro' }] }),
+    HttpResponse.json({ items: CATEGORIAS_INCIDENTE }),
   ),
 
   http.get(`${API}/api/v1/catalogos/transiciones-estado`, () =>
     HttpResponse.json([
       { estadoOrigenId: 1, estadoDestinoId: 2 },
+      { estadoOrigenId: 1, estadoDestinoId: 3 },
       { estadoOrigenId: 1, estadoDestinoId: 4 },
+      { estadoOrigenId: 1, estadoDestinoId: 5 },
+      { estadoOrigenId: 2, estadoDestinoId: 3 },
       { estadoOrigenId: 2, estadoDestinoId: 4 },
+      { estadoOrigenId: 2, estadoDestinoId: 5 },
+      { estadoOrigenId: 3, estadoDestinoId: 2 },
+      { estadoOrigenId: 3, estadoDestinoId: 4 },
+      { estadoOrigenId: 3, estadoDestinoId: 5 },
       { estadoOrigenId: 4, estadoDestinoId: 2 },
+      { estadoOrigenId: 4, estadoDestinoId: 5 },
+      { estadoOrigenId: 5, estadoDestinoId: 1 },
+      { estadoOrigenId: 5, estadoDestinoId: 2 },
     ]),
   ),
+
+  http.get(`${API}/api/v1/auditoria`, ({ request }) => {
+    const denegado = exigirRol(request, ['Administrador'])
+    if (denegado) return denegado
+    const url = new URL(request.url)
+    const entidad = url.searchParams.get('entidad')
+    const q = url.searchParams.get('q')?.toLowerCase()
+    let items = [...AUDITORIA]
+    if (entidad) items = items.filter((a) => a.entidad === entidad)
+    if (q) items = items.filter((a) => a.accion.toLowerCase().includes(q))
+    return HttpResponse.json(pagina(items))
+  }),
+
+  http.post(`${API}/api/v1/catalogos/categorias-incidente`, async ({ request }) => {
+    const denegado = exigirRol(request, ['Administrador'])
+    if (denegado) return denegado
+    const cuerpo = (await request.json()) as { nombre: string }
+    return HttpResponse.json({ id: 10, nombre: cuerpo.nombre }, { status: 201 })
+  }),
+
+  http.put(`${API}/api/v1/catalogos/categorias-incidente/:id`, async ({ request }) => {
+    const denegado = exigirRol(request, ['Administrador'])
+    if (denegado) return denegado
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.delete(`${API}/api/v1/catalogos/categorias-incidente/:id`, ({ request, params }) => {
+    const denegado = exigirRol(request, ['Administrador'])
+    if (denegado) return denegado
+    if (params.id === '1') {
+      return HttpResponse.json({ codigo: 'EN_USO', mensaje: 'No se puede eliminar: la categoría está en uso.' }, { status: 409 })
+    }
+    return new HttpResponse(null, { status: 204 })
+  }),
 
   http.get(`${API}/api/v1/activos`, ({ request }) => {
     const usuario = usuarioDeLaPeticion(request)
