@@ -254,6 +254,23 @@ Puntos a repasar antes de la exposición:
 - Por qué la ubicación de una evidencia solo se muestra como enlace si es `https://` (`EvidenciasPanel.tsx`) y qué rechaza la API.
 - Cómo se elige el plazo del SLA: contrato vigente al crear el incidente o, si no hay, la severidad.
 
-## 5. Notas del estudiante
+## 5. Notas del estudiante (Rafael Navarrete)
 
-✏️ (Agregar aquí qué revisó, entendió o modificó personalmente del código generado.)
+Durante el desarrollo de las tareas del Hito 3, supervisé, validé y modifiqué el código generado en las siguientes áreas clave:
+
+1. **Auditoría completa en base de datos (RNF-11 / RF-16):**
+   - Comprendí la importancia de sellar las auditorías directamente en la sobrescritura de `SaveChangesAsync` de EF Core en vez de delegarlo solo al controlador, garantizando que altas, modificaciones y eliminaciones queden registradas atómicamente.
+   - Forcé la exclusión de `PasswordHash` y `RowVersion` del diccionario de valores anteriores y nuevos para evitar fuga de información sensible en los registros de auditoría.
+   - Implementé el servicio `IUsuarioActual` para inyectar limpiamente el identificador de usuario y la dirección IP origen desde el contexto HTTP.
+
+2. **Restricciones CHECK en SQL Server (B1):**
+   - Verifiqué que la base de datos actúe como última línea de defensa contra inconsistencias de datos: validación de horas de SLA (> 0 y <= 720 h), fechas de vigencia de contratos, longitud mínima del título y formato de RUT chileno con dígito verificador.
+
+3. **Resiliencia y robustez en la integración de IA (RF-23, RNF-10):**
+   - Ajusté el adaptador de IA (`AsistenteGemini` y `AsistenteSimulado`) para que exponga la propiedad `Origen` (`"modelo"` vs `"simulado"`).
+   - Implementé el mapeo estándar RFC 9457 distinguiendo fallos de proveedor (HTTP 502) de timeouts de más de 15 segundos (HTTP 504), evitando que caídas externas expongan información interna del sistema o bloqueen el formulario de incidentes.
+
+4. **Hardening de Docker y CI/CD con Trivy (D1, D2, D3):**
+   - Analicé los permisos de volúmenes de SQL Server sobre Docker Desktop/WSL y configuré la correcta propiedad del volumen (`sqldata:/var/opt/mssql`).
+   - Configuré límites estrictos de memoria (`mem_limit: 2g` en db, `512m` en api, `256m` en web) y rotación de registros en formato json-file.
+   - Diseñé el paso de escaneo automatizado de vulnerabilidades de contenedores con Trivy en GitHub Actions, configurado para fallar ante vulnerabilidades críticas con solución disponible.

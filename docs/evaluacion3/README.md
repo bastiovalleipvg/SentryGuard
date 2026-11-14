@@ -2,7 +2,7 @@
 
 **Proyecto:** SentryGuard, sistema web de gestión de incidentes de ciberseguridad para una empresa ficticia (CyberOps Chile SpA), con datos sintéticos.
 
-**Asignatura:** Lenguaje de Programación Web II · **Equipo:** Adriel Troncoso, Bastián Ovalle y [integrante por confirmar].
+**Asignatura:** Lenguaje de Programación Web II · **Equipo:** Adriel Troncoso, Bastián Ovalle y Rafael Navarrete.
 
 La pauta pide para el Hito 1: dominio aprobado, requerimientos funcionales y no funcionales, historias de usuario priorizadas, arquitectura, modelo entidad–relación, contrato de la API, maquetas de pantallas, plan de trabajo y repositorio inicializado. Cada documento distingue lo **implementado** (✅) de lo **planificado** (📋, con su hito), para que la documentación coincida con el código en cada entrega.
 

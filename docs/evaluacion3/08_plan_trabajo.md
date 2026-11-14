@@ -8,7 +8,7 @@ Cada integrante es **responsable** de un área: la lidera y hace sus commits. To
 |---|---|---|
 | **Adriel Troncoso** | Frontend (pantallas nuevas, orden y validación inmediata, dashboard, reportes en pantalla e impresión), accesibilidad y documentación | Integración de IA en la interfaz |
 | **Bastián Ovalle** | Backend y datos: integrar SentryGuard-2, capa de servicios, migraciones (CHECK, vistas, auditoría), datos sintéticos, endpoints de dashboard y reportes | Respaldo y restauración |
-| **[Integrante 3, por confirmar]** | Contenerización y CI/CD (Dockerfiles, compose, GitHub Actions), plan de despliegue, endpoint de IA y sus pruebas con el servicio simulado | Manual de usuario |
+| **Rafael Navarrete** | Contenerización y CI/CD (Dockerfiles, compose, GitHub Actions, escaneo Trivy), lógica de negocio, pruebas unitarias y endpoint de IA | Manual de usuario |
 
 > Si el equipo queda en 2 integrantes, el área del integrante 3 se reparte: Bastián toma la contenerización y el CI, y Adriel la IA y el plan de despliegue. La pauta exige entre 3 y 4 integrantes, así que hay que confirmarlo con el docente.
 
