@@ -152,7 +152,7 @@ jobs:
         run: docker build -t sentryguard-web:local -f sentryguard-web/Dockerfile sentryguard-web/
 
       - name: Escanear imagen API con Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: 'sentryguard-api:local'
           format: 'table'
@@ -162,7 +162,7 @@ jobs:
           severity: 'CRITICAL'
 
       - name: Escanear imagen Web con Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: 'sentryguard-web:local'
           format: 'table'
