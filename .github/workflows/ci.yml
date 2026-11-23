@@ -115,10 +115,16 @@ jobs:
           done < .env
 
       - name: Construir imagenes y levantar el sistema
-        run: docker compose -f compose.yaml up --build -d --wait --wait-timeout 300
+        # Sin --wait: el contenedor seed termina con codigo 0 a proposito y --wait lo toma como fallo
+        run: docker compose -f compose.yaml up --build -d
 
       - name: Comprobar que el sistema responde
         run: |
+          # Espera a que la API (migraciones + health) y el seed terminen: hasta 5 minutos
+          for i in $(seq 1 60); do
+            curl -fsS http://localhost:8088/health >/dev/null 2>&1 && [ "$(docker inspect -f '{{.State.Status}}' sentryguard-seed)" = "exited" ] && break
+            sleep 5
+          done
           curl -fsS http://localhost:8088/health
           curl -fsS http://localhost:8088/ | grep -qi "<div id=\"root\""
           curl -fsS http://localhost:8088/api/v1/catalogos/severidades | grep -q "Alta"
