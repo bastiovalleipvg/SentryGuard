@@ -1,6 +1,6 @@
 # 12. Plan de despliegue
 
-Este plan describe cómo se instala, actualiza y recupera SentryGuard. Todo lo que dice se basa en archivos que existen en el repositorio: `compose.yaml`, `compose.override.yaml`, `.env.example`, `.github/workflows/ci.yml`, `scripts/` y `sentryguard-web/nginx.conf`. Lo que **no pudimos verificar** (precios de nube, certificados reales) está marcado con **[NO VERIFICADO]**.
+Este plan describe cómo se instala, actualiza y recupera SentryGuard. Todo lo que dice se basa en archivos que existen en el repositorio: `compose.yaml`, `compose.override.yaml`, `.env.example`, `.github/workflows/ci.yml`, `scripts/` y `sentryguard-web/nginx.conf`. Lo que **no pudimos verificar** (certificado real con dominio, algunos precios) está marcado con **[NO VERIFICADO]**; los precios de la nube y la licencia de QuestPDF se consultaron el 23 de noviembre de 2026 y llevan su fuente.
 
 ## 1. Entornos
 
@@ -77,7 +77,7 @@ docker compose ps && curl -fsS http://localhost:8088/health
    - Restaurar el respaldo hecho antes de actualizar (el camino más seguro si la migración borró o transformó datos).
 3. Verificar con `/health` y con una consulta de humo.
 
-**Prueba realizada** (el 23 de noviembre de 2026, base de desarrollo): se retrocedió la migración `AgregaRestriccionesCheck` y se volvió a aplicar sin errores. La evidencia, con la salida de los comandos, está en `docs/evaluacion3/evidencias/reversion-migracion.md`. **No se pudo repetir con contenedores** en esta máquina porque el servicio de Docker Desktop no estaba activo; el cambio de imagen debe probarse en el servidor antes de la defensa (apartado 10).
+**Prueba realizada** (el 23 de noviembre de 2026, base de desarrollo): se retrocedió la migración `AgregaRestriccionesCheck` y se volvió a aplicar sin errores. La evidencia, con la salida de los comandos, está en `docs/evaluacion3/evidencias/reversion-migracion.md`. **También se probó con contenedores** (reversión de la versión del código sobre la misma base de datos): ver `docs/evaluacion3/evidencias/reversion-imagen.md`.
 
 ## 6. Respaldo y recuperación
 
@@ -111,17 +111,20 @@ docker compose ps && curl -fsS http://localhost:8088/health
 
 ## 9. Costos y riesgos
 
-**Costos mensuales estimados** **[NO VERIFICADO: los precios de los proveedores cambian y no se consultaron en línea al redactar este documento; confirmar en la página del proveedor antes de decidir]**
+**Costos mensuales estimados** (precios consultados el 23 de noviembre de 2026 en las páginas de los proveedores, a través de un buscador; **confirmar en la página del proveedor antes de contratar**, porque cambian)
 
-| Ítem | Estimación |
-|---|---|
-| VM Linux de 2 vCPU y 4 GB en un proveedor de nube de gama de entrada | del orden de 15 a 30 USD al mes |
-| Disco y respaldos externos (30 GB + copias) | del orden de 2 a 5 USD al mes |
-| Dominio | unos 10 a 15 USD al año |
-| Certificado HTTPS (Let's Encrypt) | 0 USD |
-| Licencia de SQL Server | Edición *Developer* o *Express* para esta etapa; una edición *Standard* tendría costo de licencia **[NO VERIFICADO]** |
-| API de IA | Variable según el uso; con la clave vacía el sistema funciona con el asistente simulado a costo 0 |
-| QuestPDF | Licencia *Community* para uso académico; **debe revisarse la licencia vigente antes de un uso comercial** **[NO VERIFICADO]** |
+| Ítem | Estimación | Fuente |
+|---|---|---|
+| VM Linux de 2 vCPU y 4 GB, opción de nube conocida (DigitalOcean, plan *Basic*) | unos **24 USD al mes** (otras variantes, desde 32 hasta unos 38 USD) | [digitalocean.com/pricing/droplets](https://www.digitalocean.com/pricing/droplets) |
+| La misma VM en un proveedor económico (Hetzner, línea CX) | entre **3,79 y 4,51 EUR al mes** según la fuente (con o sin IVA); el plan CX22 figura como reemplazado por otro más nuevo **[los precios no coinciden entre fuentes: sin verificar]** | [hetzner.com/news/new-cx-plans](https://www.hetzner.com/news/new-cx-plans) |
+| Respaldos del proveedor | 20 % del costo de la VM los semanales y 30 % los diarios (DigitalOcean); aquí los respaldos los hace el script, así que es opcional | [digitalocean.com/pricing](https://www.digitalocean.com/pricing/droplets) |
+| Dominio | unos 10 a 15 USD al año **[estimación propia, sin fuente]** | — |
+| Certificado HTTPS (Let's Encrypt) | 0 USD | — |
+| Licencia de SQL Server | Edición *Developer* (no productiva) o *Express* en esta etapa; una edición *Standard* tiene costo de licencia **[no verificado]** | — |
+| API de IA | Variable según el uso; con la clave vacía el sistema funciona con el asistente simulado a costo 0 | — |
+| QuestPDF | **0 USD**: la licencia *Community* (v3.0) es gratuita para organizaciones con ingresos brutos anuales **menores a 1 000 000 USD** y no aplica a entidades públicas ni a empresas que cotizan en bolsa; este proyecto es académico. Si el sistema se usara en una organización que no cumpla esas condiciones, hay que comprar una licencia | [questpdf.com/license/community.html](https://questpdf.com/license/community.html) |
+
+**Costo total estimado para una puesta en marcha mínima:** entre unos 5 y 30 USD al mes, según el proveedor, más el dominio.
 
 **Riesgos**
 
