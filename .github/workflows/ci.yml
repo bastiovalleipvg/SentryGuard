@@ -108,7 +108,7 @@ jobs:
 
       - name: Generar .env con claves aleatorias
         run: |
-          ./scripts/generar-env.sh
+          bash ./scripts/generar-env.sh
           # Enmascarar en los logs antes de que algo pueda imprimirlas
           while IFS='=' read -r clave valor; do
             case "$clave" in SA_PASSWORD|JWT_KEY) echo "::add-mask::$valor" ;; esac
