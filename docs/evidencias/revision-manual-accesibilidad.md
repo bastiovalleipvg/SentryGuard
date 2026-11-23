@@ -85,3 +85,23 @@ Esta parte **no se puede automatizar**. Completar con NVDA y Firefox o Chrome, s
 | 4. Recorrer un gráfico y abrir «Ver los datos en tabla» | Conclusión del gráfico; tabla con encabezados de fila | | |
 | 5. Pulsar «Resumir con IA» | «Generado con IA» y el texto del resumen | | |
 | 6. Abrir un reporte, filtrarlo y exportarlo | Cambio de reporte (`aria-current`), cantidad de filas y el aviso «Archivo generado» | | |
+
+## 7. Simulación automatizada de lector de pantalla y teclado (23 de noviembre de 2026)
+
+**Esto NO reemplaza el recorrido con NVDA de la sección 6**: es una comprobación hecha con Playwright contra el sistema en Docker (`http://localhost:8088`) que inspecciona lo que un lector de pantalla recibe (nombres, roles, estados, regiones `aria-live`, foco) y recorre el flujo solo con teclado. Nadie escuchó la voz de NVDA; la sección 6 sigue pendiente.
+
+| Verificación | Resultado |
+|---|---|
+| Login solo con teclado: `Tab` llega a «Correo electrónico (obligatorio)», luego «Contraseña (obligatorio)»; `Enter` envía | Cumple |
+| Al entrar y al navegar, el foco queda en el `<h1>` de la vista y el título de la pestaña cambia («Dashboard · SentryGuard») | Cumple |
+| Encabezados del dashboard (lo que recorre la tecla `H`): Dashboard, Indicadores, los 6 gráficos y «Resumen del período» | Cumple, en orden lógico |
+| 6 indicadores con valor, variación en texto y fórmula | Cumple |
+| 6 gráficos: todos con nombre accesible (`aria-label`), conclusión escrita y tabla con los datos | Cumple (0 sin nombre, 0 sin tabla) |
+| Filtros de fecha con teclado | El campo de fecha de Chrome tiene 3 paradas (día, mes, año) por cada fecha: es el comportamiento nativo del navegador |
+| «Resumir con IA» con teclado (`Enter`) | El resultado aparece dentro de una región `role="status"` (`aria-live="polite"`) con «Generado con IA» |
+| Reportes: botón «Gerencial» con `Enter` | `aria-current="page"` cambia al nuevo reporte; la cantidad de filas («52 filas.») está en una región `status` |
+| Tabla ancha | Región con nombre («Reporte gerencial») y `tabindex=0`: se recorre con el teclado |
+| Exportar CSV con teclado | Descarga `reporte-gerencial-2026-11-23.csv` y anuncia «Archivo generado» |
+| Formulario inválido | `role="alert"`: «Revisa los 4 campos marcados antes de continuar.»; el foco pasa al primer campo con error, que tiene `aria-invalid="true"` y `aria-describedby` hacia su mensaje |
+
+**Hallazgos:** ninguno que corregir. Queda para NVDA verificar cómo se *pronuncian* estos textos (por ejemplo, los símbolos «▲» y «✨»).
