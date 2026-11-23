@@ -62,7 +62,7 @@ jobs:
           dotnet list SentryGuard.slnx package --vulnerable --include-transitive 2>&1 | tee vulnerables.txt
           ! grep -q "tiene las siguientes vulnerabilidades\|has the following vulnerable" vulnerables.txt
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: resultados-backend
