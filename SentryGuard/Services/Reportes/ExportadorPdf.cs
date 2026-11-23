@@ -12,7 +12,7 @@ namespace SentryGuard.Services.Reportes
     {
         static ExportadorPdf()
         {
-            // Licencia Community de QuestPDF: [NO VERIFICADO] las condiciones vigentes; uso academico.
+            // Licencia Community de QuestPDF (gratuita bajo 1 000 000 USD de ingresos anuales; uso academico).
             QuestPDF.Settings.License = LicenseType.Community;
         }
 
