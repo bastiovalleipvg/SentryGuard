@@ -509,7 +509,7 @@ public class SentryGuardDbContext : DbContext
             return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
 
-        var auditorias = new List<LogAuditoria>();
+        var auditorias = new List<(LogAuditoria Log, Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry Entry)>();
 
         foreach (var entry in entries)
         {
@@ -554,7 +554,7 @@ public class SentryGuardDbContext : DbContext
                 entidadId = parsedId;
             }
 
-            auditorias.Add(new LogAuditoria
+            auditorias.Add((new LogAuditoria
             {
                 UsuarioId = usuarioId,
                 Accion = $"{accion} {nombreEntidad}",
@@ -564,15 +564,22 @@ public class SentryGuardDbContext : DbContext
                 ValoresNuevos = valoresNuevos,
                 IpOrigen = ipOrigen,
                 Timestamp = ahora
-            });
+            }, entry));
         }
 
         var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
 
         if (auditorias.Count > 0)
         {
-            foreach (var log in auditorias)
+            foreach (var (log, entry) in auditorias)
             {
+                // En las altas el Id lo genera la base: se lee recien despues del primer guardado
+                if (log.EntidadId is null or <= 0)
+                {
+                    var pk = entry.Properties.FirstOrDefault(p => p.Metadata.IsPrimaryKey());
+                    if (pk?.CurrentValue != null && int.TryParse(pk.CurrentValue.ToString(), out var nuevoId) && nuevoId > 0)
+                        log.EntidadId = nuevoId;
+                }
                 LogsAuditoria.Add(log);
             }
             await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);

@@ -84,11 +84,6 @@ namespace SentryGuard.Migrations
                 sql: "LEN([rut]) >= 9 AND LEN([rut]) <= 10 AND [rut] LIKE '%-%'");
 
             migrationBuilder.AddCheckConstraint(
-                name: "CK_tb_Incidente_FechaCierre",
-                table: "tb_Incidente",
-                sql: "[fecha_cierre] IS NULL OR [fecha_cierre] >= [fecha_creacion]");
-
-            migrationBuilder.AddCheckConstraint(
                 name: "CK_tb_Incidente_TituloMinimo",
                 table: "tb_Incidente",
                 sql: "LEN(LTRIM(RTRIM([titulo]))) >= 5");
@@ -134,10 +129,6 @@ namespace SentryGuard.Migrations
             migrationBuilder.DropCheckConstraint(
                 name: "CK_tb_Organizacion_RutFormato",
                 table: "tb_Organizacion");
-
-            migrationBuilder.DropCheckConstraint(
-                name: "CK_tb_Incidente_FechaCierre",
-                table: "tb_Incidente");
 
             migrationBuilder.DropCheckConstraint(
                 name: "CK_tb_Incidente_TituloMinimo",

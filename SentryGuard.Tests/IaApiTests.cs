@@ -178,14 +178,15 @@ public class IaApiTests : IClassFixture<SentryGuardApiFactory>
     }
 
     [Fact]
-    public async Task Gemini_ConErrorDelProveedor_UsaElSimuladoYNoFallaLaFuncion()
+    public async Task Gemini_ConErrorDelProveedor_Devuelve502ConCodigo()
     {
         var manejador = new ManejadorSimulado(_ => new HttpResponseMessage(HttpStatusCode.InternalServerError));
 
         var resultado = await CrearAdaptador(manejador).ClasificarIncidenteAsync("Phishing a ejecutivos", "Correos sospechosos pidiendo credenciales.");
 
-        Assert.True(resultado.Success);
-        Assert.Equal("Phishing", resultado.Data!.CategoriaSugerida);
+        Assert.False(resultado.Success);
+        Assert.Equal(502, resultado.StatusCode);
+        Assert.Equal("IA_ERROR_PROVEEDOR", resultado.Codigo);
     }
 
     [Fact]
