@@ -1,0 +1,76 @@
+﻿Organización;Severidad;Estado;Cantidad
+Banco del Sur SpA;Baja;Abierto;1
+Banco del Sur SpA;Baja;Resuelto;6
+Banco del Sur SpA;Baja;Cerrado;22
+Banco del Sur SpA;Media;En progreso;2
+Banco del Sur SpA;Media;Resuelto;6
+Banco del Sur SpA;Media;Cerrado;22
+Banco del Sur SpA;Alta;En progreso;1
+Banco del Sur SpA;Alta;Resuelto;1
+Banco del Sur SpA;Alta;Cerrado;12
+Banco del Sur SpA;Crítica;En progreso;1
+Banco del Sur SpA;Crítica;Resuelto;2
+Banco del Sur SpA;Crítica;Cerrado;4
+Clínica RedSalud Integral;Baja;Escalado;1
+Clínica RedSalud Integral;Baja;Resuelto;1
+Clínica RedSalud Integral;Baja;Cerrado;21
+Clínica RedSalud Integral;Media;Abierto;1
+Clínica RedSalud Integral;Media;En progreso;1
+Clínica RedSalud Integral;Media;Resuelto;3
+Clínica RedSalud Integral;Media;Cerrado;34
+Clínica RedSalud Integral;Alta;En progreso;1
+Clínica RedSalud Integral;Alta;Escalado;1
+Clínica RedSalud Integral;Alta;Resuelto;2
+Clínica RedSalud Integral;Alta;Cerrado;15
+Clínica RedSalud Integral;Crítica;En progreso;1
+Clínica RedSalud Integral;Crítica;Cerrado;6
+Empresa Demo SpA;Baja;Abierto;2
+Empresa Demo SpA;Baja;En progreso;1
+Empresa Demo SpA;Baja;Escalado;1
+Empresa Demo SpA;Baja;Resuelto;6
+Empresa Demo SpA;Baja;Cerrado;14
+Empresa Demo SpA;Media;Abierto;2
+Empresa Demo SpA;Media;Escalado;1
+Empresa Demo SpA;Media;Resuelto;3
+Empresa Demo SpA;Media;Cerrado;27
+Empresa Demo SpA;Alta;Abierto;10
+Empresa Demo SpA;Alta;En progreso;3
+Empresa Demo SpA;Alta;Resuelto;6
+Empresa Demo SpA;Alta;Cerrado;21
+Empresa Demo SpA;Crítica;En progreso;1
+Empresa Demo SpA;Crítica;Cerrado;12
+Otra organizacion 34127298-K;Baja;Abierto;2
+Otra organizacion 34127298-K;Baja;En progreso;1
+Otra organizacion 34127298-K;Baja;Escalado;1
+Otra organizacion 34127298-K;Baja;Resuelto;4
+Otra organizacion 34127298-K;Baja;Cerrado;17
+Otra organizacion 34127298-K;Media;Abierto;1
+Otra organizacion 34127298-K;Media;En progreso;1
+Otra organizacion 34127298-K;Media;Resuelto;7
+Otra organizacion 34127298-K;Media;Cerrado;25
+Otra organizacion 34127298-K;Alta;Abierto;1
+Otra organizacion 34127298-K;Alta;Resuelto;4
+Otra organizacion 34127298-K;Alta;Cerrado;10
+Otra organizacion 34127298-K;Crítica;Resuelto;2
+Otra organizacion 34127298-K;Crítica;Cerrado;5
+Otra organizacion 66099756-6;Baja;En progreso;2
+Otra organizacion 66099756-6;Baja;Resuelto;2
+Otra organizacion 66099756-6;Baja;Cerrado;21
+Otra organizacion 66099756-6;Media;Abierto;1
+Otra organizacion 66099756-6;Media;Escalado;2
+Otra organizacion 66099756-6;Media;Resuelto;1
+Otra organizacion 66099756-6;Media;Cerrado;33
+Otra organizacion 66099756-6;Alta;Resuelto;2
+Otra organizacion 66099756-6;Alta;Cerrado;12
+Otra organizacion 66099756-6;Crítica;Resuelto;4
+Otra organizacion 66099756-6;Crítica;Cerrado;4
+Retail Express Logística;Baja;En progreso;1
+Retail Express Logística;Baja;Resuelto;5
+Retail Express Logística;Baja;Cerrado;18
+Retail Express Logística;Media;En progreso;2
+Retail Express Logística;Media;Resuelto;6
+Retail Express Logística;Media;Cerrado;21
+Retail Express Logística;Alta;En progreso;2
+Retail Express Logística;Alta;Resuelto;5
+Retail Express Logística;Alta;Cerrado;11
+Retail Express Logística;Crítica;Cerrado;7
