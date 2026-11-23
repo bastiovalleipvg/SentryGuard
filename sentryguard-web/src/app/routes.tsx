@@ -26,6 +26,8 @@ const OrganizacionDetailPage = diferida(() => import('../features/organizaciones
 const OrganizacionCreatePage = diferida(() => import('../features/organizaciones/pages/OrganizacionFormPages').then((m) => m.OrganizacionCreatePage))
 const OrganizacionEditPage = diferida(() => import('../features/organizaciones/pages/OrganizacionFormPages').then((m) => m.OrganizacionEditPage))
 const OrganizacionesListPage = diferida(() => import('../features/organizaciones/pages/OrganizacionesListPage').then((m) => m.OrganizacionesListPage))
+const DashboardPage = diferida(() => import('../features/dashboard/pages/DashboardPage').then((m) => m.DashboardPage))
+const ReportesPage = diferida(() => import('../features/reportes/pages/ReportesPage').then((m) => m.ReportesPage))
 const UsuarioCreatePage = diferida(() => import('../features/usuarios/pages/UsuariosPages').then((m) => m.UsuarioCreatePage))
 const UsuarioEditPage = diferida(() => import('../features/usuarios/pages/UsuariosPages').then((m) => m.UsuarioEditPage))
 const UsuariosListPage = diferida(() => import('../features/usuarios/pages/UsuariosPages').then((m) => m.UsuariosListPage))
@@ -74,6 +76,8 @@ export const routes: RouteObject[] = [
       { path: 'usuarios/:id/editar', element: <ProtectedRoute roles={PERMISOS.gestionarUsuarios}><Suspense fallback={<LoadingState mensaje="Cargando vista…" />}><UsuarioEditPage /></Suspense></ProtectedRoute> },
       { path: 'catalogos', element: <ProtectedRoute roles={PERMISOS.gestionarCatalogos}><Suspense fallback={<LoadingState mensaje="Cargando vista…" />}><CatalogosPage /></Suspense></ProtectedRoute> },
       { path: 'auditoria', element: <ProtectedRoute roles={PERMISOS.verAuditoria}><Suspense fallback={<LoadingState mensaje="Cargando vista…" />}><AuditoriaPage /></Suspense></ProtectedRoute> },
+      { path: 'dashboard', element: <ProtectedRoute roles={PERMISOS.verDashboard}><Suspense fallback={<LoadingState mensaje="Cargando vista…" />}><DashboardPage /></Suspense></ProtectedRoute> },
+      { path: 'reportes', element: <ProtectedRoute roles={PERMISOS.verReportes}><Suspense fallback={<LoadingState mensaje="Cargando vista…" />}><ReportesPage /></Suspense></ProtectedRoute> },
       { path: 'acceso-denegado', element: <AccessDeniedPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],

@@ -17,6 +17,8 @@ function exigirRol(request: Request, roles: string[]) {
   return null
 }
 
+const item = (clave: string, nombre: string, valor: number | null, unidad: string, formula: string, variacion: number | null) => ({ clave, nombre, valor, unidad, formula, variacion })
+
 // API simulada con el mismo contrato que SentryGuard (incluidos 401, 403, 400 y 429).
 export const handlers = [
   http.post(`${API}/api/v1/usuarios/login`, async ({ request }) => {
@@ -277,5 +279,75 @@ export const handlers = [
   http.post(`${API}/api/v1/incidentes/:id/evidencia`, ({ request }) => {
     const denegado = exigirRol(request, ['Administrador', 'Supervisor', 'Analista'])
     return denegado ?? HttpResponse.json({ id: 1 }, { status: 201 })
+  }),
+
+  // ---- Hito 4: dashboard y reportes ----
+  http.get(`${API}/api/v1/dashboard/indicadores`, ({ request }) => {
+    if (!usuarioDeLaPeticion(request)) return noAutorizado()
+    const url = new URL(request.url)
+    if (url.searchParams.get('desde') && url.searchParams.get('hasta') && url.searchParams.get('hasta')! < url.searchParams.get('desde')!) {
+      return HttpResponse.json({ status: 400, title: 'Error de validación', detail: 'Rango de fechas inválido.', codigo: 'FECHAS_INVALIDAS' }, { status: 400 })
+    }
+    return HttpResponse.json({
+      desde: '2025-11-23',
+      hasta: '2026-11-23',
+      items: [
+        item('volumen', 'Volumen de incidentes', 120, 'cantidad', 'cantidad de incidentes creados en el período', 12),
+        item('cumplimientoSla', 'Cumplimiento del SLA', 87.5, 'porcentaje', 'cerrados dentro del plazo / cerrados × 100', -2.5),
+        item('tiempoMedioResolucion', 'Tiempo medio de resolución', 14.2, 'horas', 'promedio de horas entre la creación y el cierre', 0),
+        item('tiempoMedioAsignacion', 'Tiempo medio de asignación', null, 'horas', 'promedio de horas hasta asignar', null),
+        item('backlog', 'Backlog activo', 31, 'cantidad', 'incidentes no resueltos ni cerrados', 4),
+        item('proporcionCriticos', 'Proporción de incidentes críticos', 9.5, 'porcentaje', 'críticos / total × 100', 1),
+      ],
+    })
+  }),
+
+  http.get(`${API}/api/v1/dashboard/series`, ({ request }) => {
+    if (!usuarioDeLaPeticion(request)) return noAutorizado()
+    return HttpResponse.json({
+      incidentesPorMes: [{ etiqueta: '2026-09', valor: 30 }, { etiqueta: '2026-10', valor: 45 }],
+      cumplimientoSlaPorMes: [{ etiqueta: '2026-09', valor: 80 }, { etiqueta: '2026-10', valor: 90 }],
+      porSeveridad: [{ etiqueta: 'Crítica', valor: 8 }, { etiqueta: 'Media', valor: 40 }],
+      porCategoria: [{ etiqueta: 'Malware', valor: 22 }],
+      porOrganizacion: [{ etiqueta: 'Org Demo', valor: 75 }],
+      cargaPorAnalista: [{ etiqueta: 'Analista Demo', valor: 6 }],
+    })
+  }),
+
+  http.post(`${API}/api/v1/ia/resumir`, ({ request }) => {
+    const denegado = exigirRol(request, ['Administrador', 'Supervisor'])
+    return denegado ?? HttpResponse.json({ resumen: 'El volumen de incidentes subió y el SLA bajó levemente.', generadoEn: '2026-11-23T12:00:00', modelo: 'simulado' })
+  }),
+
+  http.get(`${API}/api/v1/reportes/:tipo`, ({ request, params }) => {
+    const denegado = exigirRol(request, ['Administrador', 'Supervisor', 'Cliente'])
+    if (denegado) return denegado
+    const url = new URL(request.url)
+    if (params.tipo === 'sla' && (!url.searchParams.get('desde') || !url.searchParams.get('hasta'))) {
+      return HttpResponse.json({ status: 400, title: 'Error de validación', detail: 'Los filtros del reporte no son válidos.', codigo: 'FILTROS_INVALIDOS', errors: { desde: ['El reporte de SLA exige un rango de fechas.'] } }, { status: 400 })
+    }
+    return HttpResponse.json({
+      tipo: params.tipo,
+      filtros: {},
+      totales: { Incidentes: 2, Abiertos: 1 },
+      total: 2,
+      page: 1,
+      pageSize: 10,
+      totalPages: 1,
+      columnas: ['Id', 'Título', 'Severidad', 'Fecha creación'],
+      filas: [
+        { Id: 1, Título: 'Ransomware en servidor de archivos', Severidad: 'Crítica', 'Fecha creación': '2026-10-20T12:00:00' },
+        { Id: 2, Título: 'Phishing a ejecutivos', Severidad: 'Alta', 'Fecha creación': '2026-10-21T09:00:00' },
+      ],
+    })
+  }),
+
+  http.get(`${API}/api/v1/reportes/:tipo/exportar`, ({ request, params }) => {
+    const denegado = exigirRol(request, ['Administrador', 'Supervisor', 'Cliente'])
+    if (denegado) return denegado
+    const formato = new URL(request.url).searchParams.get('formato') ?? 'csv'
+    return new HttpResponse('Id;Titulo;Demo', {
+      headers: { 'Content-Type': 'text/csv', 'Content-Disposition': `attachment; filename="reporte-${String(params.tipo)}-2026-11-23.${formato}"` },
+    })
   }),
 ]

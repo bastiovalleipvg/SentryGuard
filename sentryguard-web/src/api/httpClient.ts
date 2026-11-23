@@ -83,3 +83,29 @@ export async function apiRequest<T = unknown>(ruta: string, opciones: Opciones<T
   if (!resultado.success) throw ApiError.invalidResponse()
   return resultado.data
 }
+
+/**
+ * Descarga un archivo generado por la API (exportacion de reportes): adjunta el Bearer, recibe un Blob
+ * y lo entrega con el nombre que indica Content-Disposition. Los errores salen como ApiError.
+ */
+export async function descargarArchivo(ruta: string, query?: Query, signal?: AbortSignal): Promise<{ blob: Blob; nombre: string }> {
+  const token = tokenStorage.obtenerToken()
+  let response: Response
+  try {
+    response = await fetch(construirUrl(ruta, query), {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      signal,
+      credentials: 'omit',
+    })
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') throw error
+    throw ApiError.network()
+  }
+  if (!response.ok) {
+    if (response.status === 401) alRecibir401?.()
+    throw await ApiError.fromResponse(response)
+  }
+  const disposicion = response.headers.get('Content-Disposition') ?? ''
+  const nombre = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposicion)?.[1] ?? 'reporte'
+  return { blob: await response.blob(), nombre: decodeURIComponent(nombre) }
+}

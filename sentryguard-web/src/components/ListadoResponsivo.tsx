@@ -30,7 +30,7 @@ export function ListadoResponsivo<T>({ items, etiqueta, clave, principal, column
 
   if (esAncha) {
     return (
-      <div className="tabla-contenedor">
+      <div className="tabla-contenedor" role="region" aria-label={etiqueta} tabIndex={0}>
         <table className="tabla">
           <caption className="visualmente-oculto">{etiqueta}</caption>
           <thead>

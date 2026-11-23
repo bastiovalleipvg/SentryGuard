@@ -233,3 +233,50 @@ export const ResumenIaSchema = z.object({
 })
 export type ResumenIa = z.infer<typeof ResumenIaSchema>
 
+
+// ---- Hito 4: dashboard y reportes ----
+export const IndicadorSchema = z.object({
+  clave: z.string(),
+  nombre: z.string(),
+  valor: z.number().nullable(),
+  unidad: z.string(),
+  formula: z.string(),
+  variacion: z.number().nullable(),
+})
+export type Indicador = z.infer<typeof IndicadorSchema>
+
+export const IndicadoresSchema = z.object({
+  desde: z.string(),
+  hasta: z.string(),
+  items: z.array(IndicadorSchema),
+})
+export type Indicadores = z.infer<typeof IndicadoresSchema>
+
+const PuntoSerieSchema = z.object({ etiqueta: z.string(), valor: z.number() })
+export type PuntoSerie = z.infer<typeof PuntoSerieSchema>
+
+export const SeriesDashboardSchema = z.object({
+  incidentesPorMes: z.array(PuntoSerieSchema),
+  cumplimientoSlaPorMes: z.array(PuntoSerieSchema),
+  porSeveridad: z.array(PuntoSerieSchema),
+  porCategoria: z.array(PuntoSerieSchema),
+  porOrganizacion: z.array(PuntoSerieSchema),
+  cargaPorAnalista: z.array(PuntoSerieSchema),
+})
+export type SeriesDashboard = z.infer<typeof SeriesDashboardSchema>
+
+export const TIPOS_REPORTE = ['operativo', 'gerencial', 'sla'] as const
+export type TipoReporte = (typeof TIPOS_REPORTE)[number]
+
+export const PaginaReporteSchema = z.object({
+  tipo: z.string(),
+  filtros: z.record(z.string(), z.string()),
+  totales: z.record(z.string(), z.number()),
+  total: z.number(),
+  page: z.number(),
+  pageSize: z.number(),
+  totalPages: z.number(),
+  columnas: z.array(z.string()),
+  filas: z.array(z.record(z.string(), z.unknown())),
+})
+export type PaginaReporte = z.infer<typeof PaginaReporteSchema>
