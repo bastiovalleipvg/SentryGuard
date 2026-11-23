@@ -17,7 +17,7 @@ ENV VITE_API_URL=$VITE_API_URL
 RUN npm run build
 
 # Etapa 2: nginx sin privilegios (usuario nginx, puerto 8080)
-FROM nginxinc/nginx-unprivileged:1.28.0-alpine AS runtime
+FROM nginxinc/nginx-unprivileged:1.31.7-alpine AS runtime
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
