@@ -2,7 +2,7 @@
 
 **Asignatura:** Lenguaje de Programación Web II · **Equipo:** Adriel Troncoso, Bastián Ovalle y Rafael Navarrete · **Fecha:** 23 de noviembre de 2026
 
-> Este informe resume el sistema y remite a los documentos de `docs/evaluacion3/` para el detalle. Todo el dominio es ficticio y los datos son sintéticos. **Pendiente de la persona antes de entregar:** registrar la aprobación del docente (Hito 1) y completar el recorrido con NVDA (sección 7).
+> Este informe resume el sistema y remite a los documentos de `docs/evaluacion3/` para el detalle. Todo el dominio es ficticio y los datos son sintéticos. **Pendiente de la persona antes de entregar:** registrar la aprobación del docente (Hito 1) y completar el recorrido con NVDA (sección 7); el nombre de quien entrega va en la portada del PDF.
 
 ## 1. Introducción y dominio
 
@@ -14,11 +14,11 @@ CyberOps Chile SpA (empresa ficticia) presta ciberseguridad gestionada a varias 
 
 ## 2. Plan de trabajo
 
-| Integrante | Área principal |
+| Integrante | Área principal (según el historial de commits) |
 |---|---|
-| Adriel Troncoso | Frontend (pantallas, dashboard, reportes e impresión), accesibilidad y documentación |
-| Bastián Ovalle | Backend y datos: capa de servicios, migraciones, datos sintéticos, auditoría |
-| Rafael Navarrete | Contenerización y CI/CD, restricciones de base de datos, endpoints de dashboard y reportes |
+| Adriel Troncoso | Base del proyecto (Trabajos 1 y 2), frontend completo (dashboard, reportes, impresión), accesibilidad, reportes y exportación en el backend, plan de despliegue, informes y manual |
+| Bastián Ovalle | Migración a .NET 10, categoría de incidente, flujo de estados desde la base, orden de listados, contrato OpenAPI, Docker multi-stage y `compose.yaml`, pipeline de CI con SQL Server y pruebas de integración de IA y auditoría |
+| Rafael Navarrete | Restricciones CHECK y auditoría en base de datos, pruebas unitarias de los servicios, resiliencia de la IA (502/504), endurecimiento de contenedores, Trivy y Dependabot, y servicio y endpoints del dashboard |
 
 Hitos: 1 (propuesta, 5 nov.), 2 (datos y backend), 3 (frontend, contenedores e IA), 4 (dashboard, reportes y despliegue) y entrega el 3 de diciembre. Herramientas: Git y GitHub (con Dependabot), .NET 10, SQL Server 2022, React 19, Docker y GitHub Actions. El repositorio es un monorepo: `SentryGuard/` (API), `SentryGuard.Tests/`, `sentryguard-web/`, `docs/`, `scripts/`. Los commits son en español con prefijo (`feat:`, `fix:`, `docs:`, `test:`, `chore:`). Detalle en `08_plan_trabajo.md`. El uso de IA de apoyo (Claude Code, y las demás herramientas que usó cada integrante) está declarado en el `README.md` y en `AI_LOG.md`.
 
@@ -73,7 +73,7 @@ Valores reales obtenidos con el dato sintético cargado, del 1 de enero al 23 de
 | Backlog activo | incidentes sin Resolver ni Cerrar al final del período | ¿Cuánto trabajo pendiente hay? | 49 | Equivale a unos 1,2 meses de demanda; la carga está concentrada en pocos analistas (ver 8.3) |
 | Proporción de críticos | críticos / total × 100 | ¿Qué parte del trabajo es urgente? | 9,62 % | Casi 1 de cada 10; sube 2,07 pp |
 
-(El período anterior de igual duración tiene pocos datos sintéticos, por eso algunas variaciones, como la del volumen, son grandes: con datos reales se interpretarían con más cuidado.)
+(El generador de datos sintéticos fija las fechas respecto del día en que se ejecuta, así que al levantar el sistema con Docker las cifras salen parecidas pero no idénticas a estas. El período anterior de igual duración tiene pocos datos sintéticos, por eso algunas variaciones, como la del volumen, son grandes: con datos reales se interpretarían con más cuidado.)
 
 ### 8.2 Visualizaciones
 
@@ -112,21 +112,26 @@ Cada uno se exporta a **Excel** (encabezados, formatos y fila de totales), **PDF
 
 - **Dockerfiles** multi-stage con versión fija (API .NET 10 y web con nginx), `compose.yaml` con `db`, `api`, `seed` y `web`, redes `app` y `datos`, `healthcheck`, `restart: unless-stopped`, contenedores en modo solo lectura y sin privilegios. **Un único comando:** `docker compose up --build` con `.env` generado por `scripts/generar-env.*`.
 - **Pipeline** (`.github/workflows/ci.yml`): backend con SQL Server, frontend (lint, tipos, pruebas, build y `npm audit`), construcción de contenedores, escaneo Trivy y **publicación en GHCR solo desde `main` y solo si todo pasó**. Dependabot propone actualizaciones.
-- **Plan de despliegue:** 10 apartados en `12_plan_despliegue.md` (entornos, infraestructura, pasos, secretos, reversión probada, respaldo con RTO de 30 min y RPO de 24 h, monitoreo, seguridad, costos y riesgos, y lista de verificación). Los precios están marcados como no verificados.
+- **Plan de despliegue:** 10 apartados en `12_plan_despliegue.md` (entornos, infraestructura, pasos, secretos, reversión probada, respaldo con RTO de 30 min y RPO de 24 h, monitoreo, seguridad, costos y riesgos, y lista de verificación). Los costos citan sus fuentes y la fecha de consulta; la reversión se probó con Docker (`evidencias/reversion-imagen.md`).
 
 ## 11. Articulación del módulo y cierre
 
 **Qué componente evidencia cada asignatura:** ver `13_informe_integracion.md` (tablas por asignatura y trazabilidad requerimiento → componente → asignatura).
 
-**Aporte de cada integrante:** ver el plan de trabajo y el historial de commits (`git shortlog -sne`).
+**Aporte de cada integrante** (verificable con `git shortlog -sne` y `git log --author`):
+- **Adriel Troncoso:** construyó el sistema base y el frontend, y en el Hito 4 el dashboard y los reportes en la interfaz, la impresión, las pruebas de accesibilidad con axe, la exportación a Excel, PDF y CSV en el backend, el plan de despliegue y los informes. Corrigió además el CI en `main`.
+- **Bastián Ovalle:** llevó el proyecto a .NET 10, agregó la categoría de incidente y el flujo de estados como datos, el orden de los listados y el contrato OpenAPI, y armó los contenedores, el `compose.yaml` y el pipeline con SQL Server, además de las pruebas de integración de IA y auditoría.
+- **Rafael Navarrete:** implementó las restricciones CHECK y la auditoría por entidad, las pruebas unitarias de los servicios, el manejo de errores de la IA (502 y 504), el endurecimiento de los contenedores con Trivy y Dependabot, y el servicio y los endpoints del dashboard.
+
+Cada integrante debe poder explicar también las partes de los demás: las tablas de `13_informe_integracion.md` indican dónde está cada componente.
 
 **Limitaciones:**
 - Sin sistema de alertas ni alta disponibilidad.
 - La agrupación mensual del dashboard se hace en C# sobre las filas del período (suficiente para cientos o miles de incidentes).
 - Solo hay tres tipos de gráfico propios.
-- Plan de despliegue sin probar en un servidor con dominio y HTTPS reales, ni la reversión de imágenes con Docker.
+- Plan de despliegue sin probar en un servidor con dominio y HTTPS reales (la reversión sí se probó con Docker en local).
 - No se midió la carga (RNF-01 se verificó a mano con 520 incidentes).
-- Licencia de QuestPDF por verificar para un uso comercial.
+- QuestPDF usa la licencia *Community*, gratuita bajo 1 000 000 USD de ingresos anuales; un uso comercial mayor exige una licencia de pago.
 
 **Mejoras futuras:** notificaciones por correo al acercarse el vencimiento del SLA, agregaciones en SQL para volúmenes grandes, alertas de monitoreo, autenticación de dos factores y una revisión completa con lectores de pantalla en móvil.
 
