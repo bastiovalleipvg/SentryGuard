@@ -22,24 +22,6 @@ public class LogAuditoria
     [Column("accion")]
     public string Accion { get; set; } = null!;
 
-    [StringLength(100)]
-    [Column("entidad")]
-    public string? Entidad { get; set; }
-
-    [Column("entidad_id")]
-    public long? EntidadId { get; set; }
-
-    [Column("valores_anteriores")]
-    public string? ValoresAnteriores { get; set; }
-
-    [Column("valores_nuevos")]
-    public string? ValoresNuevos { get; set; }
-
-    [StringLength(45)]
-    [Column("ip_origen")]
-    public string? IpOrigen { get; set; }
-
-    // Detalle por entidad (RF-16): qué registro cambió y sus valores anteriores y nuevos (JSON)
     [StringLength(50)]
     [Column("entidad")]
     public string? Entidad { get; set; }
@@ -52,6 +34,10 @@ public class LogAuditoria
 
     [Column("valores_nuevos")]
     public string? ValoresNuevos { get; set; }
+
+    [StringLength(45)]
+    [Column("ip_origen")]
+    public string? IpOrigen { get; set; }
 
     [Column("timestamp")]
     public DateTime Timestamp { get; set; }

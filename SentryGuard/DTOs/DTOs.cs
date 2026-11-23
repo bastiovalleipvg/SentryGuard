@@ -58,8 +58,6 @@ namespace SentryGuard.DTOs
         public int OrganizacionId { get; init; }
         public int? AnalistaAsignadoId { get; init; }
         public string? AnalistaAsignado { get; init; }
-        public int? CategoriaId { get; init; }
-        public string? Categoria { get; init; }
         public DateTime FechaCreacion { get; init; }
         public DateTime? FechaCierre { get; init; }
         public DateTime FechaModificacion { get; init; }
@@ -126,7 +124,7 @@ namespace SentryGuard.DTOs
         public string? Usuario { get; init; }
         public string Accion { get; init; } = null!;
         public string? Entidad { get; init; }
-        public long? EntidadId { get; init; }
+        public int? EntidadId { get; init; }
         public string? ValoresAnteriores { get; init; }
         public string? ValoresNuevos { get; init; }
         public string? IpOrigen { get; init; }

@@ -44,9 +44,6 @@ public class Incidente : IAuditable
     [Column("fecha_cierre")]
     public DateTime? FechaCierre { get; set; }
 
-    [Column("categoria_id")]
-    public int? CategoriaId { get; set; }
-
     // Auditoría (RF-16)
     [Column("fecha_modificacion")]
     public DateTime FechaModificacion { get; set; }
@@ -79,7 +76,4 @@ public class Incidente : IAuditable
 
     [ForeignKey("AnalistaAsignadoId")]
     public virtual Usuario? AnalistaAsignado { get; set; }
-
-    [ForeignKey("CategoriaId")]
-    public virtual CategoriaIncidente? Categoria { get; set; }
 }

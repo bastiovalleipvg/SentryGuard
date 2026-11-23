@@ -37,76 +37,12 @@ public class SentryGuardDbContext : DbContext
     public DbSet<BitacoraIncidente> BitacorasIncidente => Set<BitacoraIncidente>();
     public DbSet<EvidenciaIncidente> EvidenciasIncidente => Set<EvidenciaIncidente>();
     public DbSet<LogAuditoria> LogsAuditoria => Set<LogAuditoria>();
-    public DbSet<CategoriaIncidente> CategoriasIncidente => Set<CategoriaIncidente>();
     public DbSet<TransicionEstado> TransicionesEstado => Set<TransicionEstado>();
 
     // Vistas SQL para reportes y dashboard (solo lectura)
     public DbSet<IncidenteDetalleVista> VwIncidenteDetalle => Set<IncidenteDetalleVista>();
     public DbSet<CumplimientoSlaVista> VwCumplimientoSla => Set<CumplimientoSlaVista>();
     public DbSet<IndicadorMensualVista> VwIndicadoresMensuales => Set<IndicadorMensualVista>();
-
-    // Auditoría por entidad (RF-16): sella fechas y usuario, y registra valores anteriores y nuevos.
-    private static readonly HashSet<string> CamposSinAuditar = ["FechaModificacion", "ModificadoPorId", "RowVersion"];
-
-    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
-    {
-        var ahora = DateTime.UtcNow;
-        var usuarioId = _usuarioActual?.UsuarioId;
-        var pendientes = new List<(EntityEntry Entrada, string? Anteriores, string? Nuevos, bool Nuevo)>();
-
-        foreach (var entrada in ChangeTracker.Entries<IAuditable>().ToList())
-        {
-            if (entrada.State == EntityState.Added)
-            {
-                if (entrada.Entity.FechaCreacion == default) entrada.Entity.FechaCreacion = ahora;
-                if (entrada.Entity.FechaModificacion == default) entrada.Entity.FechaModificacion = entrada.Entity.FechaCreacion;
-                entrada.Entity.CreadoPorId ??= usuarioId;
-                entrada.Entity.ModificadoPorId ??= usuarioId;
-                if (usuarioId.HasValue) pendientes.Add((entrada, null, null, true));
-            }
-            else if (entrada.State == EntityState.Modified)
-            {
-                var cambios = entrada.Properties
-                    .Where(p => p.IsModified && !CamposSinAuditar.Contains(p.Metadata.Name)
-                        && !Equals(p.OriginalValue, p.CurrentValue))
-                    .ToList();
-                if (cambios.Count == 0) continue;
-
-                entrada.Entity.FechaModificacion = ahora;
-                entrada.Entity.ModificadoPorId = usuarioId;
-                if (usuarioId.HasValue)
-                    pendientes.Add((entrada,
-                        JsonSerializer.Serialize(cambios.ToDictionary(p => p.Metadata.Name, p => p.OriginalValue)),
-                        JsonSerializer.Serialize(cambios.ToDictionary(p => p.Metadata.Name, p => p.CurrentValue)),
-                        false));
-            }
-        }
-
-        var resultado = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-
-        if (pendientes.Count > 0)
-        {
-            foreach (var (entrada, anteriores, nuevos, nuevo) in pendientes)
-            {
-                var nombre = entrada.Entity.GetType().Name;
-                var id = (int?)entrada.Property("Id").CurrentValue;
-                LogsAuditoria.Add(new LogAuditoria
-                {
-                    UsuarioId = usuarioId,
-                    Accion = $"{nombre} {(nuevo ? "creado" : "modificado")}",
-                    IpOrigen = _usuarioActual?.Ip,
-                    Entidad = nombre,
-                    EntidadId = id,
-                    ValoresAnteriores = anteriores,
-                    ValoresNuevos = nuevos,
-                    Timestamp = ahora
-                });
-            }
-            await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-        }
-
-        return resultado;
-    }
 
     // Hash pre-calculado con el mismo PasswordHasher<Usuario> que usa AuthService,
     // para la contraseña de prueba "Admin123!" (no se puede generar dentro de HasData
@@ -155,22 +91,6 @@ public class SentryGuardDbContext : DbContext
                 new CategoriaActivo { Id = 3, Nombre = "Red" },
                 new CategoriaActivo { Id = 4, Nombre = "Aplicación" },
                 new CategoriaActivo { Id = 5, Nombre = "Nube" }
-            );
-        });
-
-        modelBuilder.Entity<CategoriaIncidente>(entity =>
-        {
-            entity.ToTable("tb_CategoriaIncidente");
-            entity.HasIndex(e => e.Nombre).IsUnique();
-
-            entity.HasData(
-                new CategoriaIncidente { Id = 1, Nombre = "Ransomware / Malware", Descripcion = "Infección o propagación de software malicioso o ransomware" },
-                new CategoriaIncidente { Id = 2, Nombre = "Phishing / Ingeniería Social", Descripcion = "Campañas de suplantación de identidad dirigidas a usuarios" },
-                new CategoriaIncidente { Id = 3, Nombre = "Inyección SQL / Vulnerabilidad Web", Descripcion = "Explotación de fallas en portales y aplicaciones web" },
-                new CategoriaIncidente { Id = 4, Nombre = "Acceso No Autorizado / C2", Descripcion = "Compromiso de credenciales o balizaje a servidores de control" },
-                new CategoriaIncidente { Id = 5, Nombre = "DDoS / Indisponibilidad", Descripcion = "Ataques volumétricos de denegación de servicio" },
-                new CategoriaIncidente { Id = 6, Nombre = "Fuga de Información", Descripcion = "Exfiltración no autorizada de datos confidenciales" },
-                new CategoriaIncidente { Id = 7, Nombre = "Escaneo / Reconocimiento", Descripcion = "Sondeo masivo de puertos y servicios expuestos" }
             );
         });
 
@@ -545,11 +465,40 @@ public class SentryGuardDbContext : DbContext
     private static readonly HashSet<string> CamposSinAuditar = new(StringComparer.OrdinalIgnoreCase)
     {
         "PasswordHash",
-        "RowVersion"
+        "RowVersion",
+        "FechaModificacion",
+        "ModificadoPorId"
     };
 
-    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        return SaveChangesAsync(true, cancellationToken);
+    }
+
+    public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        var ahora = DateTime.UtcNow;
+        var usuarioId = _usuarioActual?.UsuarioId;
+        var ipOrigen = _usuarioActual?.IpOrigen ?? _usuarioActual?.Ip ?? "SISTEMA";
+
+        // 1. Sellar fechas y usuarios para entidades auditables
+        foreach (var entrada in ChangeTracker.Entries<IAuditable>().ToList())
+        {
+            if (entrada.State == EntityState.Added)
+            {
+                if (entrada.Entity.FechaCreacion == default) entrada.Entity.FechaCreacion = ahora;
+                if (entrada.Entity.FechaModificacion == default) entrada.Entity.FechaModificacion = entrada.Entity.FechaCreacion;
+                entrada.Entity.CreadoPorId ??= usuarioId;
+                entrada.Entity.ModificadoPorId ??= usuarioId;
+            }
+            else if (entrada.State == EntityState.Modified)
+            {
+                entrada.Entity.FechaModificacion = ahora;
+                entrada.Entity.ModificadoPorId = usuarioId;
+            }
+        }
+
+        // 2. Preparar registros de auditoría
         var entries = ChangeTracker.Entries()
             .Where(e => e.Entity is not LogAuditoria &&
                        (e.State == EntityState.Added || e.State == EntityState.Modified || e.State == EntityState.Deleted))
@@ -557,12 +506,10 @@ public class SentryGuardDbContext : DbContext
 
         if (entries.Count == 0)
         {
-            return await base.SaveChangesAsync(cancellationToken);
+            return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
 
         var auditorias = new List<LogAuditoria>();
-        var usuarioId = _usuarioActual?.UsuarioId;
-        var ipOrigen = _usuarioActual?.IpOrigen ?? "SISTEMA";
 
         foreach (var entry in entries)
         {
@@ -601,8 +548,8 @@ public class SentryGuardDbContext : DbContext
             }
 
             var idProp = entry.Properties.FirstOrDefault(p => p.Metadata.IsPrimaryKey());
-            long? entidadId = null;
-            if (idProp?.CurrentValue != null && long.TryParse(idProp.CurrentValue.ToString(), out var parsedId))
+            int? entidadId = null;
+            if (idProp?.CurrentValue != null && int.TryParse(idProp.CurrentValue.ToString(), out var parsedId))
             {
                 entidadId = parsedId;
             }
@@ -616,11 +563,11 @@ public class SentryGuardDbContext : DbContext
                 ValoresAnteriores = valoresAnteriores,
                 ValoresNuevos = valoresNuevos,
                 IpOrigen = ipOrigen,
-                Timestamp = DateTime.UtcNow
+                Timestamp = ahora
             });
         }
 
-        var result = await base.SaveChangesAsync(cancellationToken);
+        var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
 
         if (auditorias.Count > 0)
         {
@@ -628,7 +575,7 @@ public class SentryGuardDbContext : DbContext
             {
                 LogsAuditoria.Add(log);
             }
-            await base.SaveChangesAsync(cancellationToken);
+            await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
 
         return result;
@@ -637,7 +584,7 @@ public class SentryGuardDbContext : DbContext
     /// <summary>
     /// Punto de extensión para registrar acciones explícitas como exportación de reportes (RNF-11 / Hito 4).
     /// </summary>
-    public async Task RegistrarAccionAsync(string entidad, string accion, long? entidadId = null, CancellationToken cancellationToken = default)
+    public async Task RegistrarAccionAsync(string entidad, string accion, int? entidadId = null, CancellationToken cancellationToken = default)
     {
         LogsAuditoria.Add(new LogAuditoria
         {
@@ -645,7 +592,7 @@ public class SentryGuardDbContext : DbContext
             Accion = accion,
             Entidad = entidad,
             EntidadId = entidadId,
-            IpOrigen = _usuarioActual?.IpOrigen ?? "SISTEMA",
+            IpOrigen = _usuarioActual?.IpOrigen ?? _usuarioActual?.Ip ?? "SISTEMA",
             Timestamp = DateTime.UtcNow
         });
         await base.SaveChangesAsync(cancellationToken);
