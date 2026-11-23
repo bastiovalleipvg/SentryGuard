@@ -1,5 +1,5 @@
 {
-  "fecha": "2026-10-27T04:42:27.167Z",
+  "fecha": "2026-11-23T04:36:59.471Z",
   "etiquetas": [
     "wcag2a",
     "wcag2aa",
@@ -19,12 +19,12 @@
       "reglasAprobadas": 28
     },
     "detalle": {
-      "url": "https://localhost:5173/incidentes/15",
+      "url": "https://localhost:5173/incidentes/522",
       "violaciones": [],
       "reglasAprobadas": 29
     },
     "dialogo-eliminar": {
-      "url": "https://localhost:5173/incidentes/15",
+      "url": "https://localhost:5173/incidentes/522",
       "violaciones": [],
       "reglasAprobadas": 13
     },
@@ -32,6 +32,21 @@
       "url": "https://localhost:5173/incidentes/nuevo",
       "violaciones": [],
       "reglasAprobadas": 27
+    },
+    "dashboard": {
+      "url": "https://localhost:5173/dashboard",
+      "violaciones": [],
+      "reglasAprobadas": 28
+    },
+    "reportes": {
+      "url": "https://localhost:5173/reportes",
+      "violaciones": [],
+      "reglasAprobadas": 31
+    },
+    "reportes-gerencial": {
+      "url": "https://localhost:5173/reportes?tipo=gerencial",
+      "violaciones": [],
+      "reglasAprobadas": 30
     },
     "activos": {
       "url": "https://localhost:5173/activos",
@@ -76,12 +91,12 @@
     "auditoria": {
       "url": "https://localhost:5173/auditoria",
       "violaciones": [],
-      "reglasAprobadas": 27
+      "reglasAprobadas": 30
     },
     "menu-movil": {
       "url": "https://localhost:5173/auditoria",
       "violaciones": [],
-      "reglasAprobadas": 27
+      "reglasAprobadas": 30
     }
   }
 }

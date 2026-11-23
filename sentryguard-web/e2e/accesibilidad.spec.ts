@@ -9,9 +9,11 @@ const ETIQUETAS_WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
 
 const VIEWPORTS = [
   { nombre: 'movil-320', width: 320, height: 720 },
+  { nombre: 'movil-360', width: 360, height: 780 },
   { nombre: 'movil-390', width: 390, height: 844 },
   { nombre: 'tableta-768', width: 768, height: 1024 },
   { nombre: 'escritorio-1280', width: 1280, height: 900 },
+  { nombre: 'escritorio-1440', width: 1440, height: 900 },
 ]
 
 const reporteAxe: Record<string, unknown> = {}
@@ -91,6 +93,9 @@ test.describe('Accesibilidad (axe, WCAG 2.2 AA) y diseño responsivo', () => {
 
     // Recursos relacionados: cada vista se audita y las principales se capturan en los 4 anchos.
     const vistas: { ruta: string; vista: string; titulo: RegExp | string; capturar?: boolean }[] = [
+      { ruta: '/dashboard', vista: 'dashboard', titulo: 'Dashboard', capturar: true },
+      { ruta: '/reportes', vista: 'reportes', titulo: 'Reportes', capturar: true },
+      { ruta: '/reportes?tipo=gerencial', vista: 'reportes-gerencial', titulo: 'Reportes' },
       { ruta: '/activos', vista: 'activos', titulo: 'Activos', capturar: true },
       { ruta: '/activos/1', vista: 'activo-detalle', titulo: 'Servidor web de producción' },
       { ruta: '/activos/nuevo', vista: 'activo-formulario', titulo: 'Nuevo activo' },
