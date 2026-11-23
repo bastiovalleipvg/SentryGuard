@@ -375,7 +375,7 @@ Registro de cada escritura exitosa en la API (quién, qué ruta, desde qué IP, 
 
 ## 5.4 Cambios del Hito 2
 
-**Estado (13 de noviembre de 2026):** la migración `AuditoriaCategoriaTransicionesVistas` implementa los cambios de la tabla siguiente, salvo los CHECK que se indican como pendientes. Hay pruebas de integración en `AuditoriaCategoriaVistasApiTests.cs`. Dos diferencias con lo planificado: la auditoría por entidad guarda `valores_anteriores` y `valores_nuevos` (JSON) en lugar de `operacion` y `detalle`, y además `tb_Incidente` y `tb_Activo` llevan `fecha_creacion`, `fecha_modificacion`, `creado_por_id` y `modificado_por_id`, sellados por `SentryGuardDbContext.SaveChangesAsync`.
+**Estado (13 de noviembre de 2026):** la migración `AuditoriaCategoriaTransicionesVistas` implementa los cambios de la tabla siguiente, y los CHECK de la tabla siguiente se agregaron después con la migración `AgregaRestriccionesCheck` (23 de noviembre de 2026). Hay pruebas de integración en `AuditoriaCategoriaVistasApiTests.cs`. Dos diferencias con lo planificado: la auditoría por entidad guarda `valores_anteriores` y `valores_nuevos` (JSON) en lugar de `operacion` y `detalle`, y además `tb_Incidente` y `tb_Activo` llevan `fecha_creacion`, `fecha_modificacion`, `creado_por_id` y `modificado_por_id`, sellados por `SentryGuardDbContext.SaveChangesAsync`.
 
 | Cambio | Tipo | Para qué |
 |---|---|---|
@@ -387,7 +387,7 @@ Registro de cada escritura exitosa en la API (quién, qué ruta, desde qué IP, 
 
 ### Restricciones CHECK
 
-Implementadas: `tb_TransicionEstado` (`origen <> destino`), `tb_Incidente` (`fecha_cierre IS NULL OR fecha_cierre >= fecha_creacion`) y la clave foránea compuesta `tb_Incidente (activo_id, organizacion_id)` hacia `tb_Activo (id, organizacion_id)`, que impide que un incidente declare una organización distinta a la de su activo. **Pendientes:** el resto de la tabla.
+Implementadas (las 9, entre las dos migraciones): `tb_TransicionEstado` (`origen <> destino`), `tb_Incidente` (`fecha_cierre IS NULL OR fecha_cierre >= fecha_creacion`) y la clave foránea compuesta `tb_Incidente (activo_id, organizacion_id)` hacia `tb_Activo (id, organizacion_id)`, que impide que un incidente declare una organización distinta a la de su activo. **Pendientes:** el resto de la tabla.
 
 | Tabla | Restricción |
 |---|---|
@@ -399,7 +399,7 @@ Implementadas: `tb_TransicionEstado` (`origen <> destino`), `tb_Incidente` (`fec
 | `tb_Organizacion` | RUT con formato `########-X` (`rut LIKE '%-%'` y largo entre 9 y 10) |
 | `tb_Usuario` | `intentos_fallidos >= 0` |
 
-Con los CHECK pendientes, cada regla importante quedará en **tres niveles**: el formulario (Zod), la API (`Validacion.cs`) y la base (CHECK, NOT NULL, únicos y FK).
+Con los CHECK implementados, cada regla importante queda en **tres niveles**: el formulario (Zod), la API (`Validacion.cs`) y la base (CHECK, NOT NULL, únicos y FK).
 
 ### Diagrama de los cambios
 
@@ -442,6 +442,7 @@ El esquema se crea y versiona solo con migraciones de EF Core (`SentryGuard/Migr
 | `20261020082813_SeedActivosDemo` | Tres activos de demostración |
 
 | `20261113131922_AuditoriaCategoriaTransicionesVistas` | Hito 2: `tb_CategoriaIncidente` (6 categorías) y `tb_Incidente.categoria_id`; `tb_TransicionEstado` (14 pares del flujo); campos de auditoría en `tb_Incidente` y `tb_Activo`; `entidad`, `entidad_id`, `valores_anteriores` y `valores_nuevos` en `tb_LogAuditoria`; CHECK y FK compuesta; vistas `vw_IncidenteDetalle`, `vw_CumplimientoSla` y `vw_IndicadoresMensuales` |
+| `20261123014615_AgregaRestriccionesCheck` | Hito 4: las 8 restricciones CHECK restantes (severidad, plan, contrato SLA y su detalle, título mínimo del incidente, formato del RUT e intentos fallidos). Se revierte con `dotnet ef database update AuditoriaCategoriaTransicionesVistas` (ver `evidencias/reversion-migracion.md`) |
 
 Las vistas y los CHECK se escriben con `migrationBuilder.Sql` porque EF no los genera solo. EF lee las vistas como entidades sin clave (`HasNoKey().ToView(...)`).
 

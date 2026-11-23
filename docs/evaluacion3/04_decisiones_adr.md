@@ -48,17 +48,18 @@ Cada decisión indica su contexto, la opción elegida, las alternativas descarta
   - *Una librería de gráficos genérica*: suma peso y hay que adaptar su accesibilidad.
 - **Consecuencias:** Cada gráfico tiene título, una descripción textual y una tabla con sus datos. Los filtros se envían como parámetros de consulta.
 
-## ADR-007 · IA detrás de un adaptador, con la API de Anthropic
-- **Estado:** Propuesta (Hito 3).
-- **Decisión:** Crear la interfaz `IAsistenteIA` con dos implementaciones: `AsistenteAnthropic` (la real, con `HttpClient` tipado y *timeout* de 15 s) y `AsistenteFalso` (para las pruebas y para CI). El modelo se configura con `IA__Modelo`; se propone `claude-haiku-5-5`, porque ambas tareas son cortas y conviene la velocidad. La clave va en `IA__ApiKey`, nunca en el repositorio.
+## ADR-007 · IA detrás de un adaptador, con la API de Gemini
+- **Estado:** Aceptada (implementada en el Hito 3).
+- **Decisión:** La interfaz `IAsistenteIA` tiene dos implementaciones: `AsistenteGemini` (la real, con `HttpClient` tipado, *timeout* de 15 s y la clave en el encabezado `x-goog-api-key`) y `AsistenteSimulado` (heurístico, para las pruebas, para CI y cuando no hay clave). El modelo se configura con `IA__Modelo` (por defecto `gemini-2.5-flash`) y la clave con `IA__ApiKey`; nunca van en el repositorio.
+- **Por qué Gemini y no Anthropic (propuesta inicial):** el equipo contaba con una clave gratuita de Gemini para desarrollar y demostrar sin costo. El patrón Adapter permite cambiar de proveedor escribiendo una clase nueva, sin tocar los endpoints.
 - **Alternativas descartadas:**
   - *Llamar a la IA desde el navegador*: expondría la clave.
-  - *Otro proveedor*: es posible gracias al adaptador, pero no se evalúa.
+  - *Anthropic*: era la propuesta del Hito 1; se descartó por costo en esta etapa.
 - **Consecuencias:**
-  - Las respuestas de la IA se validan como JSON contra un esquema: la severidad y la categoría deben existir en los catálogos.
-  - Si fallan, la API responde 502 o 504 con el formato estándar.
-  - Solo se envía el texto del incidente o los indicadores agregados, nunca datos de usuarios.
-  - La sugerencia nunca se aplica sola: la persona la confirma.
+  - La respuesta de la IA se valida como JSON: la severidad y la categoría deben existir en los catálogos.
+  - Si el proveedor falla o tarda más de 15 s, la API responde 502 o 504 con el formato estándar (`IA_ERROR_PROVEEDOR`, `IA_TIEMPO_AGOTADO`) y el formulario sigue funcionando sin la sugerencia.
+  - Solo se envía el texto del incidente o cifras agregadas, nunca datos de usuarios.
+  - La sugerencia nunca se aplica sola: la persona la confirma. El resumen del dashboard lleva la etiqueta «Generado con IA».
 
 ## ADR-008 · Flujo de estados como tabla de transiciones
 - **Estado:** Propuesta (Hito 2).
@@ -74,11 +75,12 @@ Cada decisión indica su contexto, la opción elegida, las alternativas descarta
   - *Un script SQL a mano*: es difícil mantener la coherencia entre las tablas.
 - **Consecuencias:** Los datos son reproducibles, así que los indicadores del informe se pueden recalcular. Ningún dato corresponde a personas reales.
 
-## ADR-010 · Auditoría por entidad con un interceptor de EF Core
-- **Estado:** Propuesta (Hito 2).
-- **Decisión:** Agregar a `tb_LogAuditoria` las columnas `entidad`, `entidad_id`, `operacion` y `detalle` (JSON con los valores anteriores y nuevos). Un `SaveChangesInterceptor` las llena en cada cambio. El middleware actual sigue registrando las peticiones de escritura.
-- **Alternativa descartada:** Agregar las columnas `creado_por`, `modificado_por` y sus fechas a cada tabla. Solo guarda el último cambio y no qué cambió.
-- **Consecuencias:** Requiere una migración y un índice por (`entidad`, `entidad_id`). Las exportaciones se registran con `operacion = EXPORTAR`.
+## ADR-010 · Auditoría por entidad dentro de `SaveChangesAsync`
+- **Estado:** Aceptada (implementada en el Hito 2).
+- **Decisión:** `tb_LogAuditoria` tiene las columnas `accion`, `entidad`, `entidad_id`, `valores_anteriores` y `valores_nuevos` (JSON). `SentryGuardDbContext.SaveChangesAsync` recorre los cambios del `ChangeTracker` y registra `CREAR`, `MODIFICAR` o `ELIMINAR` con el usuario, la IP y la hora. En las altas, el id se lee después del primer guardado porque lo genera la base. Se ignoran `RowVersion` y los campos de control. El middleware de auditoría sigue registrando las peticiones de escritura.
+- **Por qué no un `SaveChangesInterceptor` (propuesta inicial):** el equipo lo resolvió con una sobrescritura del contexto, que es más simple de probar con el mismo `DbContext` y tiene el mismo efecto.
+- **Alternativa descartada:** agregar `creado_por` y `modificado_por` a cada tabla: solo guarda el último cambio, no qué cambió. (Se mantienen además en `tb_Incidente`.)
+- **Consecuencias:** las exportaciones de reportes se registran con `accion = EXPORTAR Reporte` y el detalle (tipo, formato y filtros) en `valores_nuevos`.
 
 ## ADR-011 · Limpieza de una clave antigua del historial de git
 - **Estado:** Aceptada (aplicada el 4 de noviembre de 2026).

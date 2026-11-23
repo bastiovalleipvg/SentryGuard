@@ -13,43 +13,43 @@
 | RF-03 | Mostrar menús y acciones según el rol (4 roles) | M | ✅ | `permisos.ts`, `Layout.tsx`; prueba `mantenedores.test.tsx` |
 | RF-04 | Registrar un incidente sobre un activo, con título, descripción y severidad | M | ✅ | `POST /api/v1/incidentes` |
 | RF-05 | Listar incidentes con búsqueda, filtros (estado, severidad, activo) y paginación | M | ✅ | `GET /api/v1/incidentes` |
-| RF-06 | **Ordenar** los listados por columna (fecha, severidad, estado, título) | M | 📋 Hito 2 | Parámetro `orden` en las APIs de listado y encabezados ordenables en la interfaz |
+| RF-06 | **Ordenar** los listados por columna (fecha, severidad, estado, título) | M | ✅ | Parámetro `orden` en las APIs de listado y encabezados ordenables en la interfaz |
 | RF-07 | Ver, editar y eliminar un incidente (eliminar pide confirmación) | M | ✅ | `IncidenteDetailPage.tsx` |
 | RF-08 | Asignar un incidente a un analista | M | ✅ | `POST /api/v1/incidentes/{id}/asignar` |
-| RF-09 | Cambiar el estado **solo por transiciones válidas** del flujo | M | 🟡 Hito 2 | Hoy acepta cualquier estado; se agrega `tb_TransicionEstado` y la API responde 409 ante una transición inválida |
+| RF-09 | Cambiar el estado **solo por transiciones válidas** del flujo | M | ✅ | Implementado con `tb_TransicionEstado` y la API responde 409 ante una transición inválida |
 | RF-10 | Registrar entradas de bitácora y evidencias; las acciones del flujo se registran solas | M | ✅ | `BitacoraPanel.tsx`, `EvidenciasPanel.tsx` |
 | RF-11 | Calcular el cumplimiento del SLA con el contrato vigente o, si no hay, con la severidad | M | ✅ | `GET /api/v1/incidentes/sla/cumplimiento/{id}` |
 | RF-12 | Administrar activos con filtros por nombre/IP, categoría y organización | M | ✅ | `ActivosListPage.tsx` |
 | RF-13 | Administrar organizaciones (RUT con dígito verificador) y sus contratos SLA | M | ✅ | `OrganizacionAPI.cs` |
 | RF-14 | Administrar usuarios: crear, cambiar el rol, desactivar | M | ✅ | `UsuariosPages.tsx` |
-| RF-15 | Administrar catálogos (severidades, categorías de activo y de incidente, planes y estados) | S | 🟡 Hito 2 | La categoría de incidente es nueva (`tb_CategoriaIncidente`) |
-| RF-16 | **Auditoría por entidad**: quién creó o modificó qué registro, con los valores anteriores y nuevos, y cuándo | M | 🟡 Hito 2 | Hoy se registra el método, la ruta, el usuario y la IP; se agregan la entidad, el id y el detalle del cambio |
-| RF-17 | **Dashboard** con al menos 6 indicadores y 4 gráficos, filtros por fecha, organización, severidad y categoría | M | 📋 Hito 4 | `GET /api/v1/dashboard/*` y la pantalla `/dashboard` |
-| RF-18 | **Reporte operativo**: detalle de incidentes con los filtros aplicados | M | 📋 Hito 4 | `GET /api/v1/reportes/operativo` |
-| RF-19 | **Reporte gerencial**: totales por organización, severidad y estado, con gráficos | M | 📋 Hito 4 | `GET /api/v1/reportes/gerencial` |
-| RF-20 | **Reporte parametrizable por rango de fechas**: cumplimiento del SLA y tiempo de resolución por mes | M | 📋 Hito 4 | `GET /api/v1/reportes/sla?desde&hasta` |
-| RF-21 | Exportar cada reporte a **Excel, PDF y CSV** con los filtros elegidos, respetando el rol y registrando quién exportó | M | 📋 Hito 4 | `GET /api/v1/reportes/{tipo}/exportar?formato=` |
-| RF-22 | Imprimir cada reporte desde el navegador sin menús ni botones | M | 📋 Hito 4 | Estilos `@media print` |
-| RF-23 | **IA: sugerir la severidad y la categoría** de un incidente a partir de su descripción; la persona la acepta o la cambia | M | 📋 Hito 3 | `POST /api/v1/ia/clasificar-incidente` |
-| RF-24 | **IA: resumir en lenguaje natural** el dashboard o un reporte con los filtros aplicados | S | 📋 Hito 3 | `POST /api/v1/ia/resumir` |
-| RF-25 | Generar datos sintéticos: 500 o más incidentes repartidos en 12 meses | M | 📋 Hito 2 | Generador con semilla fija, idempotente |
+| RF-15 | Administrar catálogos (severidades, categorías de activo y de incidente, planes y estados) | S | ✅ | La categoría de incidente es nueva (`tb_CategoriaIncidente`) |
+| RF-16 | **Auditoría por entidad**: quién creó o modificó qué registro, con los valores anteriores y nuevos, y cuándo | M | ✅ | Hoy se registra el método, la ruta, el usuario y la IP; se agregan la entidad, el id y el detalle del cambio |
+| RF-17 | **Dashboard** con al menos 6 indicadores y 4 gráficos, filtros por fecha, organización, severidad y categoría | M | ✅ | `GET /api/v1/dashboard/*` y la pantalla `/dashboard` |
+| RF-18 | **Reporte operativo**: detalle de incidentes con los filtros aplicados | M | ✅ | `GET /api/v1/reportes/operativo` |
+| RF-19 | **Reporte gerencial**: totales por organización, severidad y estado, con gráficos | M | ✅ | `GET /api/v1/reportes/gerencial` |
+| RF-20 | **Reporte parametrizable por rango de fechas**: cumplimiento del SLA y tiempo de resolución por mes | M | ✅ | `GET /api/v1/reportes/sla?desde&hasta` |
+| RF-21 | Exportar cada reporte a **Excel, PDF y CSV** con los filtros elegidos, respetando el rol y registrando quién exportó | M | ✅ | `GET /api/v1/reportes/{tipo}/exportar?formato=` |
+| RF-22 | Imprimir cada reporte desde el navegador sin menús ni botones | M | ✅ | Estilos `@media print` |
+| RF-23 | **IA: sugerir la severidad y la categoría** de un incidente a partir de su descripción; la persona la acepta o la cambia | M | ✅ | `POST /api/v1/ia/clasificar-incidente` |
+| RF-24 | **IA: resumir en lenguaje natural** el dashboard o un reporte con los filtros aplicados | S | ✅ | `POST /api/v1/ia/resumir` |
+| RF-25 | Generar datos sintéticos: 500 o más incidentes repartidos en 12 meses | M | ✅ | Generador con semilla fija, idempotente |
 
 ## 2.2 Requerimientos no funcionales
 
 | ID | Atributo | Requerimiento verificable | Estado | Cómo lo atiende la arquitectura |
 |---|---|---|---|---|
-| RNF-01 | Rendimiento | Con 500 o más incidentes, un listado paginado responde en menos de 500 ms (p95) y el dashboard en menos de 1,5 s | 📋 medir en el Hito 4 | Paginación en el servidor (máx. 50 por página), índices en las FK y en `fecha_creacion`, agregaciones en SQL (vistas) en lugar de en memoria |
+| RNF-01 | Rendimiento | Con 500 o más incidentes, un listado paginado responde en menos de 500 ms (p95) y el dashboard en menos de 1,5 s | 🟡 dashboard y reportes medidos en local (< 1,5 s con 520 incidentes); sin prueba de carga | Paginación en el servidor (máx. 50 por página), índices en las FK y en `fecha_creacion`, agregaciones en SQL (vistas) en lugar de en memoria |
 | RNF-02 | Seguridad | JWT HS256 de 60 min; contraseñas con `PasswordHasher` (PBKDF2); bloqueo de la cuenta tras 5 intentos durante 15 min; 5 intentos de login por minuto por IP; ningún secreto en el repositorio | ✅ | `AuthService.cs`, `Program.cs` (rate limiting), User Secrets y variables de entorno |
 | RNF-03 | Seguridad | Mitigar al menos 5 riesgos del OWASP API Security Top 10 | ✅ (13 documentados) | Ver `docs/INFORME_TECNICO.md` §7 y `docs/evidencias/seguridad-api.txt` |
-| RNF-04 | Disponibilidad | Los contenedores se reinician solos si fallan, y la API expone un *health check* | 📋 Hito 3 | `restart: unless-stopped` y `healthcheck` en compose; endpoint `/health` |
-| RNF-05 | Recuperación | Respaldo diario de la base; restauración en menos de 30 min (RTO) con una pérdida máxima de 24 h (RPO) | 📋 Hito 2 | Script de `BACKUP DATABASE` en un volumen aparte; restauración probada y documentada |
-| RNF-06 | Accesibilidad | WCAG 2.2 AA en todas las pantallas: axe sin violaciones y un flujo completo probado con teclado y NVDA | 🟡 (axe ✅ en 15 vistas, NVDA pendiente) | HTML semántico, `FormField`, foco gestionado, `ConfirmDialog` nativo |
-| RNF-07 | Usabilidad | Sin desplazamiento horizontal entre 360 y 1440 px; objetivos táctiles de 44 × 44 px | 🟡 (verificado de 320 a 1280) | Mobile first, `ListadoResponsivo` (tabla o tarjetas), menú plegable |
-| RNF-08 | Mantenibilidad | Lógica de negocio en servicios con interfaz y pruebas unitarias; endpoints delgados | 📋 Hito 2 | Capa `Services/` con inyección de dependencias (ver arquitectura) |
-| RNF-09 | Portabilidad | El sistema completo arranca con `docker compose up` en un equipo con Docker | 📋 Hito 3 | Dockerfiles multi-stage y `compose.yaml` |
-| RNF-10 | Integración | Las llamadas a la IA tienen un tiempo máximo de 15 s; si la IA falla, la API responde 502/504 con el formato de error estándar y el formulario sigue funcionando sin la sugerencia | 📋 Hito 3 | Adaptador `IClasificadorIncidentes` con `HttpClient` tipado y *timeout* |
-| RNF-11 | Auditabilidad | Toda creación, modificación, eliminación y exportación queda registrada con el usuario, la entidad y la fecha | 🟡 Hito 2 | Interceptor de `SaveChanges` en EF Core y registro explícito de las exportaciones |
-| RNF-12 | Calidad | Pipeline CI que compila, ejecuta todas las pruebas y publica la imagen solo si pasan | 📋 Hito 3 | GitHub Actions |
+| RNF-04 | Disponibilidad | Los contenedores se reinician solos si fallan, y la API expone un *health check* | ✅ | `restart: unless-stopped` y `healthcheck` en compose; endpoint `/health` |
+| RNF-05 | Recuperación | Respaldo diario de la base; restauración en menos de 30 min (RTO) con una pérdida máxima de 24 h (RPO) | ✅ | Script de `BACKUP DATABASE` en un volumen aparte; restauración probada y documentada |
+| RNF-06 | Accesibilidad | WCAG 2.2 AA en todas las pantallas: axe sin violaciones y un flujo completo probado con teclado y NVDA | 🟡 (axe ✅ en 18 vistas; NVDA por completar a mano) | HTML semántico, `FormField`, foco gestionado, `ConfirmDialog` nativo |
+| RNF-07 | Usabilidad | Sin desplazamiento horizontal entre 360 y 1440 px; objetivos táctiles de 44 × 44 px | ✅ (verificado de 320 a 1440 px) | Mobile first, `ListadoResponsivo` (tabla o tarjetas), menú plegable |
+| RNF-08 | Mantenibilidad | Lógica de negocio en servicios con interfaz y pruebas unitarias; endpoints delgados | ✅ | Capa `Services/` con inyección de dependencias (ver arquitectura) |
+| RNF-09 | Portabilidad | El sistema completo arranca con `docker compose up` en un equipo con Docker | ✅ | Dockerfiles multi-stage y `compose.yaml` |
+| RNF-10 | Integración | Las llamadas a la IA tienen un tiempo máximo de 15 s; si la IA falla, la API responde 502/504 con el formato de error estándar y el formulario sigue funcionando sin la sugerencia | ✅ | Adaptador `IAsistenteIA` con `HttpClient` tipado y *timeout* |
+| RNF-11 | Auditabilidad | Toda creación, modificación, eliminación y exportación queda registrada con el usuario, la entidad y la fecha | ✅ | Interceptor de `SaveChanges` en EF Core y registro explícito de las exportaciones |
+| RNF-12 | Calidad | Pipeline CI que compila, ejecuta todas las pruebas y publica la imagen solo si pasan | ✅ | GitHub Actions |
 
 ## 2.3 Historias de usuario
 
@@ -63,7 +63,7 @@ Como Cliente, quiero reportar un incidente sobre un activo de mi organización p
 - Dado que el título tiene menos de 5 caracteres, cuando envío el formulario, entonces el campo muestra el error y no se envía nada a la API.
 - Dado un activo de otra organización, cuando intento usarlo (incluso forzando la petición), entonces la API responde 403.
 
-**HU-02 · Recibir una sugerencia de clasificación** (M, 📋 Hito 3)
+**HU-02 · Recibir una sugerencia de clasificación** (M, ✅)
 Como Cliente, quiero que el sistema me sugiera la severidad y la categoría a partir de mi descripción para no tener que conocer la clasificación técnica.
 - Dado que escribí una descripción de al menos 20 caracteres, cuando pido la sugerencia, entonces veo la severidad, la categoría y una justificación breve, y los campos se llenan solo si los acepto.
 - Dado que el servicio de IA no responde en 15 s, cuando pido la sugerencia, entonces veo un aviso claro y puedo completar los campos a mano.
@@ -73,7 +73,7 @@ Como Cliente, quiero ver el estado, la bitácora y el SLA de mis incidentes para
 - Dado un incidente de mi organización, cuando lo abro, entonces veo su estado, la bitácora y el plazo del SLA, pero no los botones para editar, cambiar el estado ni registrar entradas.
 - Dado un incidente de otra organización, cuando escribo su URL, entonces veo «Acceso denegado» y la API responde 403.
 
-**HU-04 · Exportar el reporte de mi organización** (S, 📋 Hito 4)
+**HU-04 · Exportar el reporte de mi organización** (S, ✅)
 Como Cliente, quiero exportar el reporte operativo de mis incidentes para compartirlo en mi empresa.
 - Dado que filtro por un rango de fechas, cuando exporto a Excel, PDF o CSV, entonces el archivo contiene solo los incidentes de mi organización con esos filtros.
 
@@ -91,23 +91,23 @@ Como Analista, quiero registrar entradas en la bitácora y evidencias en mis inc
 
 ### Supervisor
 
-**HU-07 · Asignar y mover incidentes** (M, 🟡)
+**HU-07 · Asignar y mover incidentes** (M, ✅)
 Como Supervisor, quiero asignar incidentes y moverlos por su flujo para coordinar al equipo.
 - Dado un incidente Abierto, cuando lo asigno a un analista, entonces la bitácora registra la asignación y el incidente aparece en la lista de ese analista.
 - Dado un incidente Abierto, cuando intento pasarlo directo a Cerrado, entonces la API responde 409 y la interfaz solo ofrece los estados permitidos *(Hito 2)*.
 
-**HU-08 · Analizar el dashboard** (M, 📋 Hito 4)
+**HU-08 · Analizar el dashboard** (M, ✅)
 Como Supervisor, quiero ver indicadores y gráficos filtrables para detectar a tiempo los SLA en riesgo y la carga del equipo.
 - Dado que filtro por los últimos 3 meses y una organización, cuando cambio el filtro, entonces los 6 indicadores y los 4 gráficos se recalculan con datos reales del sistema.
 - Dado que uso un lector de pantalla, cuando llego a un gráfico, entonces escucho su título y su descripción, y puedo abrir una tabla con sus datos.
 
-**HU-09 · Generar reportes** (M, 📋 Hito 4)
+**HU-09 · Generar reportes** (M, ✅)
 Como Supervisor, quiero generar el reporte gerencial de un período para presentarlo a la gerencia.
 - Dado un rango de fechas, cuando exporto a PDF, entonces el archivo tiene título, fecha de emisión, filtros usados, numeración de páginas y texto seleccionable.
 - Dado que exporto cualquier reporte, cuando reviso la auditoría, entonces aparece mi usuario, el reporte, los filtros y el formato.
 - Dado que uso «Imprimir», entonces la vista de impresión no muestra menús ni botones.
 
-**HU-10 · Resumen con IA** (S, 📋 Hito 3)
+**HU-10 · Resumen con IA** (S, ✅)
 Como Supervisor, quiero un resumen en lenguaje natural del dashboard filtrado para preparar mi reporte semanal más rápido.
 - Dado el dashboard filtrado, cuando pido el resumen, entonces recibo un texto breve que menciona solo cifras presentes en los datos enviados, marcado como «Generado con IA».
 
@@ -123,7 +123,7 @@ Como Administrador, quiero registrar organizaciones y sus contratos SLA para que
 - Dado un RUT con un dígito verificador inválido, cuando guardo, entonces se rechaza en el formulario y en la API.
 - Dado un contrato que se superpone con otro vigente, cuando lo registro, entonces la API responde 400 indicando la superposición.
 
-**HU-13 · Auditar los cambios** (M, 🟡 Hito 2)
+**HU-13 · Auditar los cambios** (M, ✅)
 Como Administrador, quiero ver quién creó o modificó cada registro y qué cambió para investigar problemas.
 - Dado que un Supervisor cambió la severidad de un incidente, cuando abro la auditoría y filtro por ese incidente, entonces veo el usuario, la fecha, el campo, el valor anterior y el nuevo.
 
