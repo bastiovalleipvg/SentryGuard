@@ -20,6 +20,7 @@ La pauta pide para el Hito 1: dominio aprobado, requerimientos funcionales y no 
 | 12 | [12_plan_despliegue.md](12_plan_despliegue.md) | Plan de despliegue de 10 apartados, con la reversión probada ([evidencia](evidencias/reversion-migracion.md)) |
 | 13 | [13_informe_integracion.md](13_informe_integracion.md) | Qué componente evidencia cada asignatura y trazabilidad requerimiento → componente → asignatura |
 | 14 | [14_manual_usuario.md](14_manual_usuario.md) | Manual de usuario breve por rol |
+| 15 | [15_pendientes_finales.md](15_pendientes_finales.md) | Estado de los pendientes finales, con paso a paso y prompts de IA |
 | — | [INFORME_TECNICO_EV3.md](INFORME_TECNICO_EV3.md) | Informe técnico con las 11 secciones de la pauta (exportar a PDF para la entrega) |
 | — | [ejemplos/](ejemplos/) | Archivos de ejemplo exportados (3 reportes × Excel, PDF y CSV) y las respuestas JSON del dashboard |
 | — | [INTEGRACION_SENTRYGUARD2.md](INTEGRACION_SENTRYGUARD2.md) | Qué se trae del fork de Bastián, en qué orden y cómo (Hito 2) |
