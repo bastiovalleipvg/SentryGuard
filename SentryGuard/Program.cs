@@ -164,6 +164,7 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IIncidenteService, IncidenteService>();
 builder.Services.AddScoped<IActivoService, ActivoService>();
 builder.Services.AddScoped<IOrganizacionService, OrganizacionService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<GeneradorDatosSinteticos>();
 
 // Módulo de Inteligencia Artificial (ADR-007 / RF-23 / RF-24)
@@ -302,6 +303,7 @@ app.MapActivoApi();
 app.MapCatalogoApi();
 app.MapAuditoriaApi();
 app.MapIaApi();
+app.MapDashboardApi();
 
 // Health Check no autenticado para Docker, Kubernetes y balanceadores (RNF-04)
 app.MapHealthChecks("/health", new HealthCheckOptions
