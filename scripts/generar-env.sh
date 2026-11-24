@@ -8,7 +8,7 @@ if [ -f "$destino" ] && [ "${1:-}" != "--forzar" ]; then
   echo ".env ya existe. Usa --forzar para reemplazarlo (se pierde la contraseña de SA actual)."
   exit 0
 fi
-aleatorio() { LC_ALL=C tr -dc "$2" < /dev/urandom | head -c "$1"; }
+aleatorio() { LC_ALL=C tr -dc "$2" < /dev/urandom | head -c "$1" || true; }
 # SQL Server exige complejidad: mayusculas, minusculas y numeros
 sa="$(aleatorio 8 'A-HJ-NP-Z')$(aleatorio 8 'a-km-z')$(aleatorio 8 '2-9')"
 jwt="$(aleatorio 64 'A-Za-z0-9')"

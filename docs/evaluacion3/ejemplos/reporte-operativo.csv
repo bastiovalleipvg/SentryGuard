@@ -1,0 +1,94 @@
+﻿Id;Título;Organización;Activo;Categoría;Severidad;Estado;Analista;Fecha creación;Fecha cierre;Horas resolución
+522;E2E acceso sospechoso 1795408571883 <script>window.xssEjecutado=true</script>;Empresa Demo SpA;Firewall perimetral;Sin categoría;Alta;Abierto;Sin asignar;23-11-2026 04:36;;
+521;Compromiso de credenciales corporativas en leak público #520;Clínica RedSalud Integral;Ficha Clínica Electrónica;Acceso no autorizado;Media;Abierto;Analista Demo;22-11-2026 14:56;;
+520;Compromiso de credenciales corporativas en leak público #519;Otra organizacion 34127298-K;Activo de otra organizacion;Acceso no autorizado;Baja;Abierto;Sin asignar;21-11-2026 23:15;;
+519;Acceso anómalo y extracción de registros de base de datos #518;Otra organizacion 66099756-6;Activo de otra organizacion;Fuga de datos;Media;Escalado;Analista Demo;21-11-2026 05:31;;
+518;Modificación no autorizada de configuración en Active Directory #517;Otra organizacion 66099756-6;Activo de otra organizacion;Acceso no autorizado;Crítica;Resuelto;Valeria Lagos (SOC L2);20-11-2026 21:25;20-11-2026 23:20;1.92
+517;Detección de robo de token de sesión OAuth #516;Retail Express Logística;Cluster eCommerce Magento;Acceso no autorizado;Media;En progreso;Analista Demo;20-11-2026 13:09;;
+516;Inyección de script malicioso en servidor web #515;Banco del Sur SpA;Active Directory DC01;Malware;Media;En progreso;Valeria Lagos (SOC L2);19-11-2026 04:25;;
+515;Detección de comunicación con botnet Mirai #514;Clínica RedSalud Integral;Servidor PACS Imagenología;Malware;Alta;En progreso;Analista Demo;18-11-2026 13:35;;
+514;Exfiltración potencial de datos por túnel DNS #513;Empresa Demo SpA;Portal de clientes;Fuga de datos;Alta;Resuelto;Analista Demo;18-11-2026 06:53;18-11-2026 15:59;9.1
+513;Inyección de script malicioso en servidor web #512;Retail Express Logística;Cluster eCommerce Magento;Malware;Baja;Resuelto;Carlos Mendoza (SOC L1);17-11-2026 08:50;17-11-2026 16:24;7.58
+512;Detección de artefacto malicioso LockBit en endpoint #511;Otra organizacion 34127298-K;Activo de otra organizacion;Malware;Alta;Abierto;Valeria Lagos (SOC L2);15-11-2026 23:33;;
+511;Exfiltración potencial de datos por túnel DNS #510;Otra organizacion 66099756-6;Activo de otra organizacion;Fuga de datos;Baja;En progreso;Analista Demo;15-11-2026 14:04;;
+510;Detección de robo de token de sesión OAuth #509;Otra organizacion 66099756-6;Activo de otra organizacion;Acceso no autorizado;Media;Cerrado;Analista Demo;14-11-2026 16:27;14-11-2026 20:47;4.33
+509;Modificación no autorizada de configuración en Active Directory #508;Empresa Demo SpA;Firewall perimetral;Acceso no autorizado;Alta;En progreso;Analista Demo;13-11-2026 20:00;;
+508;Acceso anómalo y extracción de registros de base de datos #507;Otra organizacion 34127298-K;Activo de otra organizacion;Fuga de datos;Baja;Abierto;Analista Demo;13-11-2026 03:15;;
+507;Intento de movimiento lateral mediante Mimikatz #506;Clínica RedSalud Integral;Servidor PACS Imagenología;Acceso no autorizado;Crítica;En progreso;Carlos Mendoza (SOC L1);12-11-2026 12:15;;
+506;Detección de comunicación con botnet Mirai #505;Banco del Sur SpA;Core Bancario Transaccional;Malware;Alta;En progreso;Analista Demo;12-11-2026 08:09;;
+505;Intento de movimiento lateral mediante Mimikatz #504;Otra organizacion 66099756-6;Activo de otra organizacion;Acceso no autorizado;Baja;Resuelto;Analista Demo;11-11-2026 04:31;11-11-2026 13:33;9.04
+504;Intento masivo de phishing dirigido a ejecutivos #503;Banco del Sur SpA;Active Directory DC01;Phishing;Crítica;En progreso;Valeria Lagos (SOC L2);10-11-2026 05:24;;
+503;Modificación no autorizada de configuración en Active Directory #502;Banco del Sur SpA;API Gateway OpenBanking;Acceso no autorizado;Baja;Abierto;Carlos Mendoza (SOC L1);09-11-2026 10:37;;
+502;Intento de inyección SQL en endpoint de autenticación #501;Empresa Demo SpA;Portal de clientes;Acceso no autorizado;Media;Abierto;Sin asignar;08-11-2026 22:44;;
+501;Exfiltración potencial de datos por túnel DNS #500;Banco del Sur SpA;Core Bancario Transaccional;Fuga de datos;Media;Resuelto;Carlos Mendoza (SOC L1);08-11-2026 06:05;08-11-2026 16:28;10.37
+500;Phishing telefónico (Vishing) a mesa de ayuda #499;Empresa Demo SpA;Firewall perimetral;Phishing;Media;Cerrado;Analista Demo;07-11-2026 12:04;07-11-2026 17:28;5.41
+499;Detección de robo de token de sesión OAuth #498;Retail Express Logística;Cluster eCommerce Magento;Acceso no autorizado;Alta;En progreso;Carlos Mendoza (SOC L1);06-11-2026 12:01;;
+498;Intento masivo de phishing dirigido a ejecutivos #497;Empresa Demo SpA;Servidor web de producción;Phishing;Baja;En progreso;Analista Demo;06-11-2026 00:32;;
+497;Escaneo masivo de puertos desde IP en lista negra #496;Retail Express Logística;Controlador POS Sucursales;Acceso no autorizado;Alta;En progreso;Analista Demo;05-11-2026 05:30;;
+496;Ataque de fuerza bruta contra portal VPN corporativo #495;Otra organizacion 34127298-K;Activo de otra organizacion;Acceso no autorizado;Baja;En progreso;Carlos Mendoza (SOC L1);04-11-2026 20:40;;
+495;Tráfico no autorizado entre zonas de seguridad (VLAN Hopping) #494;Clínica RedSalud Integral;Ficha Clínica Electrónica;Acceso no autorizado;Baja;Cerrado;Valeria Lagos (SOC L2);03-11-2026 19:33;04-11-2026 05:36;10.06
+494;Ataque de fuerza bruta contra portal VPN corporativo #493;Otra organizacion 66099756-6;Activo de otra organizacion;Acceso no autorizado;Baja;Resuelto;Analista Demo;02-11-2026 23:19;03-11-2026 10:33;11.23
+493;Escaneo masivo de puertos desde IP en lista negra #492;Empresa Demo SpA;Portal de clientes;Acceso no autorizado;Media;Cerrado;Analista Demo;02-11-2026 16:47;03-11-2026 15:35;22.81
+492;Exfiltración potencial de datos por túnel DNS #491;Clínica RedSalud Integral;Firewall Perimetral Hospitalario;Fuga de datos;Baja;Cerrado;Carlos Mendoza (SOC L1);01-11-2026 18:09;02-11-2026 02:45;8.6
+491;Intento masivo de phishing dirigido a ejecutivos #490;Clínica RedSalud Integral;Servidor PACS Imagenología;Phishing;Media;Cerrado;Valeria Lagos (SOC L2);01-11-2026 10:02;01-11-2026 13:20;3.31
+490;Tráfico no autorizado entre zonas de seguridad (VLAN Hopping) #489;Otra organizacion 34127298-K;Activo de otra organizacion;Acceso no autorizado;Alta;Cerrado;Carlos Mendoza (SOC L1);31-10-2026 06:43;31-10-2026 09:45;3.04
+489;Detección de artefacto malicioso LockBit en endpoint #488;Otra organizacion 66099756-6;Activo de otra organizacion;Malware;Media;Escalado;Carlos Mendoza (SOC L1);30-10-2026 19:04;;
+488;Detección de artefacto malicioso LockBit en endpoint #487;Empresa Demo SpA;Firewall perimetral;Malware;Media;Escalado;Analista Demo;29-10-2026 20:05;;
+487;Intento de inyección SQL en endpoint de autenticación #486;Banco del Sur SpA;Active Directory DC01;Acceso no autorizado;Baja;Cerrado;Carlos Mendoza (SOC L1);29-10-2026 01:55;29-10-2026 16:04;14.16
+486;Tráfico no autorizado entre zonas de seguridad (VLAN Hopping) #485;Otra organizacion 34127298-K;Activo de otra organizacion;Acceso no autorizado;Media;Resuelto;Valeria Lagos (SOC L2);28-10-2026 17:44;29-10-2026 13:35;19.86
+485;Intento de Cross-Site Scripting (XSS) almacenado #484;Banco del Sur SpA;API Gateway OpenBanking;Acceso no autorizado;Media;En progreso;Carlos Mendoza (SOC L1);27-10-2026 07:39;;
+19;<script>alert(1)</script>;Empresa Demo SpA;Portal de clientes;Sin categoría;Media;Abierto;Sin asignar;27-10-2026 04:59;;
+18;Falla en firewall;Empresa Demo SpA;Firewall perimetral;Sin categoría;Crítica;En progreso;Analista Demo;27-10-2026 04:51;;
+17;E2E acceso sospechoso 1793076148153 <script>window.xssEjecutado=true</script>;Empresa Demo SpA;Firewall perimetral;Sin categoría;Alta;Abierto;Sin asignar;27-10-2026 04:42;;
+484;Detección de comunicación con botnet Mirai #483;Clínica RedSalud Integral;Servidor PACS Imagenología;Malware;Baja;Cerrado;Carlos Mendoza (SOC L1);27-10-2026 03:10;28-10-2026 01:53;22.72
+15;E2E acceso sospechoso 1793063180132 <script>window.xssEjecutado=true</script>;Empresa Demo SpA;Firewall perimetral;Sin categoría;Alta;Resuelto;Analista Demo;27-10-2026 01:06;27-10-2026 04:32;3.43
+13;Incidente de otra organizacion;Otra organizacion 34127298-K;Activo de otra organizacion;Sin categoría;Media;Abierto;Sin asignar;26-10-2026 00:26;;
+14;XSS <img src=x onerror=alert(1)><script>alert(1)</script>;Empresa Demo SpA;Servidor web de producción;Sin categoría;Baja;Abierto;Analista Demo;26-10-2026 00:26;;
+12;E2E acceso sospechoso 1792974322299 <script>window.xssEjecutado=true</script>;Empresa Demo SpA;Firewall perimetral;Sin categoría;Alta;Abierto;Analista Demo;26-10-2026 00:25;;
+11;E2E acceso sospechoso 1792974194964 <script>window.xssEjecutado=true</script>;Empresa Demo SpA;Firewall perimetral;Sin categoría;Alta;Abierto;Analista Demo;26-10-2026 00:23;;
+483;Detección de artefacto malicioso LockBit en endpoint #482;Otra organizacion 34127298-K;Activo de otra organizacion;Malware;Baja;Escalado;Analista Demo;25-10-2026 22:15;;
+482;Compromiso de credenciales corporativas en leak público #481;Banco del Sur SpA;API Gateway OpenBanking;Acceso no autorizado;Alta;Resuelto;Carlos Mendoza (SOC L1);25-10-2026 13:01;25-10-2026 13:50;0.82
+481;Manipulación de parámetros IDOR en portal de clientes #480;Banco del Sur SpA;API Gateway OpenBanking;Acceso no autorizado;Media;Resuelto;Analista Demo;25-10-2026 03:53;25-10-2026 08:03;4.17
+480;Exfiltración potencial de datos por túnel DNS #479;Empresa Demo SpA;Firewall perimetral;Fuga de datos;Baja;Escalado;Carlos Mendoza (SOC L1);24-10-2026 15:22;;
+479;Inyección de script malicioso en servidor web #478;Clínica RedSalud Integral;Servidor PACS Imagenología;Malware;Media;Cerrado;Analista Demo;22-10-2026 23:32;23-10-2026 10:22;10.84
+478;Ataque de denegación de servicio distribuido (DDoS SYN Flood) #477;Banco del Sur SpA;Core Bancario Transaccional;Denegación de servicio;Media;Resuelto;Carlos Mendoza (SOC L1);22-10-2026 23:07;23-10-2026 05:24;6.29
+477;Intento de Cross-Site Scripting (XSS) almacenado #476;Retail Express Logística;Controlador POS Sucursales;Acceso no autorizado;Alta;Resuelto;Analista Demo;21-10-2026 16:57;21-10-2026 19:02;2.08
+475;Intento de inyección SQL en endpoint de autenticación #474;Otra organizacion 66099756-6;Activo de otra organizacion;Acceso no autorizado;Baja;En progreso;Analista Demo;20-10-2026 22:15;;
+10;E2E acceso sospechoso 1792521127846 <script>window.xssEjecutado=true</script>;Empresa Demo SpA;Firewall perimetral;Sin categoría;Alta;En progreso;Analista Demo;20-10-2026 18:32;;
+476;Acceso anómalo y extracción de registros de base de datos #475;Banco del Sur SpA;Core Bancario Transaccional;Fuga de datos;Media;Cerrado;Valeria Lagos (SOC L2);20-10-2026 18:15;21-10-2026 02:42;8.46
+9;E2E acceso sospechoso 1792485809333 <script>window.xssEjecutado=true</script>;Empresa Demo SpA;Firewall perimetral;Sin categoría;Alta;Abierto;Sin asignar;20-10-2026 08:43;;
+8;XSS <img src=x onerror=alert(1)><script>alert(1)</script>;Empresa Demo SpA;Servidor web de producción;Sin categoría;Baja;Abierto;Sin asignar;20-10-2026 08:41;;
+7;Incidente de otra organizacion;Otra organizacion 66099756-6;Activo de otra organizacion;Sin categoría;Media;Abierto;Sin asignar;20-10-2026 08:41;;
+6;E2E acceso sospechoso 1792485609589 <script>window.xssEjecutado=true</script>;Empresa Demo SpA;Firewall perimetral;Sin categoría;Alta;Abierto;Sin asignar;20-10-2026 08:40;;
+5;E2E acceso sospechoso 1792485567114 <script>window.xssEjecutado=true</script>;Empresa Demo SpA;Firewall perimetral;Sin categoría;Alta;Abierto;Sin asignar;20-10-2026 08:39;;
+4;E2E acceso sospechoso 1792485516578 <script>window.xssEjecutado=true</script>;Empresa Demo SpA;Firewall perimetral;Sin categoría;Alta;Abierto;Sin asignar;20-10-2026 08:38;;
+3;E2E acceso sospechoso 1792485428376 <script>window.xssEjecutado=true</script>;Empresa Demo SpA;Firewall perimetral;Sin categoría;Alta;Abierto;Sin asignar;20-10-2026 08:37;;
+2;E2E acceso sospechoso 1792485367214 <script>window.xssEjecutado=true</script>;Empresa Demo SpA;Firewall perimetral;Sin categoría;Alta;Abierto;Sin asignar;20-10-2026 08:36;;
+1;<img src=x onerror=alert('XSS')> Prueba de inyeccion;Empresa Demo SpA;Servidor web de producción;Sin categoría;Alta;En progreso;Analista Demo;20-10-2026 08:29;;
+474;Detección de comunicación con botnet Mirai #473;Banco del Sur SpA;Core Bancario Transaccional;Malware;Media;Cerrado;Analista Demo;19-10-2026 13:28;20-10-2026 00:37;11.15
+473;Tráfico no autorizado entre zonas de seguridad (VLAN Hopping) #472;Empresa Demo SpA;Portal de clientes;Acceso no autorizado;Media;Cerrado;Analista Demo;19-10-2026 06:54;19-10-2026 12:31;5.61
+472;Acceso anómalo y extracción de registros de base de datos #471;Retail Express Logística;Concentrador VPN Bodegas;Fuga de datos;Media;En progreso;Valeria Lagos (SOC L2);17-10-2026 23:53;;
+471;Detección de troyano de acceso remoto (RAT) #470;Empresa Demo SpA;Firewall perimetral;Malware;Baja;Resuelto;Valeria Lagos (SOC L2);17-10-2026 17:36;18-10-2026 03:00;9.4
+470;Tráfico no autorizado entre zonas de seguridad (VLAN Hopping) #469;Empresa Demo SpA;Servidor web de producción;Acceso no autorizado;Crítica;Cerrado;Analista Demo;17-10-2026 04:31;17-10-2026 04:59;0.47
+469;Escaneo masivo de puertos desde IP en lista negra #468;Otra organizacion 34127298-K;Activo de otra organizacion;Acceso no autorizado;Media;Resuelto;Carlos Mendoza (SOC L1);15-10-2026 20:50;16-10-2026 07:15;10.41
+468;Intento de movimiento lateral mediante Mimikatz #467;Banco del Sur SpA;API Gateway OpenBanking;Acceso no autorizado;Crítica;Cerrado;Valeria Lagos (SOC L2);15-10-2026 00:08;15-10-2026 00:33;0.41
+467;Intento de movimiento lateral mediante Mimikatz #466;Otra organizacion 66099756-6;Activo de otra organizacion;Acceso no autorizado;Baja;Cerrado;Carlos Mendoza (SOC L1);14-10-2026 13:52;14-10-2026 21:24;7.54
+466;Ataque de denegación de servicio distribuido (DDoS SYN Flood) #465;Retail Express Logística;Controlador POS Sucursales;Denegación de servicio;Baja;En progreso;Valeria Lagos (SOC L2);14-10-2026 02:44;;
+465;Intento de movimiento lateral mediante Mimikatz #464;Otra organizacion 34127298-K;Activo de otra organizacion;Acceso no autorizado;Media;En progreso;Analista Demo;13-10-2026 02:52;;
+464;Ataque de denegación de servicio distribuido (DDoS SYN Flood) #463;Clínica RedSalud Integral;Firewall Perimetral Hospitalario;Denegación de servicio;Alta;Escalado;Carlos Mendoza (SOC L1);12-10-2026 10:33;;
+463;Ejecución de PowerShell con comandos ofuscados #462;Clínica RedSalud Integral;Firewall Perimetral Hospitalario;Malware;Baja;Escalado;Carlos Mendoza (SOC L1);11-10-2026 14:53;;
+462;Compromiso de credenciales corporativas en leak público #461;Clínica RedSalud Integral;Ficha Clínica Electrónica;Acceso no autorizado;Media;Cerrado;Valeria Lagos (SOC L2);11-10-2026 07:47;12-10-2026 07:59;24.2
+461;Intento de movimiento lateral mediante Mimikatz #460;Empresa Demo SpA;Portal de clientes;Acceso no autorizado;Media;Cerrado;Carlos Mendoza (SOC L1);10-10-2026 12:19;10-10-2026 21:06;8.79
+459;Modificación no autorizada de configuración en Active Directory #458;Clínica RedSalud Integral;Servidor PACS Imagenología;Acceso no autorizado;Media;En progreso;Analista Demo;09-10-2026 08:17;;
+460;Intento masivo de phishing dirigido a ejecutivos #459;Clínica RedSalud Integral;Firewall Perimetral Hospitalario;Phishing;Media;Cerrado;Analista Demo;09-10-2026 05:51;09-10-2026 12:11;6.34
+458;Intento de movimiento lateral mediante Mimikatz #457;Otra organizacion 66099756-6;Activo de otra organizacion;Acceso no autorizado;Baja;Cerrado;Carlos Mendoza (SOC L1);08-10-2026 13:23;09-10-2026 03:09;13.78
+457;Detección de robo de token de sesión OAuth #456;Retail Express Logística;Cluster eCommerce Magento;Acceso no autorizado;Alta;Cerrado;Carlos Mendoza (SOC L1);07-10-2026 10:07;07-10-2026 10:58;0.85
+456;Ataque de denegación de servicio distribuido (DDoS SYN Flood) #455;Empresa Demo SpA;Portal de clientes;Denegación de servicio;Alta;Cerrado;Analista Demo;06-10-2026 19:50;06-10-2026 22:40;2.82
+455;Tráfico no autorizado entre zonas de seguridad (VLAN Hopping) #454;Banco del Sur SpA;API Gateway OpenBanking;Acceso no autorizado;Baja;Resuelto;Valeria Lagos (SOC L2);05-10-2026 22:37;06-10-2026 15:06;16.48
+454;Manipulación de parámetros IDOR en portal de clientes #453;Otra organizacion 66099756-6;Activo de otra organizacion;Acceso no autorizado;Alta;Cerrado;Valeria Lagos (SOC L2);05-10-2026 09:38;05-10-2026 11:22;1.74
+453;Acceso anómalo y extracción de registros de base de datos #452;Retail Express Logística;Controlador POS Sucursales;Fuga de datos;Alta;Resuelto;Analista Demo;04-10-2026 04:38;04-10-2026 07:09;2.51
+452;Detección de artefacto malicioso LockBit en endpoint #451;Clínica RedSalud Integral;Ficha Clínica Electrónica;Malware;Media;Cerrado;Valeria Lagos (SOC L2);03-10-2026 07:30;03-10-2026 13:52;6.37
+451;Ataque de fuerza bruta contra portal VPN corporativo #450;Retail Express Logística;Concentrador VPN Bodegas;Acceso no autorizado;Media;Cerrado;Analista Demo;02-10-2026 13:48;02-10-2026 23:47;9.99
+450;Ataque de fuerza bruta contra portal VPN corporativo #449;Clínica RedSalud Integral;Servidor PACS Imagenología;Acceso no autorizado;Media;Cerrado;Valeria Lagos (SOC L2);02-10-2026 04:23;02-10-2026 14:44;10.35
+449;Tráfico no autorizado entre zonas de seguridad (VLAN Hopping) #448;Retail Express Logística;Cluster eCommerce Magento;Acceso no autorizado;Crítica;Cerrado;Analista Demo;01-10-2026 15:24;01-10-2026 16:09;0.76
+448;Intento masivo de phishing dirigido a ejecutivos #447;Empresa Demo SpA;Servidor web de producción;Phishing;Crítica;Cerrado;Valeria Lagos (SOC L2);01-10-2026 07:42;01-10-2026 08:21;0.65

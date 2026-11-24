@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from 'react'
-import { useEstados, useSeveridades } from '../../catalogos/catalogosService'
+import { useCategoriasIncidente, useEstados, useSeveridades } from '../../catalogos/catalogosService'
 
 export interface ValoresFiltro {
   q: string
   estadoId: string
   severidadId: string
+  categoriaId: string
 }
 
 interface Props {
@@ -16,6 +17,7 @@ export function IncidentesFilters({ valores, onAplicar }: Props) {
   const [borrador, setBorrador] = useState(valores)
   const estados = useEstados()
   const severidades = useSeveridades()
+  const categorias = useCategoriasIncidente()
 
   const actualizar = (campo: keyof ValoresFiltro, valor: string) => setBorrador((b) => ({ ...b, [campo]: valor }))
 
@@ -25,7 +27,7 @@ export function IncidentesFilters({ valores, onAplicar }: Props) {
   }
 
   const limpiar = () => {
-    const vacio = { q: '', estadoId: '', severidadId: '' }
+    const vacio = { q: '', estadoId: '', severidadId: '', categoriaId: '' }
     setBorrador(vacio)
     onAplicar(vacio)
   }
@@ -49,6 +51,13 @@ export function IncidentesFilters({ valores, onAplicar }: Props) {
           <select id="filtro-severidad" value={borrador.severidadId} onChange={(e) => actualizar('severidadId', e.target.value)}>
             <option value="">Todas</option>
             {severidades.data?.map((s) => <option key={s.id} value={String(s.id)}>{s.nombre}</option>)}
+          </select>
+        </div>
+        <div className="campo">
+          <label htmlFor="filtro-categoria" className="campo__etiqueta">Categoría</label>
+          <select id="filtro-categoria" value={borrador.categoriaId} onChange={(e) => actualizar('categoriaId', e.target.value)}>
+            <option value="">Todas</option>
+            {categorias.data?.map((c) => <option key={c.id} value={String(c.id)}>{c.nombre}</option>)}
           </select>
         </div>
         <div className="acciones filtros__acciones">

@@ -23,15 +23,17 @@ function aEntero(valor: string | null): number | undefined {
 export function IncidentesListPage() {
   const { usuario } = useAuth()
   const [params, setParams] = useSearchParams()
-  // Tabla solo en escritorio: con 6 columnas, bajo 1024 px se lee mejor como tarjetas.
+  // Tabla solo en escritorio: con 7 columnas, bajo 1024 px se lee mejor como tarjetas.
   const esPantallaAncha = useMediaQuery('(min-width: 64rem)')
 
-  // Los filtros viven en la URL: se pueden compartir, recargar y navegar con Atras.
+  // Los filtros y el orden viven en la URL: se pueden compartir, recargar y navegar con Atras.
   const filtros: FiltrosIncidentes = {
     page: aEntero(params.get('page')) ?? 1,
     q: params.get('q') ?? undefined,
     estadoId: aEntero(params.get('estadoId')),
     severidadId: aEntero(params.get('severidadId')),
+    categoriaId: aEntero(params.get('categoriaId')),
+    orden: params.get('orden') ?? undefined,
   }
   const consulta = useIncidentes(filtros)
 
@@ -40,6 +42,16 @@ export function IncidentesListPage() {
     if (v.q) siguiente.set('q', v.q)
     if (v.estadoId) siguiente.set('estadoId', v.estadoId)
     if (v.severidadId) siguiente.set('severidadId', v.severidadId)
+    if (v.categoriaId) siguiente.set('categoriaId', v.categoriaId)
+    if (filtros.orden) siguiente.set('orden', filtros.orden)
+    setParams(siguiente)
+  }
+
+  const cambiarOrden = (orden: string) => {
+    const siguiente = new URLSearchParams(params)
+    if (orden) siguiente.set('orden', orden)
+    else siguiente.delete('orden')
+    siguiente.set('page', '1')
     setParams(siguiente)
   }
 
@@ -49,7 +61,7 @@ export function IncidentesListPage() {
     setParams(siguiente)
   }
 
-  const hayFiltros = Boolean(filtros.q || filtros.estadoId || filtros.severidadId)
+  const hayFiltros = Boolean(filtros.q || filtros.estadoId || filtros.severidadId || filtros.categoriaId)
   const datos = consulta.data
 
   return (
@@ -76,7 +88,12 @@ export function IncidentesListPage() {
 
       <IncidentesFilters
         key={params.toString()}
-        valores={{ q: filtros.q ?? '', estadoId: params.get('estadoId') ?? '', severidadId: params.get('severidadId') ?? '' }}
+        valores={{
+          q: filtros.q ?? '',
+          estadoId: params.get('estadoId') ?? '',
+          severidadId: params.get('severidadId') ?? '',
+          categoriaId: params.get('categoriaId') ?? '',
+        }}
         onAplicar={aplicarFiltros}
       />
 
@@ -100,7 +117,11 @@ export function IncidentesListPage() {
 
       {datos && datos.items.length > 0 && (
         <div aria-busy={consulta.isFetching}>
-          {esPantallaAncha ? <IncidentesTable incidentes={datos.items} /> : <IncidentesCards incidentes={datos.items} />}
+          {esPantallaAncha ? (
+            <IncidentesTable incidentes={datos.items} orden={filtros.orden} onCambiarOrden={cambiarOrden} />
+          ) : (
+            <IncidentesCards incidentes={datos.items} orden={filtros.orden} onCambiarOrden={cambiarOrden} />
+          )}
           <Pagination pagina={datos.page} totalPaginas={datos.totalPages} onCambiar={cambiarPagina} />
         </div>
       )}

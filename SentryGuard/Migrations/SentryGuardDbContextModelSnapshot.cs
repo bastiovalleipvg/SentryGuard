@@ -17,7 +17,7 @@ namespace SentryGuard.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.2")
+                .HasAnnotation("ProductVersion", "10.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -221,6 +221,11 @@ namespace SentryGuard.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)")
+                        .HasColumnName("descripcion");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(80)
@@ -296,7 +301,10 @@ namespace SentryGuard.Migrations
                         .IsUnique()
                         .HasFilter("[vigente_hasta] IS NULL");
 
-                    b.ToTable("tb_ContratoSLA");
+                    b.ToTable("tb_ContratoSLA", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_tb_ContratoSLA_Vigencia", "[vigente_hasta] IS NULL OR [vigente_hasta] > [vigente_desde]");
+                        });
                 });
 
             modelBuilder.Entity("SentryGuard.Models.ContratoSLADetalle", b =>
@@ -328,7 +336,10 @@ namespace SentryGuard.Migrations
                     b.HasIndex("ContratoId", "SeveridadId")
                         .IsUnique();
 
-                    b.ToTable("tb_ContratoSLA_Detalle");
+                    b.ToTable("tb_ContratoSLA_Detalle", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_tb_ContratoSLA_Detalle_HorasSla", "[horas_sla] > 0 AND [horas_sla] <= 720");
+                        });
                 });
 
             modelBuilder.Entity("SentryGuard.Models.CumplimientoSlaVista", b =>
@@ -556,7 +567,12 @@ namespace SentryGuard.Migrations
 
                     b.HasIndex("SeveridadId");
 
-                    b.ToTable("tb_Incidente");
+                    b.ToTable("tb_Incidente", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_tb_Incidente_FechaCierre", "[fecha_cierre] IS NULL OR [fecha_cierre] >= [fecha_creacion]");
+
+                            t.HasCheckConstraint("CK_tb_Incidente_TituloMinimo", "LEN(LTRIM(RTRIM([titulo]))) >= 5");
+                        });
                 });
 
             modelBuilder.Entity("SentryGuard.Models.IncidenteDetalleVista", b =>
@@ -758,7 +774,10 @@ namespace SentryGuard.Migrations
                     b.HasIndex("Rut")
                         .IsUnique();
 
-                    b.ToTable("tb_Organizacion");
+                    b.ToTable("tb_Organizacion", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_tb_Organizacion_RutFormato", "LEN([rut]) >= 9 AND LEN([rut]) <= 10 AND [rut] LIKE '%-%'");
+                        });
 
                     b.HasData(
                         new
@@ -801,7 +820,10 @@ namespace SentryGuard.Migrations
                     b.HasIndex("Nombre")
                         .IsUnique();
 
-                    b.ToTable("tb_PlanServicio");
+                    b.ToTable("tb_PlanServicio", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_tb_PlanServicio_TiempoRespuesta", "[tiempo_respuesta_base_h] > 0");
+                        });
 
                     b.HasData(
                         new
@@ -943,7 +965,10 @@ namespace SentryGuard.Migrations
                     b.HasIndex("Nombre")
                         .IsUnique();
 
-                    b.ToTable("tb_Severidad");
+                    b.ToTable("tb_Severidad", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_tb_Severidad_HorasSla", "[horas_sla] > 0 AND [horas_sla] <= 720");
+                        });
 
                     b.HasData(
                         new
@@ -1149,7 +1174,10 @@ namespace SentryGuard.Migrations
 
                     b.HasIndex("RolId");
 
-                    b.ToTable("tb_Usuario");
+                    b.ToTable("tb_Usuario", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_tb_Usuario_IntentosFallidos", "[intentos_fallidos] >= 0");
+                        });
 
                     b.HasData(
                         new
@@ -1304,7 +1332,7 @@ namespace SentryGuard.Migrations
                     b.HasOne("SentryGuard.Models.CategoriaIncidente", "Categoria")
                         .WithMany()
                         .HasForeignKey("CategoriaId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("SentryGuard.Models.Usuario", null)
                         .WithMany()

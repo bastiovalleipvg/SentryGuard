@@ -61,7 +61,9 @@ El detalle de los prompts y de lo que se aceptó, corrigió o descartó está en
 | Contratos SLA | Vigencia y horas por severidad; finalizar y eliminar; sin períodos superpuestos | `tb_ContratoSLA`, `tb_ContratoSLA_Detalle` | Ver: como la organización. Gestionar: Admin |
 | Usuarios | Listado con filtros, alta con política de contraseñas, edición de rol/organización y desactivación | `tb_Usuario`, `tb_Rol` | Admin |
 | Catálogos | Severidades, categorías de activo, planes de servicio (crear, editar, eliminar si no están en uso) y estados (solo crear) | `tb_Severidad`, `tb_CategoriaActivo`, `tb_PlanServicio`, `tb_EstadoIncidente` | Admin |
-| Auditoría | Registro de cada escritura en la API (usuario, acción, IP, fecha) | `tb_LogAuditoria` | Admin |
+| Auditoría | Registro de cada escritura y de cada exportación (usuario, acción, entidad, valores anteriores y nuevos, IP, fecha) | `tb_LogAuditoria` | Admin |
+| Dashboard | 6 indicadores con fórmula y variación, 6 gráficos accesibles, filtros por fecha, organización, severidad y categoría, y resumen con IA | vistas `vw_*` | Todos (cada rol ve solo lo suyo); el resumen con IA, Admin y Supervisor |
+| Reportes | Operativo, gerencial y de SLA; exportación a Excel, PDF y CSV; vista de impresión; cada exportación queda en la auditoría | vistas `vw_*` | Admin, Supervisor y Cliente (solo su organización) |
 
 La interfaz oculta lo que el rol no puede hacer, pero la API valida el rol y la organización en
 cada endpoint: forzar una URL o una petición devuelve 403.
@@ -163,8 +165,8 @@ npm run preview             # https://localhost:4173
 
 | Suite | Comando | Requiere |
 |---|---|---|
-| Integración de la API (23) | `dotnet test SentryGuard.slnx` (en la raíz) | SQL Server (usa la BD descartable `SentryGuardDB_Test`) |
-| Componentes del frontend (32) | `npm test` (en `sentryguard-web/`) | Nada: la API se simula con MSW |
+| API: unitarias e integración (115) | `dotnet test SentryGuard.slnx` (en la raíz) | SQL Server (usa la BD descartable `SentryGuardDB_Test`) |
+| Componentes del frontend (53) | `npm test` (en `sentryguard-web/`) | Nada: la API se simula con MSW |
 | End-to-end (5) | `npx playwright install chromium` (una vez) y `npm run test:e2e` | La BD de desarrollo migrada; Playwright levanta la API y el frontend si no están corriendo |
 | Verificación de seguridad (29 controles) | `node --use-system-ca scripts/verificar-seguridad.mjs` (en la raíz) | La API corriendo |
 | Lint (incluye reglas jsx-a11y) | `npm run lint` | Nada adicional |

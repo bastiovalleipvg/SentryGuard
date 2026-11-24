@@ -2,7 +2,7 @@
 
 **Proyecto:** SentryGuard · **Asignatura:** Lenguaje de Programación Web II · **Evaluación 3, Hito 1**
 
-**Equipo:** Adriel Troncoso, Bastián Ovalle y [integrante por confirmar]. La pauta exige entre 3 y 4 integrantes.
+**Equipo:** Adriel Troncoso, Bastián Ovalle y Rafael Navarrete.
 
 **Aprobación del docente:** [PENDIENTE: registrar aquí la fecha y la forma en que el docente aprobó el dominio].
 

@@ -113,6 +113,17 @@ builder.Services.AddRateLimiter(options =>
             QueueLimit = 0
         }));
 
+    options.AddPolicy("exportaciones", httpContext => RateLimitPartition.GetFixedWindowLimiter(
+        partitionKey: httpContext.User.Identity?.Name
+            ?? httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconocido",
+        factory: _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 20,
+            Window = TimeSpan.FromMinutes(1),
+            QueueLimit = 0
+        }));
+
     options.AddPolicy("ia", httpContext => RateLimitPartition.GetFixedWindowLimiter(
         partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "desconocido",
         factory: _ => new FixedWindowRateLimiterOptions
@@ -164,6 +175,11 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<IIncidenteService, IncidenteService>();
 builder.Services.AddScoped<IActivoService, ActivoService>();
 builder.Services.AddScoped<IOrganizacionService, OrganizacionService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IReporteService, ReporteService>();
+builder.Services.AddSingleton<SentryGuard.Services.Reportes.IExportador, SentryGuard.Services.Reportes.ExportadorExcel>();
+builder.Services.AddSingleton<SentryGuard.Services.Reportes.IExportador, SentryGuard.Services.Reportes.ExportadorPdf>();
+builder.Services.AddSingleton<SentryGuard.Services.Reportes.IExportador, SentryGuard.Services.Reportes.ExportadorCsv>();
 builder.Services.AddScoped<GeneradorDatosSinteticos>();
 
 // Módulo de Inteligencia Artificial (ADR-007 / RF-23 / RF-24)
@@ -302,6 +318,8 @@ app.MapActivoApi();
 app.MapCatalogoApi();
 app.MapAuditoriaApi();
 app.MapIaApi();
+app.MapDashboardApi();
+app.MapReporteApi();
 
 // Health Check no autenticado para Docker, Kubernetes y balanceadores (RNF-04)
 app.MapHealthChecks("/health", new HealthCheckOptions

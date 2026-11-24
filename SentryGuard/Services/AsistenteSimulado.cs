@@ -90,7 +90,8 @@ namespace SentryGuard.Services
                 SeveridadNombre: severidadNombre,
                 CategoriaSugerida: categoria,
                 Justificacion: justificacion,
-                AccionesRecomendadas: acciones
+                AccionesRecomendadas: acciones,
+                Origen: "simulado"
             );
 
             return Task.FromResult(ServiceResult<ClasificacionIaDTO>.Ok(resultado));

@@ -2,7 +2,7 @@
 
 | Archivo | Qué contiene |
 |---|---|
-| [contrato-api/openapi-implementado.json](contrato-api/openapi-implementado.json) | El contrato **de lo ya implementado**, exportado desde la API en ejecución (`GET /openapi/v1.json`): 30 rutas y 52 operaciones |
+| [contrato-api/openapi-implementado.json](contrato-api/openapi-implementado.json) | El contrato **de lo ya implementado**, exportado desde la API en ejecución (`GET /openapi/v1.json`): 40 rutas y 62 operaciones |
 | [contrato-api/openapi-evaluacion3.yaml](contrato-api/openapi-evaluacion3.yaml) | El contrato **de los endpoints nuevos**, escrito en el Hito 1 **antes de implementarlos**. Validado con Redocly CLI |
 
 Con la API corriendo en desarrollo, la documentación interactiva está en `https://localhost:7166/scalar/v1`. Tiene un panel para pegar el token Bearer.
@@ -17,14 +17,13 @@ Todas las rutas van bajo `/api/v1/`.
 | Incidentes | `GET`/`POST /incidentes`, `GET`/`PUT`/`DELETE /incidentes/{id}`, `POST /incidentes/{id}/asignar`, `POST /incidentes/{id}/cambiar-estado`, `GET`/`POST /incidentes/{id}/bitacora`, `GET`/`POST /incidentes/{id}/evidencia`, `GET /incidentes/sla/cumplimiento/{id}` | ✅ |
 | Incidentes (cambios) | `orden` (`campo` o `-campo`; columnas: id, titulo, fecha, severidad, estado, activo, categoria) y `categoriaId` en el listado; 409 `TRANSICION_INVALIDA` ante una transición no permitida | ✅ |
 | Orden de otros listados | `orden` en activos (nombre, categoria, organizacion, fecha), organizaciones (razonsocial, rut, fecha) y usuarios (nombre, email, rol, organizacion). Una columna fuera de la lista da 400 con `errors.orden` | ✅ |
-| Incidentes (pendiente) | `desde` y `hasta` en el listado | 📋 Hito 4 |
 | Activos | `GET`/`POST /activos`, `GET`/`PUT`/`DELETE /activos/{id}` | ✅ |
 | Organizaciones y contratos SLA | `GET`/`POST /organizaciones`, `GET`/`PUT`/`DELETE /organizaciones/{id}`, `GET`/`POST /organizaciones/{id}/contratos-sla`, `POST …/{contratoId}/finalizar`, `DELETE …/{contratoId}` | ✅ |
 | Catálogos | `severidades`, `estados-incidente`, `categorias-activo`, `planes-servicio`, `roles` | ✅ |
 | Catálogos (nuevo) | `categorias-incidente` y `transiciones-estado` (el flujo de estados leído de la base; reemplaza a `GET /incidentes/{id}/transiciones`) | ✅ |
 | Auditoría | `GET /auditoria` | ✅ |
-| Dashboard | `GET /dashboard/indicadores`, `GET /dashboard/series` | 📋 Hito 4 |
-| Reportes | `GET /reportes/{operativo\|gerencial\|sla}`, `GET /reportes/{tipo}/exportar?formato=xlsx\|pdf\|csv` | 📋 Hito 4 |
+| Dashboard | `GET /dashboard/indicadores`, `GET /dashboard/series` | ✅ |
+| Reportes | `GET /reportes/{operativo\|gerencial\|sla}`, `GET /reportes/{tipo}/exportar?formato=xlsx\|pdf\|csv` | ✅ |
 | IA | `POST /ia/clasificar-incidente`, `POST /ia/resumir` | ✅ |
 | Salud | `GET /health` | ✅ |
 

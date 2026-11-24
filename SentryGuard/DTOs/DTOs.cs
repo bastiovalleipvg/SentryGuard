@@ -49,6 +49,8 @@ namespace SentryGuard.DTOs
         public string Descripcion { get; init; } = null!;
         public int SeveridadId { get; init; }
         public string Severidad { get; init; } = null!;
+        public int? CategoriaId { get; init; }
+        public string? Categoria { get; init; }
         public int EstadoId { get; init; }
         public string Estado { get; init; } = null!;
         public int ActivoId { get; init; }
@@ -56,8 +58,6 @@ namespace SentryGuard.DTOs
         public int OrganizacionId { get; init; }
         public int? AnalistaAsignadoId { get; init; }
         public string? AnalistaAsignado { get; init; }
-        public int? CategoriaId { get; init; }
-        public string? Categoria { get; init; }
         public DateTime FechaCreacion { get; init; }
         public DateTime? FechaCierre { get; init; }
         public DateTime FechaModificacion { get; init; }
@@ -123,11 +123,11 @@ namespace SentryGuard.DTOs
         public long Id { get; init; }
         public string? Usuario { get; init; }
         public string Accion { get; init; } = null!;
-        public string? IpOrigen { get; init; }
         public string? Entidad { get; init; }
         public int? EntidadId { get; init; }
         public string? ValoresAnteriores { get; init; }
         public string? ValoresNuevos { get; init; }
+        public string? IpOrigen { get; init; }
         public DateTime Timestamp { get; init; }
     }
 
@@ -187,7 +187,8 @@ namespace SentryGuard.DTOs
         string SeveridadNombre,
         string CategoriaSugerida,
         string Justificacion,
-        List<string> AccionesRecomendadas
+        List<string> AccionesRecomendadas,
+        string Origen = "simulado"
     );
 
     /// <summary>

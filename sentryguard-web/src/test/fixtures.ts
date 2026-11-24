@@ -20,6 +20,8 @@ export function crearIncidente(parcial: Partial<Incidente> = {}): Incidente {
     estado: 'Abierto',
     activoId: 1,
     activo: 'Servidor web de producción',
+    categoriaId: 2,
+    categoria: 'Malware',
     organizacionId: 1,
     analistaAsignadoId: null,
     analistaAsignado: null,
@@ -31,7 +33,7 @@ export function crearIncidente(parcial: Partial<Incidente> = {}): Incidente {
 
 export const INCIDENTES: Incidente[] = [
   crearIncidente(),
-  crearIncidente({ id: 2, titulo: 'Phishing dirigido a contabilidad', severidadId: 2, severidad: 'Media', estadoId: 2, estado: 'En progreso' }),
+  crearIncidente({ id: 2, titulo: 'Phishing dirigido a contabilidad', severidadId: 2, severidad: 'Media', estadoId: 2, estado: 'En progreso', categoriaId: 1, categoria: 'Phishing' }),
 ]
 
 export const ACTIVOS: Activo[] = [
@@ -47,6 +49,38 @@ export const ORGANIZACIONES: Organizacion[] = [
 export const USUARIOS_ADMIN: Usuario[] = [
   { id: 1, nombre: 'Administrador SentryGuard', email: 'admin@sentryguard.cl', rolId: 1, rol: 'Administrador', organizacionId: null, organizacion: null, activo: true },
   { id: 4, nombre: 'Cliente Demo', email: 'cliente@sentryguard.cl', rolId: 4, rol: 'Cliente', organizacionId: 1, organizacion: 'Empresa Demo SpA', activo: true },
+]
+
+export const CATEGORIAS_INCIDENTE = [
+  { id: 1, nombre: 'Phishing' },
+  { id: 2, nombre: 'Malware' },
+  { id: 3, nombre: 'Acceso no autorizado' },
+  { id: 6, nombre: 'Otro' },
+]
+
+export const AUDITORIA = [
+  {
+    id: 1,
+    usuario: 'Administrador SentryGuard',
+    accion: 'PUT /api/v1/incidentes/1',
+    entidad: 'Incidente',
+    entidadId: 1,
+    valoresAnteriores: JSON.stringify({ estadoId: 1, severidadId: 2 }),
+    valoresNuevos: JSON.stringify({ estadoId: 2, severidadId: 4 }),
+    ipOrigen: '192.168.1.100',
+    timestamp: '2026-11-13T18:00:00',
+  },
+  {
+    id: 2,
+    usuario: 'Supervisor Demo',
+    accion: 'POST /api/v1/activos',
+    entidad: 'Activo',
+    entidadId: 3,
+    valoresAnteriores: null,
+    valoresNuevos: JSON.stringify({ nombre: 'Base de datos principal', ip: '10.0.0.5' }),
+    ipOrigen: '192.168.1.101',
+    timestamp: '2026-11-13T17:30:00',
+  },
 ]
 
 export function pagina<T>(items: T[]) {

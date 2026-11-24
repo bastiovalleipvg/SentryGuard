@@ -39,6 +39,9 @@ playwright/.cache/
 .env.*
 !.env.example
 
+# Archivos de entrega comprimidos
+*.zip
+
 # Certificados de desarrollo exportados localmente
 certs/
 

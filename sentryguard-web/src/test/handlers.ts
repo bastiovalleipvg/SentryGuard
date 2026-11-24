@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import { ACTIVOS, API, INCIDENTES, ORGANIZACIONES, USUARIOS, USUARIOS_ADMIN, pagina } from './fixtures'
+import { ACTIVOS, API, AUDITORIA, CATEGORIAS_INCIDENTE, INCIDENTES, ORGANIZACIONES, USUARIOS, USUARIOS_ADMIN, pagina } from './fixtures'
 
 function usuarioDeLaPeticion(request: Request) {
   const token = request.headers.get('Authorization')?.replace('Bearer ', '')
@@ -16,6 +16,8 @@ function exigirRol(request: Request, roles: string[]) {
   if (!roles.includes(usuario.rol)) return prohibido()
   return null
 }
+
+const item = (clave: string, nombre: string, valor: number | null, unidad: string, formula: string, variacion: number | null) => ({ clave, nombre, valor, unidad, formula, variacion })
 
 // API simulada con el mismo contrato que SentryGuard (incluidos 401, 403, 400 y 429).
 export const handlers = [
@@ -48,8 +50,13 @@ export const handlers = [
 
   http.get(`${API}/api/v1/incidentes`, ({ request }) => {
     if (!usuarioDeLaPeticion(request)) return noAutorizado()
-    const q = new URL(request.url).searchParams.get('q')?.toLowerCase()
-    const items = q ? INCIDENTES.filter((i) => i.titulo.toLowerCase().includes(q)) : INCIDENTES
+    const url = new URL(request.url)
+    const q = url.searchParams.get('q')?.toLowerCase()
+    const categoriaId = url.searchParams.get('categoriaId')
+    let items = q ? INCIDENTES.filter((i) => i.titulo.toLowerCase().includes(q)) : [...INCIDENTES]
+    if (categoriaId) {
+      items = items.filter((i) => String(i.categoriaId) === categoriaId)
+    }
     return HttpResponse.json({ total: items.length, page: 1, pageSize: 10, totalPages: 1, items })
   }),
 
@@ -105,21 +112,73 @@ export const handlers = [
   ),
 
   http.get(`${API}/api/v1/catalogos/estados-incidente`, () =>
-    HttpResponse.json({ items: [{ id: 1, nombre: 'Abierto' }, { id: 2, nombre: 'En progreso' }, { id: 4, nombre: 'Resuelto' }] }),
+    HttpResponse.json({
+      items: [
+        { id: 1, nombre: 'Abierto' },
+        { id: 2, nombre: 'En progreso' },
+        { id: 3, nombre: 'Escalado' },
+        { id: 4, nombre: 'Resuelto' },
+        { id: 5, nombre: 'Cerrado' },
+      ],
+    }),
   ),
 
   http.get(`${API}/api/v1/catalogos/categorias-incidente`, () =>
-    HttpResponse.json({ items: [{ id: 1, nombre: 'Phishing' }, { id: 2, nombre: 'Malware' }, { id: 6, nombre: 'Otro' }] }),
+    HttpResponse.json({ items: CATEGORIAS_INCIDENTE }),
   ),
 
   http.get(`${API}/api/v1/catalogos/transiciones-estado`, () =>
     HttpResponse.json([
       { estadoOrigenId: 1, estadoDestinoId: 2 },
+      { estadoOrigenId: 1, estadoDestinoId: 3 },
       { estadoOrigenId: 1, estadoDestinoId: 4 },
+      { estadoOrigenId: 1, estadoDestinoId: 5 },
+      { estadoOrigenId: 2, estadoDestinoId: 3 },
       { estadoOrigenId: 2, estadoDestinoId: 4 },
+      { estadoOrigenId: 2, estadoDestinoId: 5 },
+      { estadoOrigenId: 3, estadoDestinoId: 2 },
+      { estadoOrigenId: 3, estadoDestinoId: 4 },
+      { estadoOrigenId: 3, estadoDestinoId: 5 },
       { estadoOrigenId: 4, estadoDestinoId: 2 },
+      { estadoOrigenId: 4, estadoDestinoId: 5 },
+      { estadoOrigenId: 5, estadoDestinoId: 1 },
+      { estadoOrigenId: 5, estadoDestinoId: 2 },
     ]),
   ),
+
+  http.get(`${API}/api/v1/auditoria`, ({ request }) => {
+    const denegado = exigirRol(request, ['Administrador'])
+    if (denegado) return denegado
+    const url = new URL(request.url)
+    const entidad = url.searchParams.get('entidad')
+    const q = url.searchParams.get('q')?.toLowerCase()
+    let items = [...AUDITORIA]
+    if (entidad) items = items.filter((a) => a.entidad === entidad)
+    if (q) items = items.filter((a) => a.accion.toLowerCase().includes(q))
+    return HttpResponse.json(pagina(items))
+  }),
+
+  http.post(`${API}/api/v1/catalogos/categorias-incidente`, async ({ request }) => {
+    const denegado = exigirRol(request, ['Administrador'])
+    if (denegado) return denegado
+    const cuerpo = (await request.json()) as { nombre: string }
+    return HttpResponse.json({ id: 10, nombre: cuerpo.nombre }, { status: 201 })
+  }),
+
+  http.put(`${API}/api/v1/catalogos/categorias-incidente/:id`, async ({ request }) => {
+    const denegado = exigirRol(request, ['Administrador'])
+    if (denegado) return denegado
+    return new HttpResponse(null, { status: 204 })
+  }),
+
+  http.delete(`${API}/api/v1/catalogos/categorias-incidente/:id`, ({ request, params }) => {
+    const denegado = exigirRol(request, ['Administrador'])
+    if (denegado) return denegado
+    if (params.id === '1') {
+      return HttpResponse.json({ codigo: 'EN_USO', mensaje: 'No se puede eliminar: la categoría está en uso.' }, { status: 409 })
+    }
+    return new HttpResponse(null, { status: 204 })
+  }),
 
   http.get(`${API}/api/v1/activos`, ({ request }) => {
     const usuario = usuarioDeLaPeticion(request)
@@ -220,5 +279,75 @@ export const handlers = [
   http.post(`${API}/api/v1/incidentes/:id/evidencia`, ({ request }) => {
     const denegado = exigirRol(request, ['Administrador', 'Supervisor', 'Analista'])
     return denegado ?? HttpResponse.json({ id: 1 }, { status: 201 })
+  }),
+
+  // ---- Hito 4: dashboard y reportes ----
+  http.get(`${API}/api/v1/dashboard/indicadores`, ({ request }) => {
+    if (!usuarioDeLaPeticion(request)) return noAutorizado()
+    const url = new URL(request.url)
+    if (url.searchParams.get('desde') && url.searchParams.get('hasta') && url.searchParams.get('hasta')! < url.searchParams.get('desde')!) {
+      return HttpResponse.json({ status: 400, title: 'Error de validación', detail: 'Rango de fechas inválido.', codigo: 'FECHAS_INVALIDAS' }, { status: 400 })
+    }
+    return HttpResponse.json({
+      desde: '2025-11-23',
+      hasta: '2026-11-23',
+      items: [
+        item('volumen', 'Volumen de incidentes', 120, 'cantidad', 'cantidad de incidentes creados en el período', 12),
+        item('cumplimientoSla', 'Cumplimiento del SLA', 87.5, 'porcentaje', 'cerrados dentro del plazo / cerrados × 100', -2.5),
+        item('tiempoMedioResolucion', 'Tiempo medio de resolución', 14.2, 'horas', 'promedio de horas entre la creación y el cierre', 0),
+        item('tiempoMedioAsignacion', 'Tiempo medio de asignación', null, 'horas', 'promedio de horas hasta asignar', null),
+        item('backlog', 'Backlog activo', 31, 'cantidad', 'incidentes no resueltos ni cerrados', 4),
+        item('proporcionCriticos', 'Proporción de incidentes críticos', 9.5, 'porcentaje', 'críticos / total × 100', 1),
+      ],
+    })
+  }),
+
+  http.get(`${API}/api/v1/dashboard/series`, ({ request }) => {
+    if (!usuarioDeLaPeticion(request)) return noAutorizado()
+    return HttpResponse.json({
+      incidentesPorMes: [{ etiqueta: '2026-09', valor: 30 }, { etiqueta: '2026-10', valor: 45 }],
+      cumplimientoSlaPorMes: [{ etiqueta: '2026-09', valor: 80 }, { etiqueta: '2026-10', valor: 90 }],
+      porSeveridad: [{ etiqueta: 'Crítica', valor: 8 }, { etiqueta: 'Media', valor: 40 }],
+      porCategoria: [{ etiqueta: 'Malware', valor: 22 }],
+      porOrganizacion: [{ etiqueta: 'Org Demo', valor: 75 }],
+      cargaPorAnalista: [{ etiqueta: 'Analista Demo', valor: 6 }],
+    })
+  }),
+
+  http.post(`${API}/api/v1/ia/resumir`, ({ request }) => {
+    const denegado = exigirRol(request, ['Administrador', 'Supervisor'])
+    return denegado ?? HttpResponse.json({ resumen: 'El volumen de incidentes subió y el SLA bajó levemente.', generadoEn: '2026-11-23T12:00:00', modelo: 'simulado' })
+  }),
+
+  http.get(`${API}/api/v1/reportes/:tipo`, ({ request, params }) => {
+    const denegado = exigirRol(request, ['Administrador', 'Supervisor', 'Cliente'])
+    if (denegado) return denegado
+    const url = new URL(request.url)
+    if (params.tipo === 'sla' && (!url.searchParams.get('desde') || !url.searchParams.get('hasta'))) {
+      return HttpResponse.json({ status: 400, title: 'Error de validación', detail: 'Los filtros del reporte no son válidos.', codigo: 'FILTROS_INVALIDOS', errors: { desde: ['El reporte de SLA exige un rango de fechas.'] } }, { status: 400 })
+    }
+    return HttpResponse.json({
+      tipo: params.tipo,
+      filtros: {},
+      totales: { Incidentes: 2, Abiertos: 1 },
+      total: 2,
+      page: 1,
+      pageSize: 10,
+      totalPages: 1,
+      columnas: ['Id', 'Título', 'Severidad', 'Fecha creación'],
+      filas: [
+        { Id: 1, Título: 'Ransomware en servidor de archivos', Severidad: 'Crítica', 'Fecha creación': '2026-10-20T12:00:00' },
+        { Id: 2, Título: 'Phishing a ejecutivos', Severidad: 'Alta', 'Fecha creación': '2026-10-21T09:00:00' },
+      ],
+    })
+  }),
+
+  http.get(`${API}/api/v1/reportes/:tipo/exportar`, ({ request, params }) => {
+    const denegado = exigirRol(request, ['Administrador', 'Supervisor', 'Cliente'])
+    if (denegado) return denegado
+    const formato = new URL(request.url).searchParams.get('formato') ?? 'csv'
+    return new HttpResponse('Id;Titulo;Demo', {
+      headers: { 'Content-Type': 'text/csv', 'Content-Disposition': `attachment; filename="reporte-${String(params.tipo)}-2026-11-23.${formato}"` },
+    })
   }),
 ]

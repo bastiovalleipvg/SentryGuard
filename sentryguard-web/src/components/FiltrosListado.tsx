@@ -14,7 +14,13 @@ interface CampoSeleccion<C extends string> {
   textoTodos?: string
 }
 
-export type CampoFiltro<C extends string> = CampoBusqueda<C> | CampoSeleccion<C>
+interface CampoFecha<C extends string> {
+  nombre: C
+  etiqueta: string
+  tipo: 'fecha'
+}
+
+export type CampoFiltro<C extends string> = CampoBusqueda<C> | CampoSeleccion<C> | CampoFecha<C>
 
 interface Props<C extends string> {
   /** Nombre accesible del bloque de busqueda, por ejemplo "Filtrar activos". */
@@ -48,7 +54,14 @@ export function FiltrosListado<C extends string>({ etiqueta, campos, valores, on
           return (
             <div className="campo" key={campo.nombre}>
               <label htmlFor={id} className="campo__etiqueta">{campo.etiqueta}</label>
-              {campo.tipo === 'busqueda' ? (
+              {campo.tipo === 'fecha' ? (
+                <input
+                  id={id}
+                  type="date"
+                  value={borrador[campo.nombre]}
+                  onChange={(e) => setBorrador((b) => ({ ...b, [campo.nombre]: e.target.value }))}
+                />
+              ) : campo.tipo === 'busqueda' ? (
                 <input
                   id={id}
                   type="search"

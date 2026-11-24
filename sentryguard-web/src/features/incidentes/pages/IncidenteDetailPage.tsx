@@ -103,9 +103,13 @@ function DetalleIncidente({ incidente }: { incidente: Incidente }) {
               {puede(usuario, 'verOrganizaciones') && (
                 <div><dt>Organización</dt><dd><Link to={`/organizaciones/${incidente.organizacionId}`}>Ver organización #{incidente.organizacionId}</Link></dd></div>
               )}
+              <div><dt>Categoría</dt><dd>{incidente.categoria ?? 'Sin categoría'}</dd></div>
               <div><dt>Analista asignado</dt><dd>{incidente.analistaAsignado ?? 'Sin asignar'}</dd></div>
               <div><dt>Número</dt><dd>#{incidente.id}</dd></div>
               <div><dt>Creado</dt><dd>{formatearFecha(incidente.fechaCreacion)}</dd></div>
+              {incidente.fechaModificacion && (
+                <div><dt>Última modificación</dt><dd>{formatearFecha(incidente.fechaModificacion)}</dd></div>
+              )}
               <div><dt>Cerrado</dt><dd>{formatearFecha(incidente.fechaCierre, 'Aún abierto')}</dd></div>
             </dl>
             <h3>Descripción</h3>

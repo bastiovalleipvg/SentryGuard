@@ -25,10 +25,12 @@ interface Enlace {
 
 // El menu solo muestra lo que el rol puede abrir; la ruta y la API vuelven a validar el permiso.
 const ENLACES: Enlace[] = [
+  { a: '/dashboard', texto: 'Dashboard', icono: 'dashboard', accion: 'verDashboard' },
   { a: '/incidentes', texto: 'Incidentes', icono: 'incidentes' },
   { a: '/activos', texto: 'Activos', icono: 'activos' },
   { a: '/organizaciones', texto: 'Organizaciones', icono: 'organizaciones', accion: 'verOrganizaciones' },
   { a: '/mi-organizacion', texto: 'Mi organización', icono: 'organizaciones', soloRol: 'Cliente' },
+  { a: '/reportes', texto: 'Reportes', icono: 'reportes', accion: 'verReportes' },
   { a: '/usuarios', texto: 'Usuarios', icono: 'usuarios', accion: 'gestionarUsuarios' },
   { a: '/catalogos', texto: 'Catálogos', icono: 'catalogos', accion: 'gestionarCatalogos' },
   { a: '/auditoria', texto: 'Auditoría', icono: 'auditoria', accion: 'verAuditoria' },

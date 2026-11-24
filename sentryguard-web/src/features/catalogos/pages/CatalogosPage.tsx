@@ -15,6 +15,7 @@ import { aplicarErroresApi, ResumenErrores } from '../../../components/ResumenEr
 import { formatearHoras } from '../../../utils/formato'
 import {
   useCategorias,
+  useCategoriasIncidente,
   useEstados,
   useMutacionesCatalogo,
   usePlanes,
@@ -71,6 +72,7 @@ export function CatalogosPage() {
   const severidades = useSeveridades()
   const estados = useEstados()
   const categorias = useCategorias()
+  const categoriasIncidente = useCategoriasIncidente()
   const planes = usePlanes()
 
   return (
@@ -83,6 +85,7 @@ export function CatalogosPage() {
         <ul>
           <li><a href="#catalogo-severidades">Severidades</a></li>
           <li><a href="#catalogo-categorias-activo">Categorías de activo</a></li>
+          <li><a href="#catalogo-categorias-incidente">Categorías de incidente</a></li>
           <li><a href="#catalogo-planes-servicio">Planes de servicio</a></li>
           <li><a href="#catalogo-estados-incidente">Estados de incidente</a></li>
         </ul>
@@ -108,6 +111,19 @@ export function CatalogosPage() {
           singular: 'categoría',
           descripcion: 'Clasificación de los activos (servidor, red, aplicación…).',
           consulta: categorias,
+          campos: [CAMPO_NOMBRE],
+          columnas: [],
+          aValores: (c) => ({ nombre: c.nombre }),
+          editable: true,
+        }}
+      />
+      <SeccionCatalogo
+        config={{
+          tipo: 'categorias-incidente',
+          titulo: 'Categorías de incidente',
+          singular: 'categoría de incidente',
+          descripcion: 'Tipologías para clasificar incidentes (Malware, Phishing, Acceso no autorizado, etc.).',
+          consulta: categoriasIncidente,
           campos: [CAMPO_NOMBRE],
           columnas: [],
           aValores: (c) => ({ nombre: c.nombre }),

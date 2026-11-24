@@ -61,7 +61,7 @@ flowchart LR
     end
 
     SQL[("SQL Server 2022<br/>tablas + vistas")]
-    IA["Servicio de IA externo<br/>(API de Anthropic)"]
+    IA["Servicio de IA externo<br/>(API de Gemini)"]
 
     HTTP -- "HTTPS + Bearer JWT" --> MW
     DB --> SQL
@@ -114,15 +114,15 @@ flowchart TB
 | **Inyección de dependencias** | `Program.cs` (`AddScoped`) | ✅ | Desacopla las clases de sus dependencias (principio D de SOLID) |
 | **Cadena de responsabilidad (pipeline de middleware)** | `Middleware/` (errores, cabeceras, auditoría) | ✅ | Cada aspecto transversal es un eslabón independiente que se puede agregar o quitar |
 | **DTO y proyección** | `DTOs/DTOs.cs`, expresiones `ADto` | ✅ | La API nunca devuelve entidades EF: evita fugas de datos (OWASP API3) y ciclos de serialización |
-| **Strategy** | `IExportador` con `ExportadorExcel`, `ExportadorPdf` y `ExportadorCsv` | 📋 Hito 4 | Un mismo reporte se exporta a varios formatos sin `if` por formato; agregar uno nuevo no cambia el servicio (principio O) |
-| **Adapter** | `IAsistenteIA` con `AsistenteAnthropic` y `AsistenteFalso` (pruebas) | 📋 Hito 3 | Aísla el proveedor de IA: se puede cambiar o simular sin tocar los endpoints |
-| **State (tabla de transiciones)** | `tb_TransicionEstado` + `IIncidenteService.CambiarEstado` | 📋 Hito 2 | Las transiciones válidas son datos, no `if` repartidos en el código |
+| **Strategy** | `IExportador` con `ExportadorExcel`, `ExportadorPdf` y `ExportadorCsv` | ✅ | Un mismo reporte se exporta a varios formatos sin `if` por formato; agregar uno nuevo no cambia el servicio (principio O) |
+| **Adapter** | `IAsistenteIA` con `AsistenteGemini` y `AsistenteSimulado` (pruebas y CI) | ✅ | Aísla el proveedor de IA: se puede cambiar o simular sin tocar los endpoints |
+| **State (tabla de transiciones)** | `tb_TransicionEstado` + `IIncidenteService.CambiarEstado` | ✅ | Las transiciones válidas son datos, no `if` repartidos en el código |
 
 ### SOLID en el código
 
 - **S, responsabilidad única:** cada middleware hace una sola cosa; desde el Hito 2, los endpoints solo traducen HTTP y los servicios solo aplican reglas.
 - **O, abierto/cerrado:** exportadores e IA detrás de interfaces; agregar un formato o un proveedor no modifica el código que los usa.
-- **L, sustitución de Liskov:** `AsistenteFalso` reemplaza a `AsistenteAnthropic` en las pruebas sin cambiar el comportamiento esperado por el servicio.
+- **L, sustitución de Liskov:** `AsistenteSimulado` reemplaza a `AsistenteGemini` en las pruebas sin cambiar el comportamiento esperado por el servicio.
 - **I, segregación de interfaces:** interfaces chicas por necesidad (`IExportador` tiene un solo método), en lugar de un servicio gigante.
 - **D, inversión de dependencias:** los endpoints y servicios dependen de interfaces registradas en el contenedor de dependencias, no de clases concretas.
 

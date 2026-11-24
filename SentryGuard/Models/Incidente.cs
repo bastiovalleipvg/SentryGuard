@@ -29,6 +29,9 @@ public class Incidente : IAuditable
     [Column("severidad_id")]
     public int SeveridadId { get; set; }
 
+    [Column("categoria_id")]
+    public int? CategoriaId { get; set; }
+
     [Column("estado_id")]
     public int EstadoId { get; set; }
 
@@ -40,9 +43,6 @@ public class Incidente : IAuditable
 
     [Column("fecha_cierre")]
     public DateTime? FechaCierre { get; set; }
-
-    [Column("categoria_id")]
-    public int? CategoriaId { get; set; }
 
     // Auditoría (RF-16)
     [Column("fecha_modificacion")]

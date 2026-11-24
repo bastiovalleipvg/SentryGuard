@@ -3,7 +3,9 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SentryGuard.Models;
 
-/// <summary>Clasificación del incidente (Phishing, Malware, ...). La usan la IA (RF-23) y el dashboard.</summary>
+/// <summary>
+/// Catálogo de categorías de incidente de ciberseguridad (RF-15, RF-23).
+/// </summary>
 [Table("tb_CategoriaIncidente")]
 public class CategoriaIncidente
 {
@@ -15,4 +17,8 @@ public class CategoriaIncidente
     [StringLength(80)]
     [Column("nombre")]
     public string Nombre { get; set; } = null!;
+
+    [StringLength(250)]
+    [Column("descripcion")]
+    public string? Descripcion { get; set; }
 }

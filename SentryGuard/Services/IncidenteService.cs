@@ -47,6 +47,8 @@ namespace SentryGuard.Services
             Descripcion = i.Descripcion,
             SeveridadId = i.SeveridadId,
             Severidad = i.Severidad!.Nombre,
+            CategoriaId = i.CategoriaId,
+            Categoria = i.Categoria != null ? i.Categoria.Nombre : null,
             EstadoId = i.EstadoId,
             Estado = i.Estado!.Nombre,
             ActivoId = i.ActivoId,
@@ -54,8 +56,6 @@ namespace SentryGuard.Services
             OrganizacionId = i.OrganizacionId,
             AnalistaAsignadoId = i.AnalistaAsignadoId,
             AnalistaAsignado = i.AnalistaAsignado != null ? i.AnalistaAsignado.Nombre : null,
-            CategoriaId = i.CategoriaId,
-            Categoria = i.Categoria != null ? i.Categoria.Nombre : null,
             FechaCreacion = i.FechaCreacion,
             FechaCierre = i.FechaCierre,
             FechaModificacion = i.FechaModificacion

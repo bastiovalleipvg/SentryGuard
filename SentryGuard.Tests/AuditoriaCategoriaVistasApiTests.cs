@@ -123,15 +123,15 @@ public class AuditoriaCategoriaVistasApiTests : IClassFixture<SentryGuardApiFact
 
         var logs = await ConDbAsync(db => db.LogsAuditoria.AsNoTracking()
             .Where(l => l.Entidad == "Incidente" && l.EntidadId == id).OrderBy(l => l.Id).ToListAsync());
-        Assert.Contains(logs, l => l.Accion == "Incidente creado" && l.UsuarioId == 1);
-        var modificado = Assert.Single(logs, l => l.Accion == "Incidente modificado");
+        Assert.Contains(logs, l => l.Accion == "CREAR Incidente" && l.UsuarioId == 1);
+        var modificado = Assert.Single(logs, l => l.Accion == "MODIFICAR Incidente");
         Assert.Contains("\"SeveridadId\":2", modificado.ValoresAnteriores);
         Assert.Contains("\"SeveridadId\":4", modificado.ValoresNuevos);
 
         // El administrador puede consultar el detalle por entidad desde la API
         var api = await admin.GetFromJsonAsync<JsonElement>("/api/v1/auditoria?entidad=Incidente&pageSize=50");
         Assert.Contains(api.GetProperty("items").EnumerateArray(),
-            e => e.GetProperty("entidadId").GetInt32() == id && e.GetProperty("accion").GetString() == "Incidente modificado");
+            e => e.GetProperty("entidadId").GetInt32() == id && e.GetProperty("accion").GetString() == "MODIFICAR Incidente");
     }
 
     [Fact]

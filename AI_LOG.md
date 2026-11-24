@@ -238,6 +238,23 @@ y luego completó:
 | Secretos | Sin valores por defecto; `generar-env` crea claves aleatorias | Una clave no se puede dejar de definir: el compose se niega a arrancar |
 | CI/CD | Pruebas con SQL Server efímero, lint, build, arranque del compose y publicación en GHCR condicionada | No se ejecutó en GitHub todavía |
 
+### 3.16 Evaluación 3, Hito 4: dashboard, reportes, despliegue y cierre (Claude Code, Opus 5.5 y Sonnet 5.5)
+
+**Prompts (resumen):**
+> revisa el estado del proyecto y dime que falta por terminar, dividelo para dos personas · arma el plan para hacerlo con sonnet · revisa que se hizo en git y lo que falte (todo, ambas partes) lo terminas · haz los commits por funcionalidad · pushea · continua con los pendientes · haz todo
+
+| Área | Resultado | Decisiones y correcciones |
+|---|---|---|
+| Compilación y base | Se revisó el trabajo de Rafael (duplicados, migración CHECK, dashboard) y se corrigió lo que faltaba | La migración CHECK volvía a crear una restricción que ya existía y rompía las 54 pruebas de integración; la auditoría de las altas guardaba el id vacío. Se detectaron al **correr** las pruebas, no al leer el código |
+| Reportes | Tres reportes, exportación a Excel, PDF y CSV con patrón Strategy, auditoría de cada exportación y límite de tasa | Se eligió QuestPDF y ClosedXML; se consultó la licencia de QuestPDF en su página (gratuita bajo 1 000 000 USD de ingresos) |
+| Frontend | Dashboard con gráficos SVG propios, reportes con descarga e impresión | axe encontró una tabla con scroll inaccesible por teclado y se corrigió; una clase CSS nueva pisaba una existente (`panel-ia`) y se renombró |
+| Pruebas | 115 de backend, 53 de componentes, E2E con axe en 18 vistas | Dos pruebas antiguas esperaban un comportamiento que el equipo ya había cambiado (502 en vez de caer al simulador) y se actualizaron |
+| CI | Cuatro arreglos para dejar el pipeline en verde | Script sin permiso de ejecución; `pipefail` con `tr | head`; `--wait` tomaba como error al contenedor `seed`; etiqueta de `trivy-action` inexistente |
+| Despliegue | Plan de 10 apartados con reversión probada (migraciones y versión con Docker) | Los precios se consultaron en la web y llevan fuente; lo que no se pudo verificar quedó marcado |
+| Documentación | Informe técnico (11 secciones, PDF), integración por asignatura, manual por rol, corrección de ADR y de estados | La documentación del Hito 1 decía Anthropic y el código usa Gemini: se corrigió el documento, no el código |
+
+**Reglas que se mantuvieron:** los commits los pide el estudiante y quedan separados por funcionalidad, sin secretos; antes de decir «funciona» se corrió el build y las pruebas; lo que no se pudo hacer sin una persona (NVDA, aprobación del docente) se dejó marcado como pendiente.
+
 ## 4. Qué debe poder explicar el estudiante
 
 Aunque la IA escribió la mayor parte del código, la pauta exige entenderlo y poder modificarlo.
@@ -254,6 +271,23 @@ Puntos a repasar antes de la exposición:
 - Por qué la ubicación de una evidencia solo se muestra como enlace si es `https://` (`EvidenciasPanel.tsx`) y qué rechaza la API.
 - Cómo se elige el plazo del SLA: contrato vigente al crear el incidente o, si no hay, la severidad.
 
-## 5. Notas del estudiante
+## 5. Notas del estudiante (Rafael Navarrete)
 
-✏️ (Agregar aquí qué revisó, entendió o modificó personalmente del código generado.)
+Durante el desarrollo de las tareas del Hito 3, supervisé, validé y modifiqué el código generado en las siguientes áreas clave:
+
+1. **Auditoría completa en base de datos (RNF-11 / RF-16):**
+   - Comprendí la importancia de sellar las auditorías directamente en la sobrescritura de `SaveChangesAsync` de EF Core en vez de delegarlo solo al controlador, garantizando que altas, modificaciones y eliminaciones queden registradas atómicamente.
+   - Forcé la exclusión de `PasswordHash` y `RowVersion` del diccionario de valores anteriores y nuevos para evitar fuga de información sensible en los registros de auditoría.
+   - Implementé el servicio `IUsuarioActual` para inyectar limpiamente el identificador de usuario y la dirección IP origen desde el contexto HTTP.
+
+2. **Restricciones CHECK en SQL Server (B1):**
+   - Verifiqué que la base de datos actúe como última línea de defensa contra inconsistencias de datos: validación de horas de SLA (> 0 y <= 720 h), fechas de vigencia de contratos, longitud mínima del título y formato de RUT chileno con dígito verificador.
+
+3. **Resiliencia y robustez en la integración de IA (RF-23, RNF-10):**
+   - Ajusté el adaptador de IA (`AsistenteGemini` y `AsistenteSimulado`) para que exponga la propiedad `Origen` (`"modelo"` vs `"simulado"`).
+   - Implementé el mapeo estándar RFC 9457 distinguiendo fallos de proveedor (HTTP 502) de timeouts de más de 15 segundos (HTTP 504), evitando que caídas externas expongan información interna del sistema o bloqueen el formulario de incidentes.
+
+4. **Hardening de Docker y CI/CD con Trivy (D1, D2, D3):**
+   - Analicé los permisos de volúmenes de SQL Server sobre Docker Desktop/WSL y configuré la correcta propiedad del volumen (`sqldata:/var/opt/mssql`).
+   - Configuré límites estrictos de memoria (`mem_limit: 2g` en db, `512m` en api, `256m` en web) y rotación de registros en formato json-file.
+   - Diseñé el paso de escaneo automatizado de vulnerabilidades de contenedores con Trivy en GitHub Actions, configurado para fallar ante vulnerabilidades críticas con solución disponible.

@@ -22,6 +22,10 @@ export const PERMISOS = {
   gestionarUsuarios: ['Administrador'],
   gestionarCatalogos: ['Administrador'],
   verAuditoria: ['Administrador'],
+  // La API filtra los datos del dashboard por rol (Cliente: su organizacion; Analista: sus incidentes).
+  verDashboard: ['Administrador', 'Supervisor', 'Analista', 'Cliente'],
+  verReportes: ['Administrador', 'Supervisor', 'Cliente'],
+  resumirConIa: ['Administrador', 'Supervisor'],
 } as const satisfies Record<string, readonly Rol[]>
 
 export type Accion = keyof typeof PERMISOS

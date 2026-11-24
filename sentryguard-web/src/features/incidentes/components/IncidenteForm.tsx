@@ -2,8 +2,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useMemo, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { Link } from 'react-router'
+import { isApiError } from '../../../api/apiError'
 import type { ClasificacionIa } from '../../../api/contracts'
 import { FormField } from '../../../components/FormField'
+import { useNotifications } from '../../../components/Notifications'
 import { aplicarErroresApi, ResumenErrores } from '../../../components/ResumenErrores'
 import { useActivos } from '../../activos/activosService'
 import { useCategoriasIncidente, useSeveridades } from '../../catalogos/catalogosService'
@@ -27,6 +29,7 @@ export function IncidenteForm({ modo, valoresIniciales, textoEnviar, urlCancelar
   const categorias = useCategoriasIncidente()
   const activos = useActivos(modo === 'crear')
   const [errorGeneral, setErrorGeneral] = useState<string | null>(null)
+  const { notificar } = useNotifications()
 
   const clasificarIa = useClasificarIncidente()
   const [sugerenciaIa, setSugerenciaIa] = useState<ClasificacionIa | null>(null)
@@ -56,8 +59,14 @@ export function IncidenteForm({ modo, valoresIniciales, textoEnviar, urlCancelar
         descripcion: descripcionVal.trim(),
       })
       setSugerenciaIa(res)
-    } catch {
-      setErrorIa('El servicio de IA no respondió a tiempo. Puedes seleccionar la severidad de forma manual.')
+    } catch (err) {
+      if (isApiError(err) && err.status === 504) {
+        setErrorIa('El servicio de IA no respondió a tiempo (tiempo de espera agotado después de 15 segundos). Puedes seleccionar la severidad de forma manual.')
+      } else if (isApiError(err) && err.status === 502) {
+        setErrorIa('El servicio de IA no está disponible en este momento. Puedes seleccionar la severidad de forma manual.')
+      } else {
+        setErrorIa('El servicio de IA no respondió a tiempo. Puedes seleccionar la severidad de forma manual.')
+      }
     }
   }
 
@@ -67,6 +76,7 @@ export function IncidenteForm({ modo, valoresIniciales, textoEnviar, urlCancelar
     // Si la categoria sugerida existe en el catalogo, tambien se completa
     const categoria = categorias.data?.find((c) => c.nombre.toLowerCase() === sugerenciaIa.categoriaSugerida.trim().toLowerCase())
     if (categoria) setValue('categoriaId', String(categoria.id), { shouldValidate: true })
+    notificar('Sugerencia de IA aplicada a severidad y categoría.', 'exito')
   }
 
   const enviar = handleSubmit(async (valores) => {
@@ -128,6 +138,14 @@ export function IncidenteForm({ modo, valoresIniciales, textoEnviar, urlCancelar
                   <SeveridadBadge severidad={sugerenciaIa.severidadNombre} />
                   <span style={{ color: 'var(--texto-suave)' }}>•</span>
                   <span><strong>Categoría:</strong> {sugerenciaIa.categoriaSugerida}</span>
+                  {sugerenciaIa.origen && (
+                    <>
+                      <span style={{ color: 'var(--texto-suave)' }}>•</span>
+                      <span style={{ fontSize: '0.8rem', padding: '0.1rem 0.5rem', background: 'var(--fondo-suave, #f1f5f9)', borderRadius: '4px' }}>
+                        {sugerenciaIa.origen === 'simulado' ? 'Sugerencia generada por el asistente simulado' : `Modelo: ${sugerenciaIa.origen}`}
+                      </span>
+                    </>
+                  )}
                 </div>
                 <button
                   type="button"
